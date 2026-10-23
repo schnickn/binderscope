@@ -1,0 +1,688 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Demo · Binderscope guide</title>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<style>
+:root{
+  --font-ui:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --font-mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --bg:#eef0f5;--surface:#fff;--surface-2:#f4f5f9;--surface-3:#e8eaf1;--line:#dfe2ea;--line-strong:#c7ccda;
+  --ink:#141824;--ink-2:#444b5e;--ink-3:#586280;
+  --accent:#4a3aa7;--accent-hi:#6152c4;--accent-soft:#ebe8fa;--accent-ink:#fff;
+  --hot:#eb6834;--hot-soft:#fdeadf;--good:#0ca30c;--good-ink:#0a6a0a;--good-soft:#e2f4e2;--warn:#fab219;--warn-ink:#855700;--warn-soft:#fdf0d2;--bad:#d03b3b;--bad-ink:#a82626;--bad-soft:#fae4e4;--info-ink:#2a64ad;--info-soft:#e4eefb;
+  --shadow:0 1px 2px rgba(20,24,36,.05),0 10px 30px rgba(20,24,36,.08);--radius:12px;color-scheme:light;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0d1016;--surface:#151922;--surface-2:#1b202b;--surface-3:#242a37;--line:#262c39;--line-strong:#363d4e;
+  --ink:#eceff6;--ink-2:#b7bdce;--ink-3:#8c94a9;--accent:#9085e9;--accent-hi:#a89ff0;--accent-soft:#29254f;--accent-ink:#0d1016;
+  --hot:#f07b45;--hot-soft:#3a2216;--good-ink:#62d462;--good-soft:#10301a;--warn-ink:#f3c24c;--warn-soft:#362a0b;--bad-ink:#f08280;--bad-soft:#3a1717;--info-ink:#7db3f0;--info-soft:#14263d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1016;--surface:#151922;--surface-2:#1b202b;--surface-3:#242a37;--line:#262c39;--line-strong:#363d4e;
+  --ink:#eceff6;--ink-2:#b7bdce;--ink-3:#8c94a9;--accent:#9085e9;--accent-hi:#a89ff0;--accent-soft:#29254f;--accent-ink:#0d1016;
+  --hot:#f07b45;--hot-soft:#3a2216;--good-ink:#62d462;--good-soft:#10301a;--warn-ink:#f3c24c;--warn-soft:#362a0b;--bad-ink:#f08280;--bad-soft:#3a1717;--info-ink:#7db3f0;--info-soft:#14263d;
+  --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px rgba(0,0,0,.35);color-scheme:dark}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:76px}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 var(--font-ui);-webkit-font-smoothing:antialiased}
+a{color:var(--accent-hi);text-underline-offset:3px}
+header.top{position:sticky;top:0;z-index:20;display:flex;align-items:center;gap:18px;padding:12px max(20px,env(safe-area-inset-left));background:color-mix(in srgb,var(--surface) 88%,transparent);backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+header.top .brand{display:flex;align-items:center;gap:10px;font-weight:600;color:var(--ink);text-decoration:none;letter-spacing:-.01em}
+header.top .brand svg{width:26px;height:26px;color:var(--ink)}
+header.top .sp{flex:1}
+header.top nav{display:flex;gap:4px;flex-wrap:wrap}
+header.top nav a{padding:6px 12px;border-radius:8px;color:var(--ink-2);text-decoration:none;font-size:14px}
+header.top nav a:hover,header.top nav a.on{background:var(--surface-3);color:var(--ink)}
+.iconbtn{border:1px solid var(--line-strong);background:var(--surface);color:var(--ink-2);border-radius:8px;padding:6px 10px;font:500 13px var(--font-ui);cursor:pointer}
+.iconbtn:hover{background:var(--surface-3)}
+.wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:40px;max-width:1220px;margin:0 auto;padding:36px 24px 120px}
+aside.toc{position:sticky;top:84px;align-self:start;max-height:calc(100vh - 110px);overflow:auto;font-size:14px}
+aside.toc h4{margin:0 0 10px;font:600 11px var(--font-mono);letter-spacing:.14em;text-transform:uppercase;color:var(--ink-3)}
+aside.toc a{display:block;padding:6px 10px;border-left:2px solid var(--line);color:var(--ink-2);text-decoration:none}
+aside.toc a:hover{color:var(--ink)}
+aside.toc a.on{border-left-color:var(--accent);color:var(--ink);font-weight:600;background:linear-gradient(90deg,var(--accent-soft),transparent)}
+aside.toc a.sub{padding-left:22px;font-size:13px}
+main{min-width:0}
+.hero{background:radial-gradient(1200px 400px at 85% -10%,var(--accent-soft),transparent 60%),var(--surface);border:1px solid var(--line);border-radius:20px;padding:36px 36px 30px;box-shadow:var(--shadow);margin-bottom:34px}
+.hero .kicker{font:600 12px var(--font-mono);letter-spacing:.2em;text-transform:uppercase;color:var(--accent-hi);margin-bottom:12px}
+.hero h1{font-size:clamp(30px,4.4vw,48px);line-height:1.08;margin:0 0 14px;letter-spacing:-.03em}
+.hero p.lead{font-size:19px;color:var(--ink-2);max-width:60ch;margin:0 0 20px}
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px;margin-top:6px}
+.paths a{display:block;padding:14px 16px;border:1px solid var(--line-strong);border-radius:12px;background:var(--surface-2);text-decoration:none;color:var(--ink)}
+.paths a:hover{border-color:var(--accent);background:var(--accent-soft)}
+.paths b{display:block;margin-bottom:2px}
+.paths span{color:var(--ink-2);font-size:14px}
+section.sec{margin:0 0 58px}
+h2{font-size:30px;letter-spacing:-.025em;line-height:1.15;margin:0 0 6px}
+h2 .n{display:inline-block;min-width:34px;height:34px;line-height:34px;text-align:center;border-radius:10px;background:var(--accent);color:var(--accent-ink);font:600 16px var(--font-mono);margin-right:10px;vertical-align:3px}
+h3{font-size:20px;margin:28px 0 8px;letter-spacing:-.015em}
+h4{font-size:16px;margin:20px 0 6px;letter-spacing:-.01em}
+p{margin:0 0 14px}
+.muted{color:var(--ink-2)}
+ul,ol{padding-left:22px;margin:0 0 14px}li{margin:5px 0}
+code{font:500 .9em var(--font-mono);background:var(--surface-3);padding:2px 6px;border-radius:5px}
+kbd{font:500 12px var(--font-mono);background:var(--surface);border:1px solid var(--line-strong);border-bottom-width:2px;border-radius:6px;padding:2px 7px;color:var(--ink);white-space:nowrap}
+pre{position:relative;background:#0f1320;color:#e6e9f5;border-radius:12px;padding:16px 18px;overflow:auto;font:500 13.5px/1.55 var(--font-mono);border:1px solid #232a40;margin:0 0 16px}
+pre .c{color:#7f89ad}
+pre button{position:absolute;top:10px;right:10px;border:1px solid #394261;background:#1a2036;color:#cfd5ee;border-radius:7px;padding:3px 9px;font:500 12px var(--font-ui);cursor:pointer}
+pre button:hover{background:#252d4a}
+.callout{display:flex;gap:12px;padding:14px 16px;border-radius:12px;border:1px solid var(--line-strong);background:var(--surface);margin:0 0 16px}
+.callout .ic{flex:none;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;font:700 14px var(--font-mono)}
+.callout.tip{border-color:color-mix(in srgb,var(--good) 45%,var(--line));background:var(--good-soft)}.callout.tip .ic{background:var(--good);color:#fff}
+.callout.warn{border-color:color-mix(in srgb,var(--warn) 55%,var(--line));background:var(--warn-soft)}.callout.warn .ic{background:var(--warn);color:#2a1d00}
+.callout.note{border-color:color-mix(in srgb,var(--info-ink) 35%,var(--line));background:var(--info-soft)}.callout.note .ic{background:var(--info-ink);color:var(--bg)}
+.callout p{margin:0}.callout b:first-child{display:block;margin-bottom:2px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:14px;margin:0 0 18px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px 18px;box-shadow:var(--shadow)}
+.card h4{margin:0 0 6px;font-size:16px}.card p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.card .tag{display:inline-block;margin-bottom:8px;font:600 11px var(--font-mono);letter-spacing:.12em;text-transform:uppercase;color:var(--accent-hi)}
+.steps{counter-reset:s;list-style:none;padding:0;margin:0 0 18px}
+.steps>li{counter-increment:s;position:relative;padding:16px 18px 16px 62px;margin:0 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+.steps>li::before{content:counter(s);position:absolute;left:16px;top:16px;width:32px;height:32px;border-radius:50%;background:var(--accent);color:var(--accent-ink);font:600 15px/32px var(--font-mono);text-align:center}
+.steps>li b.t{display:block;font-size:17px;margin-bottom:2px}
+.steps .where{display:inline-block;margin-top:6px;font:500 12px var(--font-mono);color:var(--ink-3)}
+table{width:100%;border-collapse:collapse;font-size:14.5px;margin:0 0 18px;background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.tw{overflow-x:auto;margin:0 0 18px;-webkit-overflow-scrolling:touch}
+.tw table{margin:0;min-width:560px}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--surface-2);font:600 12px var(--font-mono);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+tr:last-child td{border-bottom:0}
+.pill{display:inline-block;padding:1px 9px;border-radius:99px;font:600 12px var(--font-mono);letter-spacing:.04em}
+.pill.fail{background:var(--bad-soft);color:var(--bad-ink)}.pill.warn{background:var(--warn-soft);color:var(--warn-ink)}.pill.ok{background:var(--good-soft);color:var(--good-ink)}.pill.info{background:var(--info-soft);color:var(--info-ink)}
+details{border:1px solid var(--line);border-radius:12px;background:var(--surface);margin:0 0 10px;padding:0 16px}
+details summary{cursor:pointer;padding:13px 0;font-weight:600;list-style:none}
+details summary::-webkit-details-marker{display:none}
+details summary::after{content:"+";float:right;color:var(--ink-3);font:500 20px var(--font-mono)}
+details[open] summary::after{content:"−"}
+details p,details ul{color:var(--ink-2)}
+.kbdgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.kbdgrid .card ul{list-style:none;padding:0;margin:0}.kbdgrid .card li{display:flex;justify-content:space-between;gap:12px;padding:5px 0;border-bottom:1px dashed var(--line);margin:0;font-size:14.5px}
+.kbdgrid .card li:last-child{border:0}
+footer{margin-top:60px;padding-top:20px;border-top:1px solid var(--line);color:var(--ink-3);font-size:13px}
+@media (max-width:900px){.wrap{grid-template-columns:1fr}aside.toc{display:none}header.top nav{display:none}}
+@media (max-width:560px){.wrap{padding:24px 14px 90px}.hero{padding:26px 20px 22px}.steps>li{padding:14px 14px 14px 56px}.steps>li::before{left:12px}pre{padding-top:38px}}
+@media print{header.top,aside.toc,.iconbtn{display:none}.wrap{display:block}.steps>li,.card{box-shadow:none;break-inside:avoid}}
+</style>
+<meta name="description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:title" content="Binderscope demo: reviewing BindCraft binder designs">
+<meta property="og:description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:type" content="website">
+<meta name="robots" content="index,follow">
+<style id="bs-demo-css">
+.bs-demo{position:fixed;left:12px;bottom:12px;z-index:9999;display:flex;align-items:center;gap:8px;max-width:min(560px,calc(100vw - 24px));
+  padding:7px 10px 7px 12px;border-radius:10px;background:var(--surface,#fff);color:var(--ink-2,#444b5e);border:1px solid var(--line-strong,#c7ccda);
+  box-shadow:0 6px 24px rgba(0,0,0,.18);font:12px/1.35 var(--font-ui,system-ui,sans-serif)}
+.bs-demo b{color:var(--ink,#141824);font-weight:600}
+.bs-demo a{color:var(--accent,#4a3aa7);font-weight:600;text-decoration:none;white-space:nowrap}
+.bs-demo a:hover{text-decoration:underline}
+.bs-demo button{flex:none;border:0;background:none;color:var(--ink-3,#586280);font-size:15px;line-height:1;cursor:pointer;padding:0 2px}
+.bs-demo[hidden]{display:none}
+.bs-demo-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  text-decoration:none;color:var(--accent-ink,#fff);background:var(--accent,#4a3aa7);border:1px solid var(--accent,#4a3aa7);margin-left:6px}
+.bs-demo-chip:hover{filter:brightness(1.12)}
+@media print{.bs-demo,.bs-demo-chip{display:none}}
+</style>
+</head>
+<body><div class="bs-demo" id="bsDemo" role="note"><span><b>Demo.</b> One small BindCraft 2 run, reviewed by Binderscope. Click anything: decisions stay in your browser. These designs were never made or tested. <a href="https://github.com/schnickn/binderscope" target="_blank" rel="noopener">Get Binderscope &#8599;</a></span><button type="button" aria-label="Hide this note" title="Hide">&times;</button></div><script>(function(){var n=document.getElementById("bsDemo");try{if(sessionStorage.getItem("bs-demo-hidden"))n.hidden=true}catch(e){}n.querySelector("button").onclick=function(){n.hidden=true;try{sessionStorage.setItem("bs-demo-hidden","1")}catch(e){}}})();</script>
+<header class="top">
+  <a class="brand" href="index.html" id="brand">
+    <svg viewBox="0 0 32 32" fill="none" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="16" cy="16" r="12.5" stroke="currentColor" stroke-width="2"/><path d="M16 1.2v4.6M16 26.2v4.6M1.2 16h4.6M26.2 16h4.6" stroke="currentColor" stroke-width="2"/><path d="M7.6 19.4c1.9-6.2 4-6.4 6.2-2.4s4.3 4 6.3-1.8c1.4-4.1 2.7-4.7 4.3-3.3" stroke="#8f7dff" stroke-width="2.8"/><circle cx="23.2" cy="11.6" r="2.5" fill="#f08a24"/></svg>
+    Binderscope <span class="muted" style="font-weight:500">Guide</span>
+  </a>
+  <span class="sp"></span>
+  <nav>
+    <a href="index.html">Overview</a><a href="board.html">Board</a><a href="inspector.html">Inspector</a><a href="map.html">Map</a><a href="query.html">Query</a>
+  </nav>
+  <button class="iconbtn" id="theme" title="Switch light and dark">Theme</button>
+</header>
+<div class="wrap">
+  <aside class="toc" id="toc"><h4>On this page</h4></aside>
+  <main id="main"><div class="hero">
+  <div class="kicker">Binderscope · user guide</div>
+  <h1>From a finished campaign to a shortlist you can defend.</h1>
+  <p class="lead">Binderscope takes the designs a campaign produced, groups them by backbone, checks each one on the full-length target, says which end can carry a tag, and keeps your decisions with their reasons. This guide gets you productive in about ten minutes; the rest is reference.</p>
+  <p class="lead"><b>Binderscope is the program; BindCraft 2 is the design engine it drives.</b> BindCraft is named below wherever it is the thing that acted — it designed the backbones, it chose its own filters, and its scores are carried over as its own. The families, the full-length checks, the paratope and tag analyses, the verdicts and the review are Binderscope's. This guide covers the review: the pages you read once a campaign has finished, whether Binderscope launched it for you or you ran BindCraft yourself and point Binderscope at the run folders.</p>
+  <div class="paths">
+    <a href="#start"><b>I have BindCraft folders</b><span>Install the app, add your runs, start reviewing.</span></a>
+    <a href="#pages"><b>I just opened a bundle</b><span>What each page is for, and every control on it.</span></a>
+    <a href="#recipe"><b>I must pick designs to order</b><span>A 15-minute review recipe and the other workflows.</span></a>
+  </div>
+</div>
+
+<section class="sec" id="s-start">
+  <h2 id="start"><span class="n">1</span>Quick start</h2>
+  <p class="muted">Binderscope is an app on your own computer. You choose your BindCraft runs and the target, it analyses them, and it opens the review pages in its own window. Everything stays on your machine and your designs are not uploaded.</p>
+  <ol class="steps">
+    <li><b class="t">Install Binderscope (once)</b><p>On a Mac, open the Binderscope folder you downloaded and double-click <b>Install Binderscope.command</b>. A Terminal window shows the progress for a few minutes. It checks Apple's Command Line Tools (it asks you to install them once if they are missing), finds or installs Python, and creates the app Binderscope in the Applications folder of your home folder. It never asks for an administrator password. When it is done, Binderscope opens.</p><p>Not on a Mac, or happier in a terminal? See <a href="#cli-alt">the command line</a> below. If the installer stops with a message, the app guide explains each one.</p>
+        <span class="where">Once. To update, run the installer again.</span>
+    </li>
+    <li><b class="t">Open Binderscope</b><p>Press Cmd+Space, type Binderscope and press Return. It opens its own window with the list of your projects, empty at first. Your projects are kept in the folder <code>Binderscope</code> in your home folder. The app closes itself about a minute after you close its window; your projects stay.</p>
+    </li>
+    <li><b class="t">Choose your runs</b><p>Click <b>New project</b>. On the first card press <b>Add run folders…</b> and choose one or more BindCraft run folders: the folder of each run, the one that holds the CSV files, the Accepted folder and the settings file. You can also paste a path.</p><p>Each run shows what was found: the BindCraft version, the accepted and rejected designs, the families, the hotspots and the binder lengths. Give each run a short name (<code>run01</code>, <code>run02</code>). Your folders stay where they are and are never changed. Folders you pruned are fine: a missing part switches off the features that need it, and the Overview says which.</p>
+        <span class="where">New project · card 1</span>
+    </li>
+    <li><b class="t">Add the target</b><p>On the second card choose the structure you gave BindCraft (the page suggests files it found next to your run) and the full-length reference structure of the target: a file, a file dropped on the box, or a PDB id that the page downloads from the RCSB when you press Download. Once both files are chosen the page says how well your structure fits the chain of the reference (a green, amber or red message with the CA RMSD and the residues matched); red usually means the wrong chain, another protein or another numbering.</p><p>The reference supplies everything BindCraft never saw: other subunits, the rest of the chain, glycans. See <a href="#concepts">the target frame</a> and <a href="#missing">when data are missing</a>. The third card, Options, is closed and optional: project name, UniProt accession (with an opt-in online lookup), the chain of the target in the reference, the other subunits, how designs are placed on the full-length protein and a profile file. If the reference is an AlphaFold model of a protein with several domains, read the warning about how well it places them under <a href="#missing">when data are missing</a>.</p>
+        <span class="where">New project · cards 2 and 3</span>
+    </li>
+    <li><b class="t">Build</b><p>Press <b>Build project</b>. The page shows the nine steps of the analysis as they run. The first build takes a minute or two for a typical project and grows with the number of designs; a rebuild with unchanged inputs reuses a cache and takes seconds. When the page says your project is ready, press <b>Open the project</b>.</p><p>If the build stops, the page says why in plain words, for example that a chain is not in the reference file. Fix the choice with <b>Back to the inputs</b> and build again.</p>
+        <span class="where">Build page</span>
+    </li>
+    <li><b class="t">Read the Overview</b><p>The first page lists your runs with their counts, what stands out in the data (each item links to the page or design it is about), what the project carries and which checks are switched off for lack of data. Read the switched-off list: it tells you what the build could not do with your inputs. A <b>‹ Projects</b> link at the left of every page's header leads back to your projects.</p>
+        <span class="where">Overview</span>
+    </li>
+    <li><b class="t">Start on the Board</b><p>Read the funnel and the diversity panel for each run, then walk the tiles with the arrow keys and press <kbd>K</kbd> to keep, <kbd>M</kbd> for maybe, <kbd>X</kbd> to reject (the same key again clears it). Your decisions are saved in this browser as you go, and the app keeps a copy in the project folder.</p>
+        <span class="where">Board</span>
+    </li>
+  </ol>
+  <div class="callout note"><span class="ic">i</span><div><b>Where things are</b><p>Each project is a folder in <code>Binderscope</code> in your home folder: the analysis in <code>work</code>, the review pages in <code>bundle</code>. In a project's <b>More</b> menu you find <b>Edit the inputs…</b> (change or add a run, then build), <b>Update the review pages</b> (after you update Binderscope), <b>Rebuild</b>, <b>Show in Finder</b> and <b>Delete project</b>. Deleting a project never touches your BindCraft run folders. The app guide lists every file and field.</p></div></div>
+  <div class="callout note"><span class="ic">i</span><div><b>Sharing a bundle</b><p>Choose <b>More</b> and <b>Show in Finder</b> on the project, zip its <code>bundle</code> folder and send it. Whoever opens <code>index.html</code> sees the same pages and data. It holds your binder sequences, and its build record (<code>data/manifest.json</code>) names your input files and folders (names only: the absolute paths of your machine are cut off) and copies the settings of each run, so check both before it leaves your lab. Decisions travel separately as a small review file (see <a href="#files">Saving, sharing and exporting</a>).</p></div></div>
+  <h3 id="cli-alt">Prefer the command line? <span class="muted" style="font-weight:400">· advanced use, scripts, other systems</span></h3>
+  <p>The app runs the same build that the command line offers, so you can script it or use it where the installer does not apply. You need Python 3.12 or newer; <code>pip install -e ".[dev]"</code> in a virtual environment installs the package (the <code>dev</code> extra adds pytest and can be left out unless you run the tests). Then point the command at the run folders (give each an id before the equals sign), the construct and the reference, and open the bundle it writes:</p>
+  <pre data-copy><span class="c"># from the project folder, with its virtual environment active</span>
+binder-review import run01=/path/to/run01 run02=/path/to/run02 --target-pdb construct.pdb --reference-cif full_length.cif --name my-target --out work/my-target --bundle bundles/my-target</pre>
+  <pre data-copy>open bundles/my-target/index.html</pre>
+  <p><code>binder-review app</code> starts the app from a terminal. Input folders are never written to. Every option and exit code is in the command-line reference.</p>
+</section>
+
+<section class="sec" id="s-concepts">
+  <h2 id="concepts"><span class="n">2</span>Five ideas that make the pages click</h2>
+  <div class="cards">
+    <div class="card"><span class="tag">Family</span><h4>One backbone, several sequences</h4><p>BindCraft designs a backbone (one trajectory), then proposes several sequences for it. Binderscope counts <b>families</b>, never sequences, because sequences of one backbone share a fold, a pose and most of their risk: they are not independent bets. The funnel, the diversity estimate, the tiles and the order list all work on families. You see it as the tiles on the Board, the sequence table in the focus panel and the Siblings tab in the Inspector.</p></div>
+    <div class="card"><span class="tag">Target frame</span><h4>The construct is not the protein</h4><p>BindCraft only sees the piece of the target you gave it. Binderscope puts every design back on the full-length protein, with the other subunits and the rest of the chain taken from your reference structure, so it can ask what the construct hid. A binder that crashes into the part BindCraft never saw gets flagged. You see it as the Target frame strip and the Target checks in the Inspector. BindCraft predicts and relaxes its own copy of the target, which differs a little from your reference, so how a design is placed matters: each design is fitted onto the reference by a superposition weighted around its own interface, which keeps the binder where it sits against the epitope. A fit over the whole target can leave it 1 to 3 Å off where the two copies differ (it is the option <i>Fit the whole target</i>, <code>--placement whole</code>). The interface numbers (contacts, hydrogen bonds, buried area) come from the design's own structure and do not depend on this; the distances to the other subunit, the rest of the protein and the sugars, and the Context verdict, do.</p></div>
+    <div class="card"><span class="tag">Intended site</span><h4>Hotspots are the plan</h4><p>The hotspots in your run settings define the site you meant to hit. A design that touches none of them is marked off-site ("wrong site" in the Inspector), however good its scores. The hotspots come from the settings JSON of the run or, without it, from the hotspot column of the CSVs. A run recorded without any hotspot has no intended site, and the pages say so (see <a href="#missing">when data are missing</a>).</p></div>
+    <div class="card"><span class="tag">Runs</span><h4>Never pool the estimates</h4><p>Different hotspots, lengths or targets make different experiments. On the Board the funnel, the diversity count and the "Do you need more designs?" estimate are made per run; tiles from all runs can still sit in one list, and the other pages show per-run counts next to the pooled view. Give every run its own name when you add it (<code>run01=...</code> on the command line), and pick one run in the header to see its own numbers.</p></div>
+    <div class="card"><span class="tag">Screens</span><h4>Every score is a screen</h4><p>Checks flag what deserves a look. They are not verdicts, and a design that passes them is a predicted binder, not a measured one. The Inspector's Target checks and Specificity rules say which experiment would confirm or refute each flag.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="s-pages">
+  <h2 id="pages"><span class="n">3</span>The pages</h2>
+  <p>The Overview is the landing page and the header links every page. With more than one run, <b>RUNS</b> in the header picks one run or all, and the choice follows you from page to page. <b>What to try</b> (on the Board, Inspector, Map and Query pages) gives hints for the page you are on. A design id on the Map and Query pages or in the Board's order list opens that design in the Inspector. In the app, a <b>‹ Projects</b> link at the left of each page's header leads back to your projects. The pages follow your system's light or dark setting; add <code>#dark</code> or <code>#light</code> to a page's address to force one (this guide has its own Theme button). Everything is drawn from files in the bundle: no page needs a network.</p>
+  <p>Each page below has a table of its features: the feature, the question it answers and how to use it. Order of reading for a first review: Overview, Board, Query, Inspector, Map.</p>
+  <h3 id="p-overview">Overview <span class="muted" style="font-weight:400">· the landing page</span></h3>
+  <p>The first page of a bundle. It counts what stands out in your data and links to every page. Its counts, cards and highlights always cover all runs and were fixed when the bundle was built; the <b>RUNS</b> buttons in its header do not change them, but the choice you make there applies to the other pages.</p>
+  <div class="tw"><table>
+    <tr><th style="width:20%">Feature</th><th style="width:28%">The question it answers</th><th>How to use it</th></tr>
+    <tr><td><b>Target and chips</b></td><td>What is this bundle built on?</td><td>The target name (from the UniProt record when you gave an accession; otherwise a generic "Target") with chips for the reference structure and chain, the UniProt entry (when you gave an accession), the construct and the hotspots.</td></tr>
+    <tr><td><b>Page cards</b></td><td>Where do I go next?</td><td>One card per page, each with a count from your data (families, designs to inspect, binding modes, designs to query; they count different things: accepted designs, plus near-misses, plus all rejected designs that have a structure). The last card opens this guide.</td></tr>
+    <tr><td><b>What stands out</b></td><td>What in my data deserves attention before I start?</td><td>Facts counted from your runs, each with a link to the page or design where you can look at it: designs that fail a context check, which hotspots the designs touch, how the runs differ, how diverse each run is, how a scaffolded run's interface divides between its designed segments and its framework, how many rejected designs are near-misses, how conserved the contacted residues are. They are screens, not verdicts, and they are fixed text from build time: they ignore the run filter and any threshold you change later in the pages.</td></tr>
+    <tr><td><b>Runs</b></td><td>What did each run contain, and how do the runs differ?</td><td>One row per run: accepted and rejected counts (the rejected ones marked <i>with structures</i> or <i>scores only, no structures</i>), families, hotspots, the construct as that run saw it (with the stretches it removed) and its length range and settings. An <i>experimental reader</i> tag marks a BindCraft 2 run that the reader has not been verified on (see <a href="#missing">when data are missing</a>); the Build panel's <i>Warnings</i> row says why. Runs with different settings are never pooled in an estimate.</td></tr>
+    <tr><td><b>Funnel</b></td><td>How many trajectories survived each stage?</td><td>Per run: trajectories attempted (a count for a BindCraft 2 run, which lists every trajectory it started; <i>unknown</i> for a BindCraft 1 run, because the files Binderscope reads do not record it, with an estimate from BindCraft's counters marked <i>est.</i>), completed and scored, backbones with a scored sequence, sequences scored, accepted designs, accepted backbones. Hatched bars are estimates, dashed bars are unknown; unknown is never drawn as zero.</td></tr>
+    <tr><td><b>What this bundle carries</b></td><td>Which checks are on, and which are switched off?</td><td>A row of chips for what the data contain: backbone families, generation order, fold similarity, rejected designs with structures, other-subunit and rest-of-protein context, glycan sites, membrane plane, species and paralog panels, lab outcomes, PAE matrices, ipSAE, independent co-fold. A struck-through chip means the checks that need it are off. Under the chips the panel says why: no reference structure was given (so nothing outside the construct was tested), or the reference held nothing to test against (the checks ran on nothing). Neither is a pass. Checks that need data a bundle does not carry are switched off, never guessed.</td></tr>
+    <tr><td><b>Your review</b></td><td>How far am I?</td><td>The number of decisions the current reviewer has made, the reviewer name, and <b>Save review file</b> and <b>Load review file</b>. Loading here shows no message; use the Board's Share dialog for feedback. The count is for the reviewer whose name is in the field.</td></tr>
+    <tr><td><b>Build</b></td><td>Where did this bundle come from?</td><td>Tool version, build date, the bundle id (review files refer to it), the number of input files with their hashes in the manifest, whether the counts match the run CSVs (compared for BindCraft 1 runs only; with none the row is left out), how many recomputed metrics were compared with the values the design tool wrote, warnings, and a privacy line that says no binder sequence or design id left the machine.</td></tr>
+  </table></div>
+  <h3 id="p-board">Family board <span class="muted" style="font-weight:400">· start here</span></h3>
+  <p>One tile per backbone family. It answers: <i>how diverse is what BindCraft gave me, do I need more designs, and which families deserve a closer look?</i></p>
+  <p>Top to bottom the page has three summary panels (<b>Run funnel</b>, <b>Backbone diversity</b>, <b>Do you need more designs?</b>; for a campaign built on a fixed scaffold, <b>What the designs bind with</b> takes the place of Backbone diversity), then <b>Where a tag can go</b> where the bundle carries the terminus analysis, a toolbar with a progress counter, the grid of tiles on the left, and on the right the focus panel for the selected tile, the reviewer model, the review queue and the order list. A hint bar at the bottom lists the keys.</p>
+  <div class="tw"><table>
+    <tr><th style="width:20%">Feature</th><th style="width:28%">The question it answers</th><th>How to use it</th></tr>
+    <tr><td><b>Run funnel</b></td><td>What did each run produce, and where did designs drop out?</td><td>Read one column per run, never pooled: trajectories, scored sequences, accepted designs, families. "unknown" means the run folder does not say; "est." marks an estimate. Pick one run under <b>RUNS</b> for a bar chart and the filters that failed most.</td></tr>
+    <tr><td><b>Backbone diversity</b></td><td>How many different ideas do I have?</td><td>Counts design clusters per run. <b>Count by</b> (Backbone, Both or Binding site) and <b>Same cluster if</b> (0.30 to 0.70, default 0.50) set what counts as alike. Effective number of clusters, singletons and the largest cluster's share describe their sizes; <i>Modes</i> counts the binding modes. A campaign built on a fixed scaffold does not get this panel: every design is the same fold, so the count would measure the scaffold (next row).</td></tr>
+    <tr><td><b>What the designs bind with</b></td><td>On a scaffolded campaign (a VHH, scFv, Fab or ankyrin repeat): which parts of the scaffold touch the target, and what varies between designs?</td><td>Shown instead of Backbone diversity, and its first line says why: every design is the same fold, so fold similarity would measure the scaffold, not the designs. Two bars divide the interface residues between the designed segments (CDR1 to CDR3, H1 to L3, or <i>designed segment 1, 2...</i> where there are no CDRs) and the framework, accepted designs over rejected ones, with the framework positions that still make contact. Where the campaign set an off-paratope filter, a framework share that is small in the accepted designs and large in the rejected ones is that filter at work. <i>What varies between designs</i> follows: how many region-use profiles the accepted designs show, the length classes of the loop the campaign let vary (usually CDR3, one dot per family), and how much the epitopes of the families overlap and which target residues all of them touch. An axis the data cannot support reads <i>not measured</i> or <i>not shown</i>, with the reason. Regions are the campaign's own edit spec, not IMGT or Kabat numbering, and the residues are BindCraft's own interface list. The percentages count designs, and siblings of one backbone are near copies in the paratope, so read the family counts beside them.</td></tr>
+    <tr><td><b>Do you need more designs?</b></td><td>Will more designs from these settings add new ideas?</td><td>Gives the chance that the next passing family is a new cluster (one minus coverage) with a plain label: <i>Too early to judge</i> (fewer than 10 families), <i>Still discovering</i> (coverage below 0.7), <i>Diminishing returns</i> (below 0.9) or <i>Saturated for this setup</i>. Below 30 families it is rough. Pick one run for the accumulation curve, the forecast and the <b>Replay</b> slider, which shows what the tool would have said earlier in the run (this needs the generation order of the run). For a scaffolded campaign the clusters are counted by binding site alone, because fold is the same for every design (a line under the panel says so), so its coverage is not comparable with a de novo run's.</td></tr>
+    <tr><td><b>Where a tag can go</b></td><td>Which end of each family can carry a tag or a fusion, and would that hold the binder by its binding face?</td><td>One block per run. A row per tag size (His6, Twin-Strep, a GFP-sized domain, an Fc) splits the run's families into C, either, N and neither; click a row, or the <b>Tag</b> buttons in the toolbar, to make that size the one the tiles, the focus panel and the order list use. The notes below say what the modality's convention is and how many families the geometry agrees with it on, what the campaign was asked to do about the ends, and whether the ends were checked against the full-length protein or against each design's own target only (the latter without a reference structure). Counts are of families; where a family's sequences disagree it is judged by what most of them say and marked <code>*</code>. A prediction from one predicted conformation, not a measurement.</td></tr>
+    <tr><td><b>Tiles</b></td><td>Which families deserve a look first?</td><td>Each tile shows the family's best design on the target with the hotspots in orange, its binding mode (M1...), cluster (C1...), verdict (PASS, REVIEW or NO PASS), i_pTM, hotspots touched (3/4), BindCraft's scores and <i>p 98%</i>, the reviewer model's chance that you keep it. The small boxes are the family's sequences, coloured by verdict. An <i>off-site</i> mark means it touches none of its run's hotspots, and a <i>tag C-term</i> pill (or <i>tag N or C</i>, <i>no tag site</i>) gives the end to tag for the tag size in force. The muted line mixes BindCraft's scores with values Binderscope computed (marked <i>calc.</i>).</td></tr>
+    <tr><td><b>Sort, Group by, Colour, Unit</b></td><td>In what order and grouping do I want to walk the tiles?</td><td><b>Sort</b>: Learned (by the model's keep chance), Quality, Generation order, Group. <b>Group by</b>: Cluster or Mode (switches to Group sort). <b>Colour</b> of the binder in the tile thumbnails: Chain, pLDDT, Footprint. <b>Unit</b>: Families or Sequences (decide per backbone or per sequence; sequence decisions are kept separately from family decisions and the model starts again).</td></tr>
+    <tr><td><b>Filters and find</b></td><td>How do I see only what is left, or one design?</td><td><b>Undecided only</b> and <b>Hide rejected</b> (rejected by you; on by default) narrow the grid; <kbd>/</kbd> focuses the find box, which matches design and family ids; <kbd>Esc</kbd> clears it.</td></tr>
+    <tr><td><b>Focus panel</b></td><td>Why does this family have its verdict?</td><td>Click a tile. The panel gives the verdict with a <i>because</i> list, a 3D view (drag to rotate, wheel to zoom), the K, M and X buttons, the sequences on this backbone (with the <b>Order</b> checkbox), one row per check (Fold, Interface, Pose, Chemistry, Epitope, Sequence, Context, Specificity) with the reason in words, a <b>Tag and fusion</b> section with each end's grade and distance, and the reason tags. Specificity is information only and never changes the verdict. <b>Inspect</b>, <kbd>Enter</kbd> or a double-click opens the Inspector.</td></tr>
+    <tr><td><b>Keep, maybe, reject, reasons</b></td><td>How do I record a call and why?</td><td><kbd>K</kbd>, <kbd>M</kbd>, <kbd>X</kbd> decide for the focused family; the same key again clears it; the focus moves to the next undecided tile. <kbd>1</kbd> to <kbd>7</kbd> tag a reason (the list comes from the profile; with the default profile: wrong site, small interface, floppy or loopy, sticky surface, low confidence, clashes with the other subunit, sequence liability). <kbd>U</kbd> undoes the last decision.</td></tr>
+    <tr><td><b>Reviewer model</b></td><td>Can the page learn what I like and surface the families I would keep?</td><td>A small model learns from your keeps and rejects (maybes do not train it) and reorders the board while Sort is on Learned. The panel shows how many decisions it has used and its largest weights. <kbd>L</kbd> or the <b>Learning</b> switch freezes the ranking; decisions are always recorded.</td></tr>
+    <tr><td><b>Review next, Worth a look</b></td><td>What should I look at next?</td><td>Two short lists: the undecided families the model expects you to keep, and the ones it is unsure about. <i>Review next</i> lists the four undecided families with the highest expected keep, ranked from the start by a quality prior. <i>Worth a look</i> lists up to three the model is unsure about; it is empty while learning is off and says it appears after a few decisions. Both ignore the toolbar filters.</td></tr>
+    <tr><td><b>Compare</b></td><td>How do two or three candidates differ side by side?</td><td><kbd>C</kbd> adds the focused item, then press <b>Compare</b> (up to five items on one target, a table in which the best value in each row is underlined).</td></tr>
+    <tr><td><b>Order list</b></td><td>Which sequences am I taking to the lab, and how well do they cover the field?</td><td>One or two sequences per kept family (the best by default; tick <b>Order</b> in the focus panel to change it). Only kept families are on it, not maybes, and it ignores the run filter. A note under the heading counts the families, clusters and binding modes covered; if you rescued near-misses on the Query page, a dashed line under that note counts them and links back there. A sentence after that note counts how the list divides between C-terminal, N-terminal, either and no tag site for the tag size in force. <b>Copy FASTA</b>, <b>FASTA file</b>, <b>CSV</b>, <b>Tag plan CSV</b> (one row per design with the end to tag for each tag size and the evidence behind it), <b>Save review file</b> and <b>Load review file</b> are here.</td></tr>
+    <tr><td><b>Share</b></td><td>How do I keep, move or hand over my decisions?</td><td><b>Share</b> (header) and <b>Share review</b> (order list) open a dialog with Save and Load review file, the reviewer name, a reviewer picker and a note on whether decisions persist.</td></tr>
+    <tr><td><b>Clear decisions</b></td><td>Can I start over?</td><td>Asks first (a bar under the toolbar), then clears all of yours; nothing is deleted from the log. Press <kbd>U</kbd> at once to restore them, or load a saved review file later.</td></tr>
+    <tr><td><b>How to import a run</b></td><td>How does a run get into this?</td><td>Explains the build command and lists what the build read. It does not import anything itself.</td></tr>
+    <tr><td><b>Help and What to try</b></td><td>What are the keys, and what should I try on this page?</td><td><kbd>?</kbd> lists the shortcuts; <b>What to try</b> in the header gives hints for the page.</td></tr>
+  </table></div>
+  <div class="callout warn"><span class="ic">!</span><div><b>Easy to miss on the Board</b><p><b>Hide rejected</b> is on by default, so a tile you reject disappears at once (the counters still count it). <i>Rejected</i> here means rejected by you; BindCraft's rejected sequences and the verdict NO PASS are different things. With Sort on Learned, tiles you have decided come first and the rest follow by the model's keep chance, so the order changes as it learns; <i>p 98%</i> is the model's guess of <i>your</i> decision, not a binding probability. The number keys tag the focused item if it is decided, otherwise the one you decided last, and tags are not undone by <kbd>U</kbd>. Undo works only until the page reloads or you load a review file. The toolbar settings, the cluster slider and the find text are not stored. A link such as <code>board.html#f=&lt;family id&gt;</code> can change the run filter and untick the filters without asking. The verdicts are Binderscope's own checks: a design BindCraft rejected can read PASS, an accepted one can read NO PASS, and an off-site design reads REVIEW, not NO PASS.</p></div></div>
+  <div class="callout tip"><span class="ic">+</span><div><b>Decisions belong to families</b><p><kbd>K</kbd>, <kbd>M</kbd> and <kbd>X</kbd> decide for the whole backbone family; the sequences you actually order are chosen with the <b>Order</b> boxes in the focus panel. Switch <b>Unit</b> to Sequences if you prefer to decide sequence by sequence.</p></div></div>
+  <h3 id="p-inspector">Design inspector</h3>
+  <p>One design in depth, with findings linked to the 3D view. Open it with <kbd>Enter</kbd> or <b>Inspect</b> on the Board, or from a design id on another page. The address ends in <code>#d=&lt;design id&gt;</code> (for example <code>inspector.html#d=binder_l68_s123456_mpnn3</code>), so a link opens the same design. Links such as <code>board.html#f=&lt;family id&gt;</code> and <code>map.html#m=M3</code> do the same for a family and a mode.</p>
+  <div class="tw"><table>
+    <tr><th style="width:20%">Feature</th><th style="width:28%">The question it answers</th><th>How to use it</th></tr>
+    <tr><td><b>Design list</b></td><td>Which design do I look at next?</td><td><b>Prev</b>, <b>Next</b> or <kbd>←</kbd> and <kbd>→</kbd> step through the list; <kbd>/</kbd> focuses the filter box (id, family, run, mode, status or verdict words) and the chips narrow it: Clean, Issues, Fix first, Accepted, Near miss, Undecided. It holds accepted designs and BindCraft's near-miss rejects. With a handful of designs you get one button each instead.</td></tr>
+    <tr><td><b>Verdict strip</b></td><td>What is the bottom line, and what should I fix first?</td><td>Two pills. The first is the Board's PASS, REVIEW or NO PASS for this design (a BindCraft near-miss has none). The second is the Inspector's finer reading: <i>Clean</i>, <i>Promising, with n issues</i>, or a fix-first label such as <i>Wrong site for this campaign</i>. The finer reading also names single warnings that the Board tolerates, so a PASS can come with "Promising, with 2 issues". A line says why; when several findings are bad, the label follows the first one in the page's order (wrong site first), not the worst. Read the findings, not the label.</td></tr>
+    <tr><td><b>Meters</b></td><td>How does each number compare with its limit?</td><td>One tile per score, with the value, a bar and a tick at the limit: BindCraft's own scores first, then the gaps to the other subunit and the rest of the protein, shape complementarity, ΔG, buried area and unsatisfied polars. A tick passes, a triangle is a warning (it passes close to the limit), a cross fails. The limits are those of the threshold preset in force, except that BindCraft's own scores use BindCraft's filter limits, which for a BindCraft 2 campaign are the ones it recorded (the tooltip says <i>campaign</i>).</td></tr>
+    <tr><td><b>Decision bar</b></td><td>How do I record my call here?</td><td><b>Keep</b>, <b>Maybe</b>, <b>Reject</b> (keys <kbd>K</kbd>, <kbd>M</kbd>, <kbd>X</kbd>) decide for the design's family, as on the Board; <kbd>U</kbd> undoes. On a kept family, <kbd>K</kbd> adds or removes this sequence from the order list. Links lead to the family on the Board, the near-miss list on the Query page and the mode on the Map.</td></tr>
+    <tr><td><b>Structure</b></td><td>What does the pose look like, and where is the evidence?</td><td>A 3D view: drag to rotate, wheel to zoom, click a residue to fly to it, hover for its details. The target is the design's own copy of it, as BindCraft modelled it and placed on the full-length protein, so the binder, the contacts and the hydrogen bonds are drawn exactly against it; the other subunit, the rest of the protein, the removed regions and the sugars come from your reference structure. <b>Colour by</b> Chain, pLDDT, Interface, Hydrophobicity or Conservation (needs ortholog data); a design on a scaffold also offers <b>CDRs</b> (<b>Segments</b> where the scaffold has no CDRs), which colours each designed segment and the framework (on a VHH, the FR2 face apart) and is how it opens. Layers: interface residues, H-bonds, salt bridges, hotspots, unsatisfied polars, hydrophobic patch, the target surface, and, when the data exist, glycans, the other subunit and the rest of the protein (drawn as ghosts; the rest of the protein starts on, glycans and the other subunit start off). <b>Pull apart</b> slides the binder away from the target. Click a finding and its residues light up. Without WebGL you get a simplified view, which draws the reference chain as the target.</td></tr>
+    <tr><td><b>Findings tab</b></td><td>What did the checks find, and what would settle it?</td><td>A list sorted <i>Fix or explain</i>, <i>Worth a look</i>, <i>Context</i>, <i>Looks good</i>. Click one: the 3D view flies to the evidence and a suggested next step opens. Above the list: the <b>Target frame</b> strip and the <b>Target checks</b> (below). For a design on a scaffold the list also says which designed segments touch the target, how many framework residues sit in the interface (numbered as in the scaffold) and, for a VHH, what became of the <i>FR2 face</i>, the exposed face of framework 2 that sat against the light chain in a conventional antibody. A changed face with no contacts is more likely the design making that surface less hydrophobic than part of the paratope.</td></tr>
+    <tr><td><b>Tag and fusion</b></td><td>Which end of this design can carry a tag, and what would it cost?</td><td>A card at the top of the Findings tab. The headline names the end to use for the tag size in force (<b>His6</b>, <b>Twin-Strep</b>, <b>GFP / SNAP</b>, <b>Fc</b>; the buttons switch size, and the choice follows you to the Board). Under it a column per end with its grade — <i>fits as it is</i>, <i>needs a linker of about n residues</i>, or <i>no room, even with a 15-residue linker</i> (or <i>the end itself touches the target</i>) — a chip per tag size, and the evidence: distance to the target, which way the chain leaves the fold, whether the end sits on the paratope side (a tag there holds the binder by its binding face, which matters for SPR and BLI), burial, confidence and the room around it. Hover an end to see it in 3D as a sphere with an arrow for the exit direction; click to fly there. The two unstructured tags are judged by whether a chain of their length can route to open solvent, the two folded fusions by whether a sphere of their size fits in the cone the chain can leave in. A design whose molecule has no free end (a cyclic peptide) says so instead.</td></tr>
+    <tr><td><b>Target frame strip</b></td><td>Where does the construct sit in the full-length protein?</td><td>A strip of the full-length protein: its domains (when the profile lists them), your construct, the stretches this run removed (hatched), the cut ends, the hotspots, the contacted residues, the interface with the other subunit and glycan sites.</td></tr>
+    <tr><td><b>Target checks</b></td><td>Does the binder fit on the full-length target?</td><td>Cards for the other subunit, the rest of the protein (nearest atom, atoms within 3, 4 and 6 Å, residues it would bury), cut ends, glycan distance and membrane side, as far as the data exist. Each card shows its numbers; click it for a suggested next step and what would confirm or refute it, and the 3D view flies to the residues involved.</td></tr>
+    <tr><td><b>Interface tab</b></td><td>How is the interface built?</td><td>A contact diagram (target left, binder right; H-bonds, salt bridges, other contacts), the buried area per residue and the ten largest contacts. For a scaffolded design, <i>Paratope by segment</i> sits above the diagram: one bar per segment with its interface residues (BindCraft's list); click a segment to see its residues in 3D.</td></tr>
+    <tr><td><b>Confidence tab</b></td><td>Where is the prediction trustworthy?</td><td>pLDDT along the chain and the predictors block. A PAE matrix appears only when the data carry one; BindCraft writes none.</td></tr>
+    <tr><td><b>Specificity tab</b></td><td>Would it bind other species or related proteins?</td><td>A <i>Reading</i> of the specificity rules (cross-species reactivity and off-target risk, each with the assay that would settle it; it appears only when your profile defines such rules), epitope conservation, a species table with the residues that differ, paralog bars, the residue-by-residue alignment and four stickiness proxies (exposed hydrophobic patch, charge, interface hydrophobicity, aromatic and Arg share). A sequence screen, not a measurement. Needs species and paralog data (see <a href="#missing">when data are missing</a>).</td></tr>
+    <tr><td><b>Siblings tab</b></td><td>What do the other sequences on this backbone look like?</td><td>The sequences on the same backbone with their scores and a bar of the positions that differ from the first one. A rejected sequence is listed but never suggested as better.</td></tr>
+    <tr><td><b>Sequence tracks</b></td><td>Which residues carry the issue?</td><td>Per residue: sequence with interface residues underlined, structure, segments (for a scaffolded design), pLDDT, buried area and flags (unpaired Cys, liabilities, sticky patches), then for the target the numbering, hotspots, contacts, conservation and paralog identity. Hover a residue to see it in 3D; click to fly there. Residues the run removed are hatched.</td></tr>
+    <tr><td><b>Rejected near-misses</b></td><td>Why did BindCraft reject this one?</td><td>A near-miss design has a finding that lists every filter it failed, with value and limit. It is decided per design, not per family.</td></tr>
+  </table></div>
+  <div class="callout warn"><span class="ic">!</span><div><b>Easy to miss in the Inspector</b><p>Two numbers carry the name <i>unsatisfied polars</i>: the meter <i>Unsat. (mean)</i> is BindCraft's own Rosetta count, while the findings, the Siblings tab and the Board use the count Binderscope recomputes from the structure, so they can disagree. For a BindCraft 1 run the limits on the meters are BindCraft's <i>default</i> filter values as Binderscope reconstructs them (BindCraft 1 does not copy its filter file into the run folder), so ticks do not follow custom filters you ran with; a BindCraft 2 campaign records its thresholds and the meters use them. The meter named <i>Binder pLDDT</i> is the complex pLDDT; BindCraft's binder-alone pLDDT is a different number. Contacts and H-bonds are drawn on the reference chain, not on your construct, so they can differ slightly from the numbers in the findings. Filters, chips, the tab, colour and layers reset on reload; <kbd>U</kbd> undoes only decisions made since the page loaded; a run filter in the header silently hides other runs' designs from the list and from arrow stepping.</p></div></div>
+  <h3 id="p-map">Binding-mode map</h3>
+  <p>Where on the target the designs bind, and whether you are covering one site many times or several sites once. With several runs, pick one under <b>RUNS</b> to see its own hotspots, removed regions and counts; with all runs the view is pooled and descriptive, and per-run counts sit under the funnel.</p>
+  <div class="tw"><table>
+    <tr><th style="width:20%">Feature</th><th style="width:28%">The question it answers</th><th>How to use it</th></tr>
+    <tr><td><b>Funnel and Thresholds</b></td><td>Which limits take designs away, and how many are left?</td><td>One button per stage, from the accepted designs to Diverse picks, with the count that passes and the limits in words (Fold confident, Interface confident, Pose-consistent when the data allow, Fits its surroundings when there is full-length context, On the intended epitope, which a run without hotspots passes by default). Click a step to fade the designs that fail it. The <b>Thresholds</b> select holds the built-in presets (Literature-informed, BindCraft-style, Strict) and any preset in the profile; keep it on the default unless you mean to change the screen. Changing it recounts the funnel and the picks.</td></tr>
+    <tr><td><b>Show rejected</b></td><td>Where do BindCraft's rejected designs sit?</td><td>Draws them as hollow marks you can hover and click. They never count in the funnel, the picks or the stats. Disabled when the runs in view have none with a structure. Key <kbd>R</kbd>.</td></tr>
+    <tr><td><b>Epitope map</b></td><td>Which target residues do designs contact, and where are the hotspots?</td><td>The target in 3D coloured by contacts per residue (<b>Contacts</b>) or by conservation (<b>Conservation</b>, needs ortholog data). <b>Binders</b> overlays up to seven of the best designs in view; <b>Surface</b> shows the target alone. Each run's hotspots are ringed and tagged with the run when only some runs have them; glycan sites are diamonds; residues a run removed fade out. Drag to rotate, wheel to zoom, double-click to reset.</td></tr>
+    <tr><td><b>Contact strip</b></td><td>Which stretch of the sequence is popular?</td><td>Contact frequency by residue along the target, below the 3D view. Drag across it to keep only designs that touch that region (a chip clears it). Residues a run lacks are hatched.</td></tr>
+    <tr><td><b>Binding modes</b></td><td>Do my designs bind alike?</td><td>Designs placed by the target residues they contact, so close marks bind alike. Each shaded group is a mode (M1, M2... by size, at most seven), named from the up to three residues that set it apart (for example <code>K48/D52/T55 site</code>, invented) and, when none of them is a hotspot but one lies near, that hotspot. Views: <b>Map</b> (key <kbd>M</kbd>), <b>Fingerprints</b> (<kbd>F</kbd>: one row per design, one column per residue), <b>By mode</b> (<kbd>B</kbd>: a heat map, one row per mode) and <b>Table</b> (<kbd>T</kbd>: the best 80 designs in view). Marker size is the headline score; small and faint means NO PASS; a dashed ring marks a design that touches none of its run's hotspots. Drag over empty space on the map to select a custom group.</td></tr>
+    <tr><td><b>Legend</b></td><td>Which modes are in view?</td><td>One button per mode with its count (in view / all). Click to select it; keys <kbd>1</kbd> to <kbd>9</kbd> pick the nth mode (again to clear), <kbd>←</kbd> and <kbd>→</kbd> step through them.</td></tr>
+    <tr><td><b>Mode detail</b></td><td>What is this mode, and is it a good bet?</td><td>For the chosen mode, a custom selection or all modes: counts (in view, PASS or REVIEW, median headline score, on the epitope), the residues touched most, <b>Hotspots touched</b> per hotspot, <b>Context</b> (closest approach to the other subunit and to the rest of the protein), <b>Specificity</b> (conservation and identity bars, when the data exist), and the four best designs. Design ids link to the Inspector.</td></tr>
+    <tr><td><b>Quality-diversity picks</b></td><td>If I can only take N designs, which N cover the most ground?</td><td>Set <b>Budget</b> (4 to 24), <b>Diversity</b> (0 to 1) and <b>Pool</b> (designs on the intended epitope, or any confident design that fits its surroundings). The page picks designs that are good <i>and</i> different from each other, treating sequences of one backbone as near-duplicates. <b>Add picks to shortlist</b>, <b>Show only picks</b> and <b>Copy FASTA</b> are the buttons.</td></tr>
+    <tr><td><b>Star shortlist</b></td><td>Can I mark candidates while I look around?</td><td>A star adds a design to a shortlist that lives in the page only: it is not saved, it is lost on reload and it does not feed the Board's order list. <b>Copy FASTA</b> is the way out; record decisions on the Board or the Query page.</td></tr>
+  </table></div>
+  <div class="callout warn"><span class="ic">!</span><div><b>Easy to miss on the Map</b><p>The first mode is preselected when the page opens, so the 3D colours, the strip and the mode detail describe that mode only: click its legend chip (or press its number) again to see all modes. A funnel step and a strip region both fade designs everywhere (counts, table, by-mode heat map) and only the region chip and the "N of M designs in full colour" note remind you. The quality-diversity picks ignore the selected mode, brush, region and funnel step; they depend only on Thresholds, the run filter, Pool, Budget and Diversity. Residue numbers are those of the full-length reference, not of your construct, and the 3D view draws the construct only. Nothing on this page is saved except the run choice: the selected mode, view and preset are lost on reload.</p></div></div>
+  <h3 id="p-query">Structure query</h3>
+  <p>Rules instead of clicking: stack conditions, watch the funnel shrink, rescue near-misses. The page answers <i>which designs satisfy these conditions, and which ones miss by only one?</i> With several runs, pick one under <b>RUNS</b> to scope the counts and the hotspot chips to it.</p>
+  <div class="tw"><table>
+    <tr><th style="width:20%">Feature</th><th style="width:28%">The question it answers</th><th>How to use it</th></tr>
+    <tr><td><b>Ask</b></td><td>Can I say what I want in words?</td><td>Type it, for example <i>"on the hotspots, clear of the rest of the protein"</i>, and press <b>Compile to rules</b> (the chips under <b>Try</b> are examples). It matches keywords to the same rules as the stack; it is not a language model and sends nothing anywhere. A new sentence replaces your rules except the base confidence screen and BindCraft's filters unless you tick <b>Add to current rules</b>. Naming a residue (<code>A45</code> requires it, <code>A45 or G60</code> requires one of them, <code>avoid A45</code> forbids it) replaces the required set, and a note says so, with a <b>Restore the default hotspots</b> button. <b>Clear all rules</b> turns every rule off, BindCraft's filters included, and has no Undo; <b>Reset to defaults</b> resets all rules and the residues you required or forbade (not the pool, the tab or the run filter); <b>Undo</b> appears after a compile or a rule-set load.</td></tr>
+    <tr><td><b>Rule stack</b></td><td>What does each condition cost me?</td><td>Rules sit in groups (Confidence, Epitope and geometry, context, Specificity, Interface chemistry, Sequence, Run and family, BindCraft filters). Tick a rule, drag its limit, or click its name for a histogram and what relaxing or tightening would change. The count beside it is how many designs pass and how many only it removes ("kills 4 alone"). A design with no value for a rule passes it. The <b>preset</b> select applies the limits of a preset (Literature-informed, Relaxed, Strict, and any the profile adds) and turns the matching rules on.</td></tr>
+    <tr><td><b>BindCraft filters</b></td><td>Can I reproduce BindCraft's own accept and reject?</td><td>Each filter BindCraft applied becomes a rule with its own number. With only these on, the stack reproduces BindCraft's decision, except where BindCraft judged a design on a single validation model (see the FAQ). Loosen one to see which designs it was holding back. Each rule's note says how well the limit is known or, for a BindCraft 2 campaign, that it is the limit the campaign recorded.</td></tr>
+    <tr><td><b>Funnel</b></td><td>Where do the designs go?</td><td>The pool, then one row per group of rules with the designs left after it and the loss. Under it, <b>Rules blocking the most near-misses</b>: the rules that alone remove the most designs; click one to see them. <b>Copy recipe</b>, <b>Save</b> and <b>Load</b> sit in the header of this panel: Copy recipe puts the rule set on the clipboard as JSON (a format Load does not read back).</td></tr>
+    <tr><td><b>Pool</b></td><td>Do I include designs BindCraft rejected?</td><td>Switch between <i>Accepted</i> (default) and <i>+ BindCraft-rejected</i> (the rejected designs that have a structure). The funnel, the counts and the lists follow the pool.</td></tr>
+    <tr><td><b>Results</b></td><td>Which designs are left, and which just miss?</td><td>Three tabs: <b>Survivors</b> (fail no rule), <b>Near-misses</b> (fail exactly one rule) and <b>Failing 2+ rules</b>. Survivors are tiles; the others are tables. Click a tile or row to draw the design on the target. Design ids in the two tables and in the panel under the 3D view link to the Inspector; Survivors tiles are not links. The lists are cut at 60 tiles, 40 near-miss rows and 60 failing rows, while the tab counts are not.</td></tr>
+    <tr><td><b>Send to board</b></td><td>How do the results become decisions?</td><td>Tick designs (or leave none ticked for the whole tab), choose Maybe or Keep and press <b>Send n to board</b>. Decisions you already have are left alone, and the note records the rules that were on. A Keep sent from here counts like a Keep on the Board: it trains the reviewer model and fixes that family's order-list sequences.</td></tr>
+    <tr><td><b>Rescue as maybe</b></td><td>Which rejected designs deserve a second look?</td><td>A BindCraft-rejected design tagged <i>near-miss</i> missed exactly one of BindCraft's filters by at most 25% of its threshold. <b>Rescue as maybe</b> records it with the missed filters as the reason. <b>BindCraft near-misses only</b> narrows the tab. Rejected designs are not tiles on the Board, so a rescued design lives in your review file and is exported from this page, not from the order list.</td></tr>
+    <tr><td><b>CSV and FASTA</b></td><td>How do I take a list away?</td><td><b>CSV (n)</b> and <b>FASTA (n)</b> act on the ticked designs or, with nothing ticked, the whole tab. The CSV carries ids, run, status, family, rank (the page's own quality rank, not BindCraft's), mode, length, quality, hotspots touched, the metrics, liabilities, the rules failed here and BindCraft's failed filters; it never contains a sequence. FASTA does. Both are made in your browser.</td></tr>
+    <tr><td><b>Pick residues on the target</b></td><td>Can I choose residues by pointing at them?</td><td>The target in 3D. <b>Require</b> makes a click mark a residue that designs must touch (orange; it feeds the Hotspots rule); <b>Forbid</b> marks one they must stay off (red). The best survivors are drawn as thin lines.</td></tr>
+    <tr><td><b>Save, Load, Copy recipe</b></td><td>How do I keep or share a rule set?</td><td>In the Funnel panel header. <b>Save</b> writes <code>binderscope-rules-&lt;profile id&gt;.json</code> (numbers and ids, no sequences and no design ids); <b>Load</b> applies the rules it knows, clamps values to each rule's range, and counts what it skipped. <b>Copy recipe</b> copies the rule set as JSON for pasting elsewhere; Load does not read that format.</td></tr>
+  </table></div>
+  <div class="callout warn"><span class="ic">!</span><div><b>Easy to miss on the Query page</b><p>A sentence the Ask box does not recognise, with <b>Add to current rules</b> unticked, still resets and switches off every rule outside the Confidence group and the BindCraft filters, says <i>Nothing recognised</i> and offers no Undo. Residues you name stay the required set until you press <b>Restore the default hotspots</b> or <b>Reset to defaults</b>; names must be a capital letter and a number in the numbering shown on the page (lowercase or wrong letters are ignored). Several rules are on from the start and silently hide designs (the header says how many rules are on), and choosing a preset switches rules on without an Undo. The word <i>near-miss</i> has two meanings: a design that fails exactly one rule of <i>your</i> stack, and BindCraft's own tag (one filter, at most 25%); a tagged near-miss can sit in <i>Failing 2+ rules</i>. <b>Send to board</b>, <b>CSV</b> and <b>FASTA</b> take the whole tab when nothing is ticked, and your ticks persist across tabs. Nothing on the page persists across a reload.</p></div></div>
+  <div class="callout note"><span class="ic">i</span><div><b>The Query page has no letter shortcuts</b><p>Everything is reachable with <kbd>Tab</kbd> and used with <kbd>Enter</kbd> or <kbd>Space</kbd>. Each list (rule names, tiles, rows) is one Tab stop; the arrow keys, <kbd>Home</kbd> and <kbd>End</kbd> move inside it. <kbd>Enter</kbd> in the Ask box compiles. Opening <code>query.html#pool=all&amp;tab=near</code> starts on the all-designs pool and the Near-misses tab.</p></div></div>
+</section>
+
+<section class="sec" id="s-recipe">
+  <h2 id="recipe"><span class="n">4</span>A 15-minute review recipe</h2>
+  <p class="muted">The order that wastes the least of your time. It assumes a bundle with one or two runs and a few dozen families.</p>
+  <ol class="steps">
+    <li><b class="t">Judge the campaign before the designs</b><p>On the Board, read <b>Do you need more designs?</b> for each run. <i>Still discovering</i> means more designs will pay off; <i>Diminishing returns</i> or <i>Saturated</i> means your time is better spent choosing. Treat the estimate as rough below about 30 families. On a scaffolded campaign read <i>What the designs bind with</i> too: fold is not counted there, so coverage describes binding sites only.</p>
+        <span class="where">Board · funnel and diversity</span>
+    </li>
+    <li><b class="t">Remove what cannot work</b><p>In Query, switch on the rules that matter for your target: touches a hotspot, clear of the other subunit, clear of the rest of the protein. Look at what disappears and why, and open <b>Near-misses</b> to see what a single rule costs you. To mark the survivors on the Board, <b>Send to board</b> as Maybe.</p>
+        <span class="where">Query · rule stack</span>
+    </li>
+    <li><b class="t">Walk the families</b><p>Back on the Board, step through the tiles with the arrow keys. Press <kbd>K</kbd>, <kbd>M</kbd> or <kbd>X</kbd>, and right after a reject tag a reason with <kbd>1</kbd> to <kbd>7</kbd>. Keep it quick: families you cannot decide on become maybes.</p>
+        <span class="where">Board · tiles</span>
+    </li>
+    <li><b class="t">Look hard at the maybes</b><p>Open each in the Inspector. Read the headline, the Target checks, the interface findings and the liabilities under Worth a look. Decide.</p>
+        <span class="where">Inspector</span>
+    </li>
+    <li><b class="t">Check specificity</b><p>For every keep, open the Specificity tab. If you need cross-species reactivity, read the orthologs; if off-target binding worries you, read the paralogs. This needs species and paralog data (see <a href="#missing">when data are missing</a>).</p>
+        <span class="where">Inspector · Specificity</span>
+    </li>
+    <li><b class="t">Spread your bets</b><p>The note under the Order list says how many families, clusters and binding modes your keeps cover. If they pile up in one mode, look at the Map's Quality-diversity picks and swap one or two keeps for picks from other modes.</p>
+        <span class="where">Board · order list, then Map · Mode detail</span>
+    </li>
+    <li><b class="t">Export and save</b><p>Copy the order list as FASTA or export it as CSV or a FASTA file, and save the review file so you can reload it later.</p>
+        <span class="where">Board · order list</span>
+    </li>
+  </ol>
+</section>
+
+<section class="sec" id="s-workflows">
+  <h2 id="workflows"><span class="n">5</span>More workflows</h2>
+  <p class="muted">Five common jobs, each as a short sequence of steps. They use the same pages as the recipe above.</p>
+  <h3 id="w-comp">Choosing designs to order <span class="muted" style="font-weight:400">· a competition or a limited lab budget</span></h3>
+  <p>When lab slots are limited, the question is not "which designs score highest?" but "which set of designs gives me the best chance that at least one of them binds?"</p>
+  <div class="cards">
+    <div class="card"><span class="tag">Diversify</span><h4>Spend slots on different ideas</h4><p>Pick across families and binding modes. Two designs from one backbone share most of their risk; two from different modes share very little.</p></div>
+    <div class="card"><span class="tag">Context</span><h4>Remove what cannot bind</h4><p>Designs that collide with the part of the target BindCraft never saw, or sit on the wrong face, cost a slot and teach you little.</p></div>
+    <div class="card"><span class="tag">Hedge</span><h4>Keep near-misses in play</h4><p>A design BindCraft rejected by a hair, on the right site, can be a better bet than a polished one on the wrong site.</p></div>
+    <div class="card"><span class="tag">Tag</span><h4>Decide the tag with the design, not after it</h4><p>The end a construct is tagged at is part of the order. <b>Where a tag can go</b> on the Board, and the <b>Tag and fusion</b> card in the Inspector, say which end each design can carry a His6, a Twin-Strep or a larger fusion at, and whether that end is on the binding face; <b>Tag plan CSV</b> takes the answers with you. It is a prediction, so read the evidence before you commit a construct to it.</p></div>
+    <div class="card"><span class="tag">Record</span><h4>Write down why</h4><p>Reasons on every keep and reject, plus the saved review file and the bundle, are the rationale you will want after the results come back.</p></div>
+  </div>
+  <ol class="steps">
+    <li><b class="t">Fix the budget and the risks</b><p>Write down how many sequences you can order, and which risks matter most to you: the wrong site, a collision with the rest of the protein, cross-species reactivity, off-target binding, sequence liabilities.</p>
+        <span class="where">Before you open a page</span>
+    </li>
+    <li><b class="t">Screen with rules</b><p>On Query switch on the rules that express those risks (hotspots touched, the context rules, specificity, sequence). Read the funnel for what each group costs, use "kills n alone" to see which rule holds designs back, and open the histogram of a rule to see how narrow the margin is. <b>Send to board</b> the survivors as Maybe.</p>
+        <span class="where">Query · rule stack and funnel</span>
+    </li>
+    <li><b class="t">Decide per family</b><p>On the Board keep the families you would defend, reject with a reason, leave the rest as maybes. One strong sequence from many families beats several sequences from one.</p>
+        <span class="where">Board · tiles</span>
+    </li>
+    <li><b class="t">Check the spread</b><p>Read the note under the Order list: how many families, clusters and binding modes your keeps cover. Open the Map, set <b>Budget</b> to your number of slots and compare the quality-diversity picks with your keeps. Swap keeps that repeat a mode for picks from modes you do not yet cover.</p>
+        <span class="where">Board · order list, Map · Quality-diversity picks</span>
+    </li>
+    <li><b class="t">Choose the sequence</b><p>In the focus panel tick <b>Order</b> for the sequences you want. The best sequence of a kept family is on the list by default; add a second only when you have slots to spare.</p>
+        <span class="where">Board · focus panel</span>
+    </li>
+    <li><b class="t">Hedge with near-misses</b><p>Add one or two near-misses on the right site, following <a href="#w-rescue">Rescuing near-misses</a>. They are exported from the Query page, not from the order list.</p>
+        <span class="where">Query</span>
+    </li>
+    <li><b class="t">Check specificity</b><p>For the final list open the Specificity tab of each design, if you have species and paralog data.</p>
+        <span class="where">Inspector · Specificity</span>
+    </li>
+    <li><b class="t">Export, then freeze</b><p>Copy the order list as FASTA or CSV for the submission, save the review file, and archive the project folder next to it (in the app <code>Binderscope/&lt;project&gt;</code> in your home folder; it holds the review pages and the analysis for a rebuild). When results arrive you can reopen the same project and see what the checks said about each design. Binderscope does not import lab results for BindCraft runs: join your results to the order-list CSV by design id.</p>
+        <span class="where">Board · order list</span>
+    </li>
+  </ol>
+  <h3 id="w-depth">Checking one design in depth <span class="muted" style="font-weight:400">· the Inspector, step by step</span></h3>
+  <ol class="steps">
+    <li><b class="t">Open it</b><p>Press <kbd>Enter</kbd> on a Board tile, click a design id on the Map or Query pages, or open <code>inspector.html#d=&lt;design id&gt;</code>.</p>
+    </li>
+    <li><b class="t">Read the strip and the meters</b><p>The first pill is the Board's verdict, the second the Inspector's finer reading. In the meters look for the crosses first, then the triangles that sit close to their limit.</p>
+        <span class="where">Inspector · verdict strip and meters</span>
+    </li>
+    <li><b class="t">Work through the findings</b><p>Start with <i>Fix or explain</i>, then <i>Worth a look</i>. Click each: the 3D view flies to the evidence and a suggested next step names the experiment that would settle it.</p>
+        <span class="where">Inspector · Findings tab</span>
+    </li>
+    <li><b class="t">Check the fit on the full-length target</b><p>Under the Target frame strip open each Target check card. Look at the nearest atom, the atoms within 3, 4 and 6 Å and what the check says would confirm it. A rest-of-protein clash or a contact on a cut end is the most common reason a good-looking design is not what it seems.</p>
+        <span class="where">Inspector · Target frame and Target checks</span>
+    </li>
+    <li><b class="t">Look at the pose</b><p>Colour by Interface, switch on H-bonds and hotspots, rotate, and use <b>Pull apart</b> to see what the binder sits on. Does the interface rest on a few residues? Do the hotspots sit in it?</p>
+        <span class="where">Inspector · Structure</span>
+    </li>
+    <li><b class="t">Read the other tabs</b><p><b>Interface</b> for the contact diagram and the largest contacts, <b>Confidence</b> for pLDDT along the chain, <b>Specificity</b> for the reading of cross-species and off-target rules, <b>Siblings</b> to see whether another sequence on the backbone is better.</p>
+        <span class="where">Inspector · tabs</span>
+    </li>
+    <li><b class="t">Find the residues behind a flag</b><p>In the sequence tracks hover a flagged residue to see it in 3D. A liability in the interface is a different problem from one in a distant loop.</p>
+        <span class="where">Inspector · tracks</span>
+    </li>
+    <li><b class="t">Decide, and say why</b><p><kbd>K</kbd>, <kbd>M</kbd> or <kbd>X</kbd> decide for the family. Reasons are tagged on the Board with <kbd>1</kbd> to <kbd>7</kbd> right after the decision.</p>
+        <span class="where">Inspector · decision bar</span>
+    </li>
+  </ol>
+  <h3 id="w-rescue">Rescuing near-misses <span class="muted" style="font-weight:400">· designs BindCraft rejected by a hair</span></h3>
+  <p>A near-miss is a BindCraft-rejected design that missed exactly one of BindCraft's filters by at most 25% of its threshold. BindCraft applies its AlphaFold2 confidence pre-filters before a sequence gets a row, so designs lost there leave no row and no structure and cannot be rescued; near-miss lists contain only failures of the filters that act on scored sequences.</p>
+  <ol class="steps">
+    <li><b class="t">Add the rejected designs</b><p>On Query set <b>Pool</b> to <i>+ BindCraft-rejected</i>. Only rejected designs that have a structure are in it; the Overview's Runs table says which runs kept them.</p>
+        <span class="where">Query · Pool</span>
+    </li>
+    <li><b class="t">Say what you cannot compromise on</b><p>Switch on the rules for the site and the context (hotspots touched, clear of the other subunit and the rest of the protein). Leave the BindCraft filters on: they define what "near" means.</p>
+        <span class="where">Query · rule stack</span>
+    </li>
+    <li><b class="t">Read the near-misses</b><p>Open <b>Near-misses</b> and tick <b>BindCraft near-misses only</b>. Each row names the rule that blocks it here and the BindCraft filters it missed, with value, limit and gap. A miss on a filter you do not mind (a surface hydrophobicity a hair over) on the right site is the classic rescue; a miss on interface confidence is a bigger risk.</p>
+        <span class="where">Query · Near-misses</span>
+    </li>
+    <li><b class="t">Look at a few</b><p>Open the best candidates in the Inspector (the <b>Near miss</b> chip lists them) and check the context, the pose and the findings as for any design. The Inspector has no export; <kbd>K</kbd>, <kbd>M</kbd> or <kbd>X</kbd> there record a per-design rescue only.</p>
+        <span class="where">Inspector</span>
+    </li>
+    <li><b class="t">Rescue and export</b><p>Press <b>Rescue as maybe</b> to record the design with the missed filters as the reason, then <b>CSV</b> or <b>FASTA</b> to take the list away. Rejected designs are not tiles on the Board, so rescued designs do not enter the Board's order list: a dashed line under it counts them and links back. Add them to your submission by hand.</p>
+        <span class="where">Query · Rescue as maybe, CSV, FASTA</span>
+    </li>
+  </ol>
+  <h3 id="w-runs">Comparing runs <span class="muted" style="font-weight:400">· different settings are different experiments</span></h3>
+  <ol class="steps">
+    <li><b class="t">See how the runs differ</b><p>On the Overview read the Runs table and the <i>What stands out</i> item about differences: hotspots, the construct as each run saw it, length range and settings.</p>
+        <span class="where">Overview</span>
+    </li>
+    <li><b class="t">Read each run on its own</b><p>On the Board pick each run under <b>RUNS</b> in turn and read its funnel, its diversity and its <i>Do you need more designs?</i> label. Do not compare pooled counts; compare what each run found for what it was asked.</p>
+        <span class="where">Board · RUNS</span>
+    </li>
+    <li><b class="t">Compare where they bind</b><p>On the Map pick a run and look at its hotspots, the residues it lacks (hatched) and the by-run counts in the mode detail. The By mode view shows which modes each run covers.</p>
+        <span class="where">Map · RUNS, By mode</span>
+    </li>
+    <li><b class="t">Compare what survives</b><p>On Query scope a rule to one run (open the rule's histogram and choose the run) and read <i>Survivors by run</i> under the funnel.</p>
+        <span class="where">Query · rule scope</span>
+    </li>
+    <li><b class="t">Decide where to spend the next compute</b><p>A run that is still discovering new clusters pays off with more designs. A saturated run needs different hotspots, lengths or a different construct, not more of the same.</p>
+    </li>
+  </ol>
+  <h3 id="w-share">Sharing a review and merging <span class="muted" style="font-weight:400">· two or more reviewers</span></h3>
+  <ol class="steps">
+    <li><b class="t">Start from the same bundle</b><p>Send the project's <code>bundle</code> folder (zipped), or let every reviewer build from the same inputs (the same inputs give the same bundle id). Review files carry that id.</p>
+    </li>
+    <li><b class="t">Set your name first</b><p>In the <b>Share</b> dialog set the reviewer name before you decide anything. The default is "you", and two people with the same name cannot be told apart.</p>
+        <span class="where">Board · Share</span>
+    </li>
+    <li><b class="t">Review and save</b><p>Each reviewer works through the Board and presses <b>Save review file</b>. The file is named after the reviewer (<code>anna.jsonl</code>) and holds that reviewer's events only. Keep a copy next to the bundle (a rebuild into the same folder deletes its <code>reviews/</code> folder). In the app the project folder also keeps a copy of your decisions.</p>
+        <span class="where">Board · Share · Save review file</span>
+    </li>
+    <li><b class="t">Collect and load</b><p>The lead collects the files and presses <b>Load review file</b> for each (on the Board; the Overview's button shows no message). Events already present are skipped, so loading twice is safe, and events from another bundle are counted so you notice. The pages never read the <code>reviews/</code> folder by themselves.</p>
+        <span class="where">Board · Share · Load review file</span>
+    </li>
+    <li><b class="t">Look at one reviewer at a time</b><p>The <b>Share</b> dialog shows a reviewer picker once the log holds more than one reviewer. The Board, the Inspector and the order list show the picked reviewer's calls. Binderscope does not merge calls into a consensus.</p>
+        <span class="where">Share · reviewer picker</span>
+    </li>
+    <li><b class="t">Merge by hand, then record the outcome</b><p>To hand everyone one file, concatenate the files (<code>cat reviews/*.jsonl &gt; combined.jsonl</code>): the union of events by id is the merge, and loading it brings in every reviewer. To agree a final set, compare the order lists (switch reviewer, export the CSV), discuss, then record the agreed calls under a new reviewer name such as <code>final</code> and save that file as the record.</p>
+        <span class="where">Outside the page, then Board</span>
+    </li>
+  </ol>
+</section>
+
+<section class="sec" id="s-checks">
+  <h2 id="checks"><span class="n">6</span>Reading the checks</h2>
+  <p class="muted">A check is a question, not an answer. Here is what each asks and what would settle it.</p>
+  <p>The Board's verdict comes from these checks. <b>NO PASS</b> when a hard check fails (Fold, Interface, Pose, and Context only when the reference is an experimental structure; see below). <b>REVIEW</b> when a soft check fails (Chemistry, Epitope, Sequence, and Context otherwise) or two or more checks warn (soft checks, Pose and Context all count). Otherwise <b>PASS</b>. A check that was not run, for want of a reference structure, is not a pass: the Board's Context row reads <i>not checked</i> and says why. Specificity never counts. The limits are those of the threshold preset in force; with the default profile that is BindCraft's own default filter set, quoted below. The preset is set in the profile: the Board and the Inspector have no control for it, while the Map's <b>Thresholds</b> and the Query page's preset select apply another preset (Literature-informed, Relaxed, Strict) to their own counts only. If you write your own profile, set its default preset: a profile that names none falls back to the stricter literature-informed set (i_pTM at least 0.70, i_pAE at most 0.30, pTM at least 0.75, three hotspots), under which designs BindCraft accepted can read NO PASS.</p>
+  <div class="tw"><table>
+    <tr><th style="width:22%">Check</th><th>What it asks</th><th style="width:30%">What would confirm it</th></tr>
+    <tr><td><span class="pill fail">hard</span> Fold</td><td>Is the binder confidently predicted in the complex? Its mean pLDDT in the complex model at least 0.80 and pTM at least 0.55 (BindCraft's averaged scores).</td><td>A second predictor, or more seeds.</td></tr>
+    <tr><td><span class="pill fail">hard</span> Interface</td><td>Is the interface confidently predicted? i_pTM at least 0.50 and i_pAE at most 0.35 (BindCraft writes PAE divided by 31; the pages show it in Å, where 0.35 reads about 11 Å). With a co-folding re-score, ipSAE and minimum iPAE are used instead.</td><td>A second predictor, or more seeds.</td></tr>
+    <tr><td><span class="pill fail">hard</span> Pose (called Refold in some profiles)</td><td>Does the binder keep its shape when predicted alone? Binder RMSD against its complex shape at most 3.5 Å. With BindCraft data alone this check can only warn, so it cannot give NO PASS by itself; it fails when a re-score of the complex by another predictor disagrees with the design.</td><td>An independent re-score of the complex.</td></tr>
+    <tr><td><span class="pill warn">advisory</span> Context: other subunit</td><td>Do binder atoms sit inside or touch the other subunits of the assembly? Fails at 10 or more binder atoms within 3 Å. Warns for any atom within 3 Å, a closest approach under 4 Å, or three or more contacted residues buried at the other subunit.</td><td>The binder predicted on the whole assembly, or binding to the purified assembly.</td></tr>
+    <tr><td><span class="pill warn">advisory</span> Context: rest of the protein</td><td>Do binder atoms run into parts of the full-length protein that BindCraft never saw? Same limits as above.</td><td>Predicting the complex with the neighbouring stretch added, or binding to a longer construct.</td></tr>
+    <tr><td><span class="pill warn">advisory</span> Context: why</td><td>Context places the binder against the reference as one static model. Against an experimental structure that is a measurement and the check is hard (it can give NO PASS). Against a predicted model, or a file that does not say, it is advisory: it appears with its reasons and can lead to REVIEW, never to NO PASS on its own, because a region the predictor cannot place lands at an arbitrary position. Binderscope reads the method record in the reference file to decide, and the Board and the Overview say which it concluded. <code>--context-check hard</code> or <code>advisory</code> (or <code>checks.context.hard</code> in the profile) overrides it.</td><td>The PAE plot of the model, or an experimental structure of the same region.</td></tr>
+    <tr><td><span class="pill warn">warns</span> Context: cut ends</td><td>Are two or more contacted residues within four residues of a cut end, where a neighbour was removed?</td><td>Binding to a construct with longer ends.</td></tr>
+    <tr><td><span class="pill warn">warns</span> Context: buried epitope</td><td>Does the rest of the full-length protein bury (more than 10 Å² each) two or more contacted residues?</td><td>Binding to the full-length protein.</td></tr>
+    <tr><td><span class="pill warn">soft</span> Epitope</td><td>Does it touch at least the required number of hotspots of its own run (two by default, or all of them when the run has fewer)? Some but not enough is a warning; none at all is <i>off-site</i> and fails (a soft failure: REVIEW, not NO PASS).</td><td>A competition or mutation experiment at the hotspots.</td></tr>
+    <tr><td><span class="pill warn">soft</span> Chemistry</td><td>Shape complementarity at least 0.60 and ΔG at most −15 (both BindCraft's own values), at most 4 buried unsatisfied polar atoms and an exposed hydrophobic patch of at most 650 Å² (both recomputed by Binderscope). One or two misses warn; three or four fail (a soft failure: REVIEW).</td><td>A second interface prediction; an aggregation test for a sticky patch.</td></tr>
+    <tr><td><span class="pill warn">soft</span> Sequence</td><td>Liabilities in the binder sequence. An unpaired cysteine fails (a soft failure: REVIEW). Which cysteines are paired comes from the structure file's own disulfide records; BindCraft 2 writes none, and a placed structure carries none either, so the pairs are then read from the distance between the sulfur atoms (up to 3.4 Å, and a pair over 3.0 Å is kept but noted as loose, where the model is least sure). Without that, the conserved framework disulfide of every nanobody would read as two unpaired cysteines. The Inspector says which of the two the answer rests on. These warn: an N-glycosylation sequon (N-X-S/T, X not P), NG deamidation, DG isomerisation, an exposed methionine, an exposed hydrophobic stretch of six or more residues, an exposed hydrophobic patch of 500 Å² or more, an exposed furin site. Weaker notes (NS, DS and DP motifs, buried motifs, interface Lys and Met, unusual charge) are shown but do not count.</td><td>Expression, stability and aggregation tests.</td></tr>
+    <tr><td><span class="pill info">info</span> Specificity</td><td>How much of the contacted surface is identical in other species and in related proteins? Information only; never part of the verdict.</td><td>Binding assays against those species and proteins.</td></tr>
+  </table></div>
+  <div class="callout warn"><span class="ic">!</span><div><b>A passing design is a predicted binder, not a confirmed one.</b><p>In published benchmarks, confidence scores are only weak predictors of lab success on designs that already passed the filters. Use agreement between checks as a flag, never as a gate. The context checks rest on a placement from your reference structure, and the Sequence check rests on sequence patterns, not on measurements.</p></div></div>
+  <h4>Things that surprise people</h4>
+  <ul>
+    <li>A tile shows the verdict of the family's best design (the highest quality score); its sibling sequences may read differently, and the Board counts a family as passing when its best sequence is not NO PASS.</li>
+    <li>A design BindCraft accepted can read NO PASS (these checks are Binderscope's own), and a BindCraft-rejected one can read PASS. Membrane side, glycan distance and specificity never change the verdict, even where they show as amber or red elsewhere.</li>
+    <li>The Interface and Fold checks use BindCraft's own averaged scores. For a BindCraft 1 run the limits in BindCraft's <i>filters</i> are reconstructed defaults, not your filter file (see the FAQ).</li>
+    <li>The Inspector's <i>Promising, with n issues</i> counts every warning finding, so a PASS can come with issues. One warning alone never changes the Board's verdict.</li>
+    <li>If every accepted design fails Context, or they all hit the same residues, suspect the reference before the designs (see the warning under <a href="#missing">when data are missing</a>).</li>
+  </ul>
+  <h4>What the checks need</h4>
+  <ul>
+    <li><b>Fold, Interface, Pose, Chemistry, Epitope, Sequence</b> run on every bundle. A metric a run does not report (for example from a BindCraft 2 run) removes the part of the check that needs it, and a missing value never fails a design.</li>
+    <li><b>Context</b> is not run without a reference structure (see below). With one, it needs the reference structure to contain the other subunits (the build finds them, or you name them with <code>--partner-chains</code>) and the parts of the chain outside your construct. Without other chains there is no other-subunit part; without extra residues in the reference there is no rest-of-the-protein part. The Overview lists which parts are on. Its distances depend on how the design is placed on the reference (see <i>Target frame</i> under <a href="#concepts">concepts</a>) and on how well the reference places the rest of the chain (see the warning under <a href="#missing">when data are missing</a>).</li>
+    <li><b>Epitope</b> needs the hotspots of each run (settings JSON or CSV column). A run without hotspots has nothing to test and the check passes; its row then reads <i>0 of 0 hotspots touched</i>, which is not a result (see <a href="#missing">when data are missing</a>).</li>
+    <li><b>Specificity</b> needs species and paralog data (see <a href="#missing">when data are missing</a>).</li>
+  </ul>
+</section>
+
+<section class="sec" id="s-missing">
+  <h2 id="missing"><span class="n">7</span>When data are missing</h2>
+  <p class="muted">Binderscope never guesses. A check that needs data your inputs do not carry is switched off, the Overview's <i>What this bundle carries</i> panel says which, and a missing value never fails a design. Here is what depends on what.</p>
+  <div class="tw"><table>
+    <tr><th style="width:28%">What you give it</th><th style="width:36%">What it switches on</th><th>Without it</th></tr>
+    <tr><td><b>A reference structure of the full-length target</b> (the second card of the import page, or <code>--reference-cif</code>; the command line does not need one, the import page asks for one)</td><td>The whole target frame: placement of every design on the full-length protein, the other subunits, the rest of the chain, cut ends, buried epitope, glycans, the Target frame strip and Target checks, and the residue numbering the pages use.</td><td>Without one the construct is the frame: designs are compared on it, and the other-subunit, rest-of-protein, cut-end, glycan and membrane checks are not run. They are absent, not passed: the Overview says no reference structure was given, the Board's Context row reads <i>not checked</i>, and the Inspector shows its Target checks as not run. Everything computed from the designs' own structures (interface, families, modes, paratope, near-miss rescue) is the same as with a reference. A reference with no other chains has no other-subunit check, and one that holds nothing beyond your construct has no rest-of-the-protein check; the Overview words these two situations differently, because a check that ran on nothing is not the same as a check that could not run. If the reference does not match the construct by sequence the build stops with a message naming the disagreement. A residue number that two residues of the reference chain share (an insertion code) is left out of the placement, and the build warns.</td></tr>
+    <tr><td><b>Hotspots</b> (the run's settings JSON, or the hotspot column of the CSVs)</td><td>The Epitope check, <i>off-site</i> marks, hotspots touched on tiles and in mode detail, the <i>On the intended epitope</i> step on the Map.</td><td>A run with no hotspots at all (no settings file and an empty hotspot column) still imports and builds. It has no intended epitope, so there is nothing to test: the Epitope check passes, no design is off-site, no hotspot rings are drawn and the epitope numbers of its designs are empty. The Overview's <i>What stands out</i> says so, and so does a note in the run's record in <code>data/manifest.json</code>. Counts and rules that divide by the hotspots are not meaningful for that run: <i>0 of 0 hotspots touched</i> on tiles and in the Epitope row, the Map's <i>On the intended epitope</i> step, the <i>Hotspots touched</i> rule on Query and the Query examples that mention hotspots or the epitope. They pass everything or find nothing, so ignore them. The binding-site view is built from the residues the designs contact most, or from the whole construct when there is nothing to go by, so it shows where the designs bind and not where you meant them to.</td></tr>
+    <tr><td><b>Species and paralogs</b> in the profile, and their public records (fetched when you allow the online lookup, or already cached)</td><td>Specificity: the Inspector's Specificity tab, the Board's Specificity row, the Map's specificity block and conservation colouring, and the specificity rules of the Query page. See the profile specification.</td><td>With the built-in default profile there is no species or paralog list, so these parts are absent. Specificity is a sequence screen over the contacted residues, never a measurement. The optional ConSurf-DB overlay (<code>--consurf</code>) is academic and non-commercial use only.</td></tr>
+    <tr><td><b>A UniProt accession</b> (Options on the import page, or <code>--uniprot</code>; optional. Tick <i>Allow the online lookup</i>, or use <code>--online</code>, so that its records are fetched)</td><td>Domain strip, topology, membrane plane and annotation of the target, and the sequence cross-check of the reference.</td><td>Without one no UniProt, PDBe or AlphaFold record is read: no domain strip, topology, membrane plane or specificity panel.</td></tr>
+    <tr><td><b>The trajectory table</b> (<code>trajectory_stats.csv</code>)</td><td>Generation order, the accumulation curve, the forecast and the Replay slider on the Board.</td><td>Without it there is no Generation order sort, no curve and no replay; the coverage estimate and the diversity count remain.</td></tr>
+    <tr><td><b>Counts of attempted trajectories</b></td><td>Yield per attempted trajectory and forecasts in trajectories.</td><td>BindCraft 1 does not record every attempt in the files Binderscope reads, so attempted trajectories read "unknown", with an estimate from BindCraft's counters marked "est." where they allow one. The yield is then per passed trajectory. A BindCraft 2 campaign lists every trajectory it started, so its count is known.</td></tr>
+    <tr><td><b>Rejected structures</b> (the <code>rejected</code> folder)</td><td>Near-miss rescue, the <i>+ BindCraft-rejected</i> pool on Query, <i>Show rejected</i> on the Map, the <i>Near miss</i> chip in the Inspector.</td><td>Rejected sequences stay in the funnel counts as scores only. They cannot be placed, inspected or queried.</td></tr>
+    <tr><td><b>The settings JSON of each run</b></td><td>Hotspots, binder length range, the target number of designs.</td><td>Hotspots come from the CSV column and lengths from the observed range; a note in the run's record in <code>data/manifest.json</code> says so.</td></tr>
+    <tr><td><b>More than one run</b></td><td>The RUNS filter, per-run estimates side by side, run tags.</td><td>With one run there is no run filter and no run wording.</td></tr>
+    <tr><td><b>A BindCraft 2 run</b></td><td>The BindCraft 2 reader.</td><td>Verified against one real campaign: de novo design (the <code>binder</code> modality) written by BindCraft 2 v1.0.3, with its metadata file; such a run is read without a warning. Every other campaign is read on the same assumptions but is not verified: another version, a VHH, scFv, Fab or cyclic-peptide campaign, several targets, or tables or metadata that lack what the reader relies on. The Overview marks such a run "experimental reader" and the Build panel's <i>Warnings</i> row names the reason; compare a few numbers with the campaign's own CSVs before relying on it. A real VHH campaign was read without error and its residue letters matched its sequences; nothing more was checked. Checks that need scores BindCraft 2 does not report are switched off. A campaign that numbers its binder residues from 0 (BindCraft 2 versions 1.0.0 and 1.0.1; documented, not yet seen on a real campaign) is analysed through renumbered copies of its structure files, kept in the project's <code>work/onebased</code> folder, and a note in the run's record in <code>data/manifest.json</code> says so; your files are not changed. A campaign without its metadata file has no hotspots (see above). Only BindCraft 1 runs are compared with their CSVs, so a project of BindCraft 2 runs has no <i>Counts check</i> row in the Overview's Build panel.</td></tr>
+    <tr><td><b>The scaffold record of a scaffolded campaign</b> (a VHH, scFv, Fab or ankyrin-repeat campaign: BindCraft 2 records in <code>campaign_metadata.json</code> which positions it may change; the scaffold file is looked for at the recorded path, else beside the campaign)</td><td>The paratope analysis: <i>What the designs bind with</i> on the Board, <i>Paratope by segment</i> and the CDRs or Segments colouring in the Inspector, and the framework and FR2-face findings. Fold diversity is switched off.</td><td>A campaign without the record is not treated as scaffolded, and its fold diversity stays on. With the record but without a usable scaffold file (a campaign moved off the machine that ran it has often left the file behind), or if the positions outside the edit spec were not held fixed, fold diversity stays off and the paratope axes read <i>not measured</i>, with the reason. A design that cannot be placed on the scaffold is left out and counted, never guessed at. Only a VHH campaign has been tried on real output: the scFv, Fab and ankyrin-repeat paths are tested on synthetic scaffolds only, and an scFv or Fab is analysed through one binder chain.</td></tr>
+    <tr><td><b>Structures of the judged designs</b> (they are in every bundle the current version writes)</td><td>The terminus analysis: <b>Where a tag can go</b> on the Board, the tag pills on the tiles, the <b>Tag and fusion</b> card in the Inspector and the <b>Tag plan CSV</b>.</td><td>Accepted designs and rescued near-misses are judged; the other rejected designs are not, and an older bundle built before the analysis existed carries none of it, so the pages leave the panel and the card out rather than showing them empty. Without a reference structure the ends are judged against each design's own target only, and the panel says so: a tag site that the rest of the full-length protein or another subunit would block is then not seen. The run's modality decides which tagging convention is quoted; a run that did not record one is read as a de novo binder and the card says so.</td></tr>
+    <tr><td><b>WebGL and local storage in the browser</b></td><td>The Inspector's 3D view, and autosave of decisions.</td><td>Without WebGL the Inspector draws a simplified view and says so (the other pages draw their 3D views without it). Without storage decisions live in memory only: save a review file.</td></tr>
+  </table></div>
+  <div class="callout note"><span class="ic">i</span><div><b>The reference decides how good the full-length checks are</b><p>The checks that use the reference (context, cut ends, buried epitope) are only as good as it is: a model of a different construct, a reference with missing loops or one that lacks the other subunit gives fewer or weaker checks. They are flags that say what to confirm, not measurements.</p></div></div>
+  <div class="callout warn"><span class="ic">!</span><div><b>Check how well the reference places the rest of the protein.</b><p>An AlphaFold model of a protein with several domains places them relative to each other only as well as its predicted aligned error (PAE) says. Where the PAE between your construct and a stretch is near 30 Å (the scale tops out near 32 Å, where AlphaFold is saying it has no idea), that stretch is placed essentially at random. A clash, cut-end or buried-epitope finding that involves it means nothing in either direction: a design reported as colliding there may not, and one reported clear is not shown clear. This is why Context is advisory unless the reference is experimental: its findings still appear, with their reasons, but cannot give NO PASS on their own. Two signs that the reference is the problem, not the designs: every accepted design fails the rest-of-protein check, and they all hit the same residues. On a real campaign every accepted design was reported as clashing, all on the same residues of a region the model could not place, and every family read NO PASS on that check, which also hid the sequence liabilities that were real; Context is now advisory for a predicted reference, so such designs read REVIEW with the liabilities listed. Binderscope does not read the model's PAE itself, so look at the PAE plot of the model before you rely on a clash, or on a NO PASS that rests on Context (Binderscope's campaign interface, where you launch runs, checks it on the Review tab when you choose the reference). If the reference is poor, build against one that stops at the domain you designed against, or an experimental structure of it. The interface numbers (contacts, hydrogen bonds, buried area) come from the design's own structure and do not depend on the reference.</p></div></div>
+</section>
+
+<section class="sec" id="s-keys">
+  <h2 id="keys"><span class="n">8</span>Keyboard shortcuts</h2>
+  <p class="muted">Press <kbd>?</kbd> on the Board for its own list. Shortcuts do not fire while you type in a field or hold Ctrl, Alt or Cmd.</p>
+  <div class="kbdgrid">
+    <div class="card"><h4>Board</h4><ul>
+      <li><span>Move between tiles</span><span><kbd>←</kbd> <kbd>↑</kbd> <kbd>↓</kbd> <kbd>→</kbd></span></li>
+      <li><span>Keep · maybe · reject (again to clear)</span><span><kbd>K</kbd> <kbd>M</kbd> <kbd>X</kbd></span></li>
+      <li><span>Tag a reason on what you just decided</span><span><kbd>1</kbd> <kbd>–</kbd> <kbd>7</kbd></span></li>
+      <li><span>Undo the last decision</span><span><kbd>U</kbd></span></li>
+      <li><span>Learning on or off</span><span><kbd>L</kbd></span></li>
+      <li><span>Add to compare, then press Compare</span><span><kbd>C</kbd></span></li>
+      <li><span>Step through a family's sequences</span><span><kbd>[</kbd> <kbd>]</kbd></span></li>
+      <li><span>Open in the Inspector</span><span><kbd>Enter</kbd></span></li>
+      <li><span>Find an id · all shortcuts</span><span><kbd>/</kbd> <kbd>?</kbd></span></li>
+      <li><span>Close a dialog, the clear bar or the search</span><span><kbd>Esc</kbd></span></li>
+    </ul></div>
+    <div class="card"><h4>Inspector</h4><ul>
+      <li><span>Previous · next design</span><span><kbd>←</kbd> <kbd>→</kbd></span></li>
+      <li><span>Keep · maybe · reject the family</span><span><kbd>K</kbd> <kbd>M</kbd> <kbd>X</kbd></span></li>
+      <li><span>Undo the last decision</span><span><kbd>U</kbd></span></li>
+      <li><span>Focus the filter box (list mode)</span><span><kbd>/</kbd></span></li>
+      <li><span>In the filter box: pick the first match · move to the list · clear</span><span><kbd>Enter</kbd> <kbd>↓</kbd> <kbd>Esc</kbd></span></li>
+      <li><span>In the list: next · previous · first · last</span><span><kbd>↓</kbd> <kbd>↑</kbd> <kbd>Home</kbd> <kbd>End</kbd></span></li>
+      <li><span>Rotate · zoom the 3D view</span><span>drag · wheel</span></li>
+      <li><span>Fly to a residue</span><span>click it in the tracks or 3D</span></li>
+    </ul></div>
+    <div class="card"><h4>Map</h4><ul>
+      <li><span>Pick a binding mode (again to clear)</span><span><kbd>1</kbd> <kbd>–</kbd> <kbd>9</kbd></span></li>
+      <li><span>Step through the modes</span><span><kbd>←</kbd> <kbd>→</kbd></span></li>
+      <li><span>Map · Fingerprints · By mode · Table</span><span><kbd>M</kbd> <kbd>F</kbd> <kbd>B</kbd> <kbd>T</kbd></span></li>
+      <li><span>Show or hide rejected designs</span><span><kbd>R</kbd></span></li>
+      <li><span>Clear the brush, the residue region and the focus</span><span><kbd>Esc</kbd></span></li>
+      <li><span>Rotate · zoom the 3D view</span><span>drag · wheel</span></li>
+    </ul></div>
+    <div class="card"><h4>Query</h4><ul>
+      <li><span>Move between controls · activate</span><span><kbd>Tab</kbd> <kbd>Enter</kbd> <kbd>Space</kbd></span></li>
+      <li><span>Inside a list (rules, tiles, rows): move</span><span><kbd>↑</kbd> <kbd>↓</kbd> <kbd>←</kbd> <kbd>→</kbd> <kbd>Home</kbd> <kbd>End</kbd></span></li>
+      <li><span>Compile the Ask box</span><span><kbd>Enter</kbd></span></li>
+      <li><span>Close What to try</span><span><kbd>Esc</kbd></span></li>
+    </ul></div>
+    <div class="card"><h4>Every page</h4><ul>
+      <li><span>Skip the header (a link that appears on the first Tab)</span><span><kbd>Tab</kbd> <kbd>Enter</kbd></span></li>
+      <li><span>Close the open dialog or the What to try box</span><span><kbd>Esc</kbd></span></li>
+    </ul></div>
+  </div>
+</section>
+
+<section class="sec" id="s-files">
+  <h2 id="files"><span class="n">9</span>Saving, sharing and exporting</h2>
+  <h4>Where your decisions live</h4>
+  <ul>
+    <li><b>Autosave.</b> Each decision is saved in this browser's local storage under the bundle's id (the same inputs give the same id in any folder), together with the reviewer name and the learning switch. Clearing site data erases it, so save a review file. If the browser blocks storage the page says so and decisions live in memory until you close the tab. In the app a copy is also saved in the project folder (<code>review-events.json</code>) a few seconds after each change and when you leave the page, and brought back when a page opens in a browser that lacks some decisions (another browser, another port, cleared site data): the merge is a union by event id, so nothing is overwritten. Deleting the project deletes the copy.</li>
+    <li><b>Review file.</b> <b>Save review file</b> writes <code>&lt;reviewer&gt;.jsonl</code>, a small text file with one line per event: a keep, maybe or reject, a reason tag, a clear. Each event carries the reviewer, a time stamp, the family or design id, the run, the sequences chosen for the order list, the reasons, the learning switch and the bundle id. It holds the events of the current reviewer only, and the save button is available as long as the log holds anything, so a file can come out empty if the log holds only a colleague's events. Browsers cannot write into the bundle themselves: move the downloaded file into the bundle's <code>reviews/</code> folder if you want to keep them together, but note that the pages never read that folder by themselves and that writing a bundle into an existing folder (<code>import --bundle</code>, or <code>build-bundle</code> without <code>--keep</code>; in the app <b>Rebuild</b> and <b>Update the review pages</b>) deletes it, <code>reviews/</code> included. Keep a second copy elsewhere.</li>
+    <li><b>Load review file.</b> Reads one back and merges it: events whose id is already present are skipped, new events are added, nothing is overwritten, and a decision in the file that a later <b>Clear decisions</b> removed here is brought back as a new event. Invalid lines are reported with their line number; events written for a different bundle are counted. The current decision on an item is the latest event of that reviewer.</li>
+    <li><b>Reviewer name.</b> The default is "you". Set your name in the <b>Share</b> dialog before you start; the file is named after it. If two people use the same name their events cannot be told apart, and a typo in the name makes your decisions look empty (the events are still in the log: typing the old name brings them back).</li>
+    <li><b>Share.</b> <b>Share</b> in the header (also <b>Share review</b> in the order list) opens a dialog with Save and Load review file, the reviewer name, a picker to switch between the reviewers found in the log, and a note on whether decisions persist. The Board shows one reviewer at a time and does not merge their calls. Nothing is sent anywhere.</li>
+  </ul>
+  <h4>Lists you take away</h4>
+  <ul>
+    <li><b>Order list (Board).</b> <b>Copy FASTA</b> puts the sequences on the clipboard for a submission form. <b>FASTA file</b> and <b>CSV</b> download <code>order-list.fasta</code> and <code>order-list.csv</code> (columns: design id, run, family, rank, verdict, BindCraft rank, reasons). <b>Tag plan CSV</b> downloads <code>tag-plan.csv</code>: one row per design in the list with the end to tag for each of the four tag sizes, what to immobilise through, and the distance, side and room behind each answer. FASTA needs the sequences to be in the bundle; the exporter can leave them out.</li>
+    <li><b>Query results.</b> <b>CSV (n)</b> and <b>FASTA (n)</b> act on the ticked designs or the whole tab; the CSV never contains a sequence. <b>Save</b> writes a rule-set file (<code>binderscope-rules-&lt;profile id&gt;.json</code>) and <b>Load</b> applies one; the file holds numbers and ids, no sequences and no design ids.</li>
+    <li><b>Map.</b> <b>Copy FASTA</b> on the quality-diversity picks. The star shortlist is not saved.</li>
+  </ul>
+  <h4>What is in a bundle</h4>
+  <p>A bundle is a folder. In the app it is the <code>bundle</code> folder of the project (<code>Binderscope/&lt;project&gt;/bundle</code> in your home folder); on the command line it is the folder you name with <code>--bundle</code>.</p>
+  <pre>bundle/
+  index.html  board.html  inspector.html  map.html  query.html  guide.html
+  data/        campaign, inspect, homolog, profile, manifest: .json for tools, .js for the pages
+  structures/  &lt;design id&gt;.pdb and .js for each exported design
+  assets/      shared css and js, vendored 3Dmol.js and its licence
+  reviews/     a place for saved review files (the pages do not read it)
+  README.txt</pre>
+  <p><code>data/manifest.json</code> records the tool version and the command you ran (file and folder names only, no absolute paths), the platform and library versions, the build date, the bundle id, the names and hashes of every input and output file, the run settings, the thresholds, the checks made at build time, what stands out in the data and a privacy record of what (if anything) was fetched. Run <code>binder-review inspect</code> on the bundle folder for a summary.</p>
+  <div class="callout tip"><span class="ic">+</span><div><b>Export, then freeze</b><p>Copy the order list as FASTA or CSV for the submission, save the review file, and archive the project folder next to it (in the app <code>Binderscope/&lt;project&gt;</code> in your home folder: the <code>bundle</code> folder holds the review pages and <code>work</code> the analysis for a rebuild). When results arrive you can reopen the same project and see what the checks said about each design.</p></div></div>
+</section>
+
+<section class="sec" id="s-tips">
+  <h2 id="tips"><span class="n">10</span>Good practice and pitfalls</h2>
+  <div class="cards">
+    <div class="card"><span class="tag">Do</span><h4>Count families</h4><p>Ten sequences from one backbone are one idea. Spread across families and binding modes.</p></div>
+    <div class="card"><span class="tag">Do</span><h4>Write the reason</h4><p>A reason beside every reject makes the next campaign's rules obvious.</p></div>
+    <div class="card"><span class="tag">Do</span><h4>Look at the maybes in 3D</h4><p>Numbers hide pose problems that take seconds to see.</p></div>
+    <div class="card"><span class="tag">Do</span><h4>Save a review file</h4><p>Browser storage is a convenience, not an archive. Save the file when you stop, and keep a copy outside the bundle folder (a rebuild into the same folder deletes it).</p></div>
+    <div class="card"><span class="tag">Avoid</span><h4>Comparing runs by pooled rates</h4><p>If the hotspots, lengths or target construct changed, it is a different experiment.</p></div>
+    <div class="card"><span class="tag">Avoid</span><h4>Trusting one score</h4><p>Several weak signals that agree are worth more than one strong number.</p></div>
+    <div class="card"><span class="tag">Avoid</span><h4>Reading flags as vetoes</h4><p>Only a failed Fold, Interface or Pose check gives NO PASS (and Context, when the reference is an experimental structure), and even that is a screen: the context checks rest on a placement from the reference structure and on how well it places the rest of the protein.</p></div>
+  </div>
+</section>
+
+<section class="sec" id="s-faq">
+  <h2 id="faq"><span class="n">11</span>FAQ</h2>
+  <details><summary>Does anything leave my computer?</summary><p>No design data does. The app runs a small server on your own computer (it listens on 127.0.0.1 only, so other computers cannot reach it) and the pages load from it or from files on disk; no binder sequence or design id is sent anywhere. The only network requests are public lookups that you ask for: pressing Download for a PDB id (the id goes to the RCSB) and ticking <i>Allow the online lookup</i> (public records fetched by accession or PDB id at build time; <code>--online</code> on the command line). By default a build reads a local cache and makes no requests; the Overview's Build panel records it. A bundle makes no network request when you open it (it uses the fonts of your system; <code>--fonts google</code> adds an optional typeface link). The learning ranking on the Board runs in your browser. The installer downloads the Python libraries from PyPI once.</p></details>
+  <details><summary>Why are some numbers marked "unknown" or "est."?</summary><p>BindCraft 1 does not record every attempt in the files Binderscope reads, so the number of attempted trajectories reads "unknown", with an estimate from BindCraft's failure counters marked "est." where the counters allow one. A BindCraft 2 campaign lists every trajectory it started, so its number is known. Unknown is never drawn as zero.</p></details>
+  <details><summary>Why do the two runs have different targets or hotspots?</summary><p>Each run is read with its own settings. If one run deleted loops from the construct or used other hotspots, the pages follow that run. The Overview lists the differences, and the Inspector's target frame strip hatches what a run removed.</p></details>
+  <details><summary>My run has no hotspots. Can I still use it?</summary><p>Yes. A run with no hotspots at all (no settings file and an empty hotspot column, or a BindCraft 2 campaign without its metadata file) imports and builds. It has no intended epitope, so the Epitope check passes, no design is off-site and counts such as <i>0 of 0 hotspots touched</i> mean nothing. The Overview says <i>No hotspots recorded for run01</i>, and the binding-site view is built from the residues the designs contact most. See <a href="#missing">when data are missing</a>.</p></details>
+  <details><summary>Why "PASS · Promising, with 2 issues" in the Inspector?</summary><p>The first word is the Board's verdict. The second part is the Inspector's finer reading: it counts every warning finding, such as a Met oxidation or a contact near a cut end, while the Board leaves PASS only after a failed soft check or two warnings. Read the findings, not the label.</p></details>
+  <details><summary>My decisions disappeared.</summary><p>They live in the browser's local storage under the bundle's id and the page's address. In the app a copy is also kept in the project folder and brought back when the page opens, so another browser, another port or cleared site data does not lose them. A bundle built from other inputs, a project you deleted, or a bundle opened from disk (it has another address) starts fresh: load your saved review file. In Firefox the store for a page opened from disk may be kept separately for each page, so use the app, Chrome or Edge, the browsers the pages are tested in. <b>Clear decisions</b> asks first; <kbd>U</kbd> restores the cleared decisions at once, and loading a review file you saved earlier brings them back as new events.</p></details>
+  <details><summary>Can I add a run later?</summary><p>Open the project's <b>More</b> menu and choose <b>Edit the inputs…</b>: the import page opens with the project's choices filled in. Add the run and press Build project. The app makes a new project (named like the old one with " 2" added) and leaves the old one as it is. The bundle id changes with the inputs, so load your review file in the new project to carry decisions over (they refer to family and design ids, which stay the same); delete the old project when you no longer need it. On the command line, build again with all the run folders, into a new bundle folder or after copying your review files out of the old one (a rebuild into the same folder replaces its contents). The Board's <b>How to import a run</b> button only explains the command and lists what the build read; it does not import anything itself.</p></details>
+  <details><summary>Why do the BindCraft filters not match the ones I ran with?</summary><p>BindCraft 1 does not copy its filter file into the run folder. For a BindCraft 1 run Binderscope attaches BindCraft's default filter set, reconstructed from the data, and says how firmly each limit is known (<i>counter-verified</i>, <i>bounded</i> or <i>memory</i>). If you ran custom filters, the <i>BindCraft filters</i> group on the Query page and the limits on the Inspector's meters are not yours: edit the limits there, or write them into your profile. BindCraft 2 does record its thresholds in <code>campaign_metadata.json</code>, so a BindCraft 2 campaign is judged by the thresholds it used (each rule's note says it is the limit the campaign recorded, and so does the tooltip of the Inspector's meters): that is a stronger claim than a reconstruction, but still a screen, not a verdict. A design BindCraft rejected stays rejected even when its CSV values pass a threshold (BindCraft checks confidence filters on each validation model, the CSV holds the mean), and thresholds on metrics Binderscope does not carry are listed as not re-checked.</p></details>
+  <details><summary>The binder looks misplaced on the full-length protein. What do I check?</summary><p>Start with the chain. The import page says how your target structure fits the chain of the reference (green, amber or red, with the CA RMSD and the residues matched); red means the wrong chain, another protein or another numbering. Set <b>Chain of the target in the reference</b> in Options (for an existing project, More and <b>Edit the inputs…</b>) and build again. Then the protein: the reference must be the full-length version of the same protein. Then <b>How designs are placed on the full-length protein</b> in Options: the default fits around each design's interface, while the whole-target fit can leave the binder 1 to 3 Å off where BindCraft's copy of the target differs from your reference (a project whose card says "Built with an older analysis" used it: press <b>Rebuild</b>). Then the numbers: in the Inspector's Target checks a design fails the other-subunit or the rest-of-protein check by default from 10 atoms within 3 Å, and if nearly every design of a run does, suspect the placement, then the reference (see the warning under <a href="#missing">when data are missing</a>), before the designs. Last, open <code>structures/&lt;design id&gt;.pdb</code> of the bundle in a text editor: the line <code>REMARK 250 placement:</code> gives the fit used and the CA RMSD near the interface and over the whole target, and more than 1.5 Å near the interface means that the design's own copy of the target differs from the reference there (the build records a warning for it). On the command line the option is <code>--placement interface|whole|core</code>. See the app guide.</p></details>
+  <details><summary>Why does a design BindCraft accepted read NO PASS?</summary><p>The Board's verdict is Binderscope's own set of checks, not BindCraft's decision. The usual reasons are a Fold, Interface or Pose limit in your profile that is stricter than BindCraft's, or a Context failure against an experimental reference (binder atoms within 3 Å of the other subunit or of the part of the protein BindCraft never saw); against a predicted reference a Context failure only adds a reason to a REVIEW. The Board's <i>because</i> list ends with a line saying BindCraft accepted the design and that the verdict is Binderscope's own screen. Open the design: the <i>because</i> list and the Target checks say which. If every accepted design fails Context on the same residues, suspect the reference before the designs (see the warning under <a href="#missing">when data are missing</a>).</p></details>
+  <details><summary>How do I change the limits behind PASS, REVIEW and NO PASS?</summary><p>In your profile (<code>checks.presets</code> and <code>checks.preset_default</code>, and <code>checks.context</code> for the context limits). See the profile specification. The Board and the Inspector have no control for it.</p></details>
+  <details><summary>Where are my projects, and how do I update or remove Binderscope?</summary><p>Projects are folders in <code>Binderscope</code> in your home folder (More, then Show in Finder, opens one). To update, run the installer again (it asks a running Binderscope to quit); projects built by an older version say so on the home page, and <b>Update the review pages</b> brings them up to date in seconds. A card that says "Built with an older analysis" needs <b>Rebuild</b> instead: the update changed how designs are placed on the full-length protein, and new pages alone do not recompute that. To remove it, run <code>./install.sh --uninstall</code>: it removes the app and keeps your projects. The app guide has the details.</p></details>
+  <details><summary>The window says "Binderscope has stopped".</summary><p>The app ended: you pressed Quit, or about a minute passed with no open window and no build running. Open Binderscope again from Spotlight. Your projects and decisions are unchanged.</p></details>
+  <details><summary>Can I use BindCraft 2 output?</summary><p>Yes. The reader was verified against a real de novo campaign (the <code>binder</code> modality) written by BindCraft 2 v1.0.3, and a campaign of that version and modality with its metadata file is read without a warning. Every other BindCraft 2 campaign is read on the same assumptions but is not verified: another version, a VHH, scFv, Fab or cyclic-peptide campaign, several targets, a missing metadata file, or tables that lack a column the reader relies on. The Overview marks such a run "experimental reader" and the Build panel's <i>Warnings</i> row says why, so compare a few numbers with your own CSVs. Checks that need scores BindCraft 2 does not report are switched off. A campaign that numbers its binder residues from 0 is analysed through renumbered copies of its structure files (your files are not changed). See <a href="#missing">when data are missing</a>.</p></details>
+</section>
+
+<section class="sec" id="s-glossary">
+  <h2 id="glossary"><span class="n">12</span>Glossary</h2>
+  <div class="tw"><table>
+    <tr><th style="width:26%">Term</th><th>Meaning</th></tr>
+    <tr><td>Family</td><td>One BindCraft backbone (trajectory) and the sequences designed on it.</td></tr>
+    <tr><td>Sibling</td><td>Another sequence on the same backbone.</td></tr>
+    <tr><td>Design cluster (C1...)</td><td>Families whose backbones, binding sites or both are alike enough; the Board's <i>Count by</i> and <i>Same cluster if</i> set how alike.</td></tr>
+    <tr><td>Binding mode (M1...)</td><td>Designs that contact much the same target residues, named from those residues. At most seven per bundle.</td></tr>
+    <tr><td>Scaffolded campaign</td><td>A campaign whose designs share one fixed framework (a VHH, scFv, Fab or ankyrin repeat) and change only chosen positions. Fold similarity is switched off for it.</td></tr>
+    <tr><td>Paratope, segment, FR2 face</td><td>The residues of a scaffolded binder that touch the target, and the designed stretches they fall in (CDR1 to CDR3, H1 to L3, or numbered segments); the rest is framework. The regions are the campaign's own edit spec, not IMGT or Kabat numbering. On a VHH the FR2 face is the exposed face of framework 2 that sat against the light chain in a conventional antibody.</td></tr>
+    <tr><td>Construct</td><td>The piece of the target you gave BindCraft, usually a trimmed domain.</td></tr>
+    <tr><td>Reference structure</td><td>A full-length structure of the target that you give the build; designs are placed on it.</td></tr>
+    <tr><td>Target frame</td><td>The numbering map and context that place the construct on the full-length protein.</td></tr>
+    <tr><td>Placement</td><td>How a design's own copy of the target is fitted onto the reference structure. The default fit is weighted around the design's interface; <code>--placement whole</code> fits the whole target and <code>core</code> the rigid core.</td></tr>
+    <tr><td>Cut end</td><td>A place where the construct stops although the protein continues (or where a loop was removed).</td></tr>
+    <tr><td>Buried epitope</td><td>A contacted residue that the rest of the full-length protein would cover.</td></tr>
+    <tr><td>Hotspot</td><td>A target residue you asked BindCraft to contact.</td></tr>
+    <tr><td>Off-site</td><td>A design that touches none of its run's hotspots.</td></tr>
+    <tr><td>Verdict</td><td>PASS, REVIEW or NO PASS on the Board, from the checks.</td></tr>
+    <tr><td>i_pTM, pLDDT, pTM, i_pAE</td><td>AlphaFold2 confidence in the interface, in the fold of the design and in the aligned error across the interface. BindCraft writes i_pAE as PAE divided by 31.</td></tr>
+    <tr><td>Shape complementarity, ΔG</td><td>How well the surfaces fit, and BindCraft's Rosetta interface energy.</td></tr>
+    <tr><td>Unsatisfied polars</td><td>Buried polar atoms at the interface with no hydrogen-bond partner.</td></tr>
+    <tr><td>Hydrophobic patch</td><td>An exposed hydrophobic area near the interface that can make a binder sticky; given in square angstrom.</td></tr>
+    <tr><td>Liability</td><td>A sequence pattern that often causes trouble: unpaired cysteine, glycosylation sequon, deamidation or isomerisation motif, exposed methionine, furin site.</td></tr>
+    <tr><td>Tag and fusion (terminus analysis)</td><td>Which end of a design can carry a tag or a fusion, judged per tag size from the predicted complex: for His6 and Twin-Strep whether a flexible chain of that length can reach open solvent, for a GFP-sized domain or an Fc whether a sphere of that size fits against the end.</td></tr>
+    <tr><td>Immobilised by the binding face</td><td>A tag at an end that sits on the paratope side holds the binder by the surface it binds with, which can lose the signal in an SPR or BLI assay. The Tag and fusion card says which side each end is on.</td></tr>
+    <tr><td>Disulfide basis</td><td>Whether the binder's cysteine pairing was read from the structure file's own records (<i>recorded</i>) or from the distance between the sulfur atoms because the file holds none (<i>inferred</i>).</td></tr>
+    <tr><td>Coverage</td><td>Estimated chance that the next passing family falls in a cluster you have already seen. One minus coverage is the chance it is new.</td></tr>
+    <tr><td>Yield</td><td>Families per trajectory (passed trajectories unless the attempted number is known).</td></tr>
+    <tr><td>Near-miss</td><td>On the Query page, a design that fails exactly one rule you have on. Among BindCraft's rejected designs, one that missed exactly one filter by at most 25% of its threshold.</td></tr>
+    <tr><td>Pool</td><td>The set of designs the Query page works on: accepted designs, or accepted plus BindCraft-rejected.</td></tr>
+    <tr><td>Ortholog, paralog</td><td>The same protein in another species, and a related protein in the same species.</td></tr>
+    <tr><td>Review file</td><td>A JSONL file of one reviewer's decisions, one line per event.</td></tr>
+    <tr><td>App</td><td>The Binderscope program on your computer: a local server and a window with the project list, the import page and the review pages.</td></tr>
+    <tr><td>Project (in the app)</td><td>A folder in <code>Binderscope</code> in your home folder: the analysis (<code>work</code>), the review pages (<code>bundle</code>), the structure files you dropped or downloaded, the log of the last build and a copy of your decisions.</td></tr>
+    <tr><td>Bundle</td><td>The folder of review pages, data and structures that Binderscope writes (in the app the <code>bundle</code> folder of a project).</td></tr>
+    <tr><td>Project folder</td><td>The folder written by <code>import</code> (caches, <code>export/</code>, <code>project.json</code>); <code>build-bundle</code> rewrites a bundle from it. In the app it is the <code>work</code> folder of a project.</td></tr>
+    <tr><td>Profile</td><td>A JSON file that describes your target and project to the pages: wording, limits, species and paralogs, which checks apply. See the profile specification.</td></tr>
+  </table></div>
+</section>
+
+<footer>Binderscope is the program; BindCraft 2 is the design engine it drives. BindCraft is a separate project and Binderscope is not affiliated with it. This page is part of the bundle and works offline.</footer>
+</main>
+</div>
+<script>
+// theme toggle (guarded storage)
+(function(){
+  var root=document.documentElement,key='binderscope.theme';
+  try{var v=localStorage.getItem(key);if(v)root.setAttribute('data-theme',v)}catch(e){}
+  document.getElementById('theme').addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    var nx=cur==='dark'?'light':'dark';root.setAttribute('data-theme',nx);try{localStorage.setItem(key,nx)}catch(e){}
+  });
+})();
+// table of contents + scroll spy
+(function(){
+  var toc=document.getElementById('toc'),secs=[].slice.call(document.querySelectorAll('main h2[id],main h3[id]'));
+  secs.forEach(function(h){var a=document.createElement('a');a.href='#'+h.id;a.textContent=h.getAttribute('data-toc')||h.textContent.replace(/^\d+\s*/,'');if(h.tagName==='H3')a.className='sub';toc.appendChild(a);});
+  var links=[].slice.call(toc.querySelectorAll('a'));
+  function spy(){var y=window.scrollY+110,cur=null;secs.forEach(function(h){if(h.offsetTop<=y)cur=h.id});links.forEach(function(a){a.classList.toggle('on',a.getAttribute('href')==='#'+cur)})}
+  addEventListener('scroll',spy,{passive:true});spy();
+})();
+// copy buttons on code blocks
+[].forEach.call(document.querySelectorAll('pre[data-copy]'),function(pre){
+  var b=document.createElement('button');b.textContent='Copy';pre.appendChild(b);
+  b.addEventListener('click',function(){var t=pre.innerText.replace(/\nCopy$/,'').replace(/^Copy\n/,'');
+    (navigator.clipboard&&navigator.clipboard.writeText?navigator.clipboard.writeText(t):Promise.reject()).then(function(){b.textContent='Copied'},function(){var ta=document.createElement('textarea');ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand('copy')}catch(e){}ta.remove();b.textContent='Copied'});
+    setTimeout(function(){b.textContent='Copy'},1400)});
+});
+</script>
+</body>
+</html>

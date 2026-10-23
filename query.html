@@ -1,0 +1,902 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Demo · Binder Structure Query</title>
+<script>if(location.hash=="#light")document.documentElement.setAttribute("data-theme","light");if(location.hash=="#dark")document.documentElement.setAttribute("data-theme","dark");</script>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/css/shared.css">
+<style>
+/* ---- Structure Query ---- */
+.app { min-height: 760px; }
+.nlbar { flex: none; display: flex; flex-direction: column; gap: 6px; padding: 10px 16px 8px; background: var(--surface); border-bottom: 1px solid var(--line); }
+.nlrow { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.nlrow input { flex: 1; min-width: 0; padding: 8px 12px; font-size: 13.5px; border-radius: 8px; }
+.nlrow label.chk { white-space: nowrap; }
+.nlrow .tagai { font-size: 10.5px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: 2px 8px; white-space: nowrap; }
+.nlex { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; font-size: 11.5px; color: var(--ink-3); }
+.nlout { font-size: 12px; color: var(--ink-2); display: flex; gap: 6px; flex-wrap: wrap; align-items: center; min-height: 20px; }
+.nlout .chip { background: var(--accent-soft); border-color: var(--accent); color: var(--ink); }
+/* The structure is the one thing here you point at: clicking a residue is what
+   writes the Hotspots and Stays-off rules. It gets the wider column, and the
+   rule stack gives up the difference -- a rule row is a label and a slider and
+   reads fine at 380. The middle column reflows: its results are a thumbnail grid. */
+.cols { flex: 1; min-height: 0; display: grid; grid-template-columns: 380px minmax(0, 1fr) 452px; gap: 10px; padding: 10px 16px 14px; }
+.col { min-height: 0; display: flex; flex-direction: column; gap: 10px; }
+.scrollcol { overflow: auto; min-height: 0; padding-right: 2px; }
+.grp { border-top: 1px solid var(--line); }
+.gh2 { display: flex; align-items: center; gap: 8px; padding: 9px 12px 6px; cursor: pointer; user-select: none; }
+.gh2 h3 { margin: 0; font-size: 11px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-2); flex: 1; }
+.gh2 .cnt { font-size: 11px; color: var(--ink-3); }
+.gh2 .chev { transition: transform .15s; } .gh2[aria-expanded="false"] .chev { transform: rotate(-90deg); }
+.rule { position: relative; padding: 7px 12px 8px; border-top: 1px solid var(--line); display: grid; gap: 4px; }
+.rule:first-of-type { border-top: 0; }
+.rule.off .ctl-row, .rule.off .rbar { display: none; }
+.rule.sel { background: var(--accent-soft); }
+.rule:hover { background: var(--surface-2); } .rule.sel:hover { background: var(--accent-soft); }
+.rhead { display: grid; grid-template-columns: 18px 1fr auto; gap: 8px; align-items: center; }
+.rhead .lbl { display: flex; align-items: baseline; gap: 6px; min-width: 0; cursor: pointer; }
+.rhead .nm { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rule.off .nm { color: var(--ink-2); font-weight: 400; }
+.rhead .val { font-family: var(--font-mono); font-size: 12px; color: var(--ink); white-space: nowrap; }
+.badge-nl { font-size: 9.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; color: var(--accent); border: 1px solid var(--accent); border-radius: 99px; padding: 0 5px; white-space: nowrap; }
+.rcount { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rcount b { color: var(--ink); font-weight: 600; }
+.ctl-row { display: grid; grid-template-columns: 1fr; gap: 2px; padding-left: 26px; }
+.rbar { height: 3px; border-radius: 2px; background: var(--surface-3); margin-left: 26px; overflow: hidden; }
+.rbar i { display: block; height: 100%; background: var(--accent); }
+.rexp { padding: 6px 0 2px 26px; display: grid; gap: 6px; }
+.rexp canvas { width: 100%; height: 54px; }
+.rexp .note { font-size: 11.5px; color: var(--ink-3); line-height: 1.4; }
+.sens { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+.sens > div { border: 1px solid var(--line); border-radius: 7px; padding: 5px 8px; font-size: 11.5px; background: var(--surface); }
+.sens b { font-variant-numeric: tabular-nums; }
+.funnel2 { padding: 4px 12px 10px; display: grid; gap: 6px; }
+.fr { display: grid; grid-template-columns: 138px 1fr 70px; gap: 10px; align-items: center; font-size: 12px; }
+.fr .bar { height: 14px; background: var(--surface-2); border-radius: 4px; position: relative; overflow: hidden; }
+.fr .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 4px; }
+.fr .bar i.prev { background: var(--accent-soft); }
+.fr .num { text-align: right; font-variant-numeric: tabular-nums; } .fr .num b { font-weight: 600; } .fr .num span { color: var(--ink-3); margin-left: 4px; }
+.unl { display: grid; gap: 4px; padding: 0 12px 10px; }
+.ur { display: grid; grid-template-columns: 1fr 120px 28px; gap: 8px; align-items: center; font-size: 12px; cursor: pointer; border-radius: 6px; padding: 2px 4px; }
+.ur:hover { background: var(--surface-2); } .ur .b { height: 6px; background: var(--surface-3); border-radius: 3px; overflow: hidden; } .ur .b i { display: block; height: 100%; background: var(--m2); }
+.ur output { text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.tabs { display: flex; gap: 2px; padding: 0 12px; border-bottom: 1px solid var(--line); }
+.tabs button { border: 0; background: transparent; padding: 8px 10px; font-size: 12.5px; color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; font-weight: 500; }
+.tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--accent); }
+.tabs button .n { color: var(--ink-3); font-weight: 400; margin-left: 4px; font-variant-numeric: tabular-nums; }
+.rgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; padding: 10px 12px 12px; }
+.rt { border: 1px solid var(--line); border-radius: 8px; overflow: hidden; cursor: pointer; background: var(--surface); position: relative; }
+.rt:hover { border-color: var(--line-strong); } .rt.sel { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); }
+.rt canvas { width: 100%; aspect-ratio: 150 / 100; background: var(--viewer-bg); }
+.rt .m { padding: 4px 7px 6px; font-size: 11px; display: grid; gap: 1px; } .rt .m .a { font-family: var(--font-mono); font-weight: 500; display: flex; gap: 6px; align-items: center; } .rt .m .b { color: var(--ink-3); }
+.nmt td { vertical-align: middle; white-space: normal; } .nmt canvas { width: 72px; height: 50px; border-radius: 5px; background: var(--viewer-bg); border: 1px solid var(--line); display: block; }
+.failchip { display: inline-flex; gap: 5px; align-items: center; padding: 1px 7px; border-radius: 99px; background: var(--bad-soft); color: var(--bad-ink); font-size: 11.5px; font-weight: 500; white-space: nowrap; }
+.vbox { position: relative; flex: 1; min-height: 340px; background: var(--viewer-bg); border-top: 1px solid var(--line); }
+.vbox canvas { position: absolute; inset: 0; }
+.vleg { position: absolute; left: 10px; bottom: 8px; display: flex; gap: 10px; flex-wrap: wrap; font-size: 11px; color: var(--ink-2); pointer-events: none; }
+.vleg span:empty { display: none; }
+.vleg span { display: inline-flex; gap: 5px; align-items: center; background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 1px 6px; border-radius: 99px; border: 1px solid var(--line); }
+.toast { position: fixed; left: 50%; bottom: 22px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 9px 16px; border-radius: 10px; font-size: 12.5px; z-index: 90; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: min(560px, 92vw); }
+.toast.on { opacity: 1; }
+input[type="range"].thin { height: 16px; }
+.dual { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media (max-width: 1250px) { .cols { grid-template-columns: 380px minmax(0, 1fr); } .col.r { grid-column: 1 / -1; } .vbox { min-height: 340px; } }
+@media (max-width: 860px) { .nlrow { flex-wrap: wrap; } .nlrow input { flex: 1 1 100%; order: 2; } html, body { height: auto; } .app { height: auto; } .cols { grid-template-columns: 1fr; } .hdr { flex-wrap: wrap; height: auto; padding-block: 8px; } .views { order: 5; } .fr { grid-template-columns: 100px 1fr 60px; } .scrollcol { max-height: 520px; } }
+
+.credit { flex: none; padding: 4px 16px 8px; font-size: 11px; color: var(--ink-3); } .credit a { color: var(--ink-2); }
+.tag-real { font-size: 11px; color: var(--good-ink); border: 1px solid var(--good); background: var(--good-soft); padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.lab { font-size: 12px; font-weight: 700; margin-left: 4px; } .lab.y { color: var(--good-ink); } .lab.n { color: var(--bad-ink); }
+.labstrip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; margin-top: 4px; }
+.labstrip > div { background: var(--surface); padding: 5px 8px; min-width: 0; } .labstrip .k { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .labstrip .v { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; } .labstrip .v small { font-size: 11px; font-weight: 400; color: var(--ink-3); }
+@media (max-width: 720px) { .tag-real { display: none; } .labstrip { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* rule stack for run projects: pool switch, scopes, sets, hotspot chips, toolbar, rescue (drawn only when the profile is a run) */
+.poolrow, .restool { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 4px 12px 8px; font-size: 12px; color: var(--ink-2); }
+.restool { padding: 8px 12px; border-bottom: 1px solid var(--line); background: var(--surface-2); }
+.restool .rn { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; }
+.restool select { padding: 3px 6px; font-size: 12px; }
+.restool .rnote { flex: 1 1 100%; font-size: 11.5px; line-height: 1.4; color: var(--ink-3); } .restool .rnote b { color: var(--ink-2); font-weight: 600; } .restool .rnote a { color: var(--accent); }
+.poolrow .seg button .c { color: var(--ink-3); margin-left: 4px; font-variant-numeric: tabular-nums; }
+.scoperow { display: flex; gap: 6px; align-items: center; font-size: 11.5px; color: var(--ink-3); }
+.scoperow select { padding: 1px 4px; font-size: 11.5px; }
+.setchips, .hotchips { display: flex; gap: 4px; flex-wrap: wrap; padding: 2px 0; }
+.setchips .chip, .hotchips .chip { font-family: var(--font-mono); font-size: 11px; }
+.hotchips .chip.on { border-color: var(--hotspot); color: var(--hotspot-ink); background: transparent; }
+/* a residue required by clicking the target: it belongs to no run, so it is drawn dashed */
+.hotchips .chip.picked { border-style: dashed; }
+.rt .tk { position: absolute; left: 6px; top: 6px; z-index: 2; }
+.rt .st-dec, .decpill { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: .03em; text-transform: uppercase; padding: 0 5px; border-radius: 99px; border: 1px solid var(--line-strong); color: var(--ink-2); margin-left: 4px; }
+.decpill.keep { border-color: var(--good); color: var(--good-ink); } .decpill.maybe { border-color: var(--warn); color: var(--warn-ink); } .decpill.reject { border-color: var(--bad); color: var(--bad-ink); }
+.nmtag { display: inline-flex; gap: 4px; align-items: center; padding: 0 6px; border-radius: 99px; font-size: 10.5px; font-weight: 600; background: var(--warn-soft); color: var(--warn-ink); white-space: nowrap; }
+.nmtag.rej { background: var(--bad-soft); color: var(--bad-ink); } .nmtag.acc { background: var(--good-soft); color: var(--good-ink); }
+.bcfail { font-size: 11px; color: var(--ink-3); line-height: 1.4; }
+.nmi { display: grid; grid-template-columns: minmax(0, 1fr); gap: 3px; padding: 2px 0; min-width: 0; } .nmi > div { overflow-wrap: anywhere; } .tbl.nmr { table-layout: fixed; width: 100%; } .tbl.nmr td { white-space: normal; } .tbl.nmr th:nth-child(1) { width: 28px; } .tbl.nmr th:nth-child(2) { width: 88px; }   /* long failed-filter lines wrap instead of running out of a narrow screen */
+.col.scroll { overflow: auto; } .col.scroll > .panel:first-child { flex: none; } .col.scroll > .panel:last-child { flex: 1 0 340px !important; min-height: 340px !important; }
+.col.scroll .funnel2 { gap: 3px; } .col.scroll .fr { grid-template-columns: 184px 1fr 64px; gap: 8px; } .col.scroll .fr .bar { height: 12px; }   /* the group name fits on one line, and the results panel gets more of the column */
+.pickbox { border-top: 1px solid var(--line); padding: 8px 12px 10px; display: grid; gap: 5px; font-size: 12px; }
+.pickbox .row { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.pickbox a { color: var(--accent); }
+.fr[data-run] .num { white-space: nowrap; }
+.perrun { padding: 2px 0 0; font-size: 11.5px; color: var(--ink-3); }
+.perrun b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+@media (max-width: 860px) { .restool .grow { display: none; } }
+</style>
+<meta name="description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:title" content="Binderscope demo: reviewing BindCraft binder designs">
+<meta property="og:description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:type" content="website">
+<meta name="robots" content="index,follow">
+<style id="bs-demo-css">
+.bs-demo{position:fixed;left:12px;bottom:12px;z-index:9999;display:flex;align-items:center;gap:8px;max-width:min(560px,calc(100vw - 24px));
+  padding:7px 10px 7px 12px;border-radius:10px;background:var(--surface,#fff);color:var(--ink-2,#444b5e);border:1px solid var(--line-strong,#c7ccda);
+  box-shadow:0 6px 24px rgba(0,0,0,.18);font:12px/1.35 var(--font-ui,system-ui,sans-serif)}
+.bs-demo b{color:var(--ink,#141824);font-weight:600}
+.bs-demo a{color:var(--accent,#4a3aa7);font-weight:600;text-decoration:none;white-space:nowrap}
+.bs-demo a:hover{text-decoration:underline}
+.bs-demo button{flex:none;border:0;background:none;color:var(--ink-3,#586280);font-size:15px;line-height:1;cursor:pointer;padding:0 2px}
+.bs-demo[hidden]{display:none}
+.bs-demo-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  text-decoration:none;color:var(--accent-ink,#fff);background:var(--accent,#4a3aa7);border:1px solid var(--accent,#4a3aa7);margin-left:6px}
+.bs-demo-chip:hover{filter:brightness(1.12)}
+@media print{.bs-demo,.bs-demo-chip{display:none}}
+</style>
+</head>
+<body data-page="query">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></symbol>
+<symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.8 5.2L19 10l-5.2 1.8L12 17l-1.8-5.2L5 10l5.2-1.8zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></symbol>
+<symbol id="i-wrench" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 0-5.4 5.4L3 18v3h3l6.3-6.3a4 4 0 0 0 5.4-5.4l-2.5 2.5-2.3-.5-.5-2.3z"/></symbol>
+</defs></svg>
+
+<div class="app">
+  <header class="hdr">
+    <a class="brand" href="index.html" title="Project overview"><svg class="mark" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- A lowercase b: a helix for the stem, a bowl holding the hotspot. The same
+       drawing as the launcher's mark. The stripes are cut with a mask rather
+       than painted in the background colour, so they show whatever is behind;
+       the stem and the bowl follow currentColor, which is what lets the header
+       colour them and favicon_svg() substitute a literal for a tab strip. -->
+  <defs>
+    <mask id="bs-mark-stem">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M9 57C12.5 57 16.5 50 20 50M9 46C12.5 46 16.5 39 20 39M9 35C12.5 35 16.5 28 20 28M9 24C12.5 24 16.5 17 20 17M9 13C12.5 13 16.5 6 20 6" fill="none" stroke="#000" stroke-width="2.6"/>
+    </mask>
+  </defs>
+  <g transform="translate(1.5 0)">
+    <rect x="9" y="3" width="11" height="57" rx="5.5" fill="currentColor" mask="url(#bs-mark-stem)"/>
+    <circle cx="36" cy="40" r="15" fill="none" stroke="currentColor" stroke-width="10"/>
+    <circle cx="36" cy="40" r="5.5" fill="#f08a24"/>
+  </g>
+</svg><span class="bname">Binderscope</span><span class="bproj" title="Q9NZQ7">Q9NZQ7</span></a>
+    <div class="crumbs"><span>Campaigns</span><span>/</span><b id="crumbT"></b><span class="muted" id="crumbS"></span></div>
+    <div class="grow"></div>
+    <span class="tag-run" id="tagMock" title="Designs and scores come from BindCraft runs, accepted and rejected. Rules are typed and editable; the natural-language box is keyword-based and only fills the same rules.">BindCraft output</span><a class="bs-demo-chip" href="https://github.com/schnickn/binderscope" target="_blank" rel="noopener" title="This is a demo with sample data. Binderscope is free to install and reviews your own runs.">Demo &middot; Get Binderscope &#8599;</a>
+    <div class="runslot" id="bsRunSlot" hidden></div>
+    <nav class="views" aria-label="Views"><a href="index.html" data-nav="index">Overview</a><a href="board.html" data-nav="board">Board</a><a href="inspector.html" data-nav="inspector">Inspector</a><a href="map.html" data-nav="map">Map</a><a href="query.html" data-nav="query" aria-current="page">Query</a><a class="extra" href="guide.html" data-nav="guide">Guide</a></nav>
+  </header>
+  <section class="nlbar" aria-label="Describe what you want">
+    <form class="nlrow" id="nlForm"><span class="tagai">Ask</span><input type="text" id="nlIn" placeholder="Describe the binders you want" aria-label="Describe the binders you want" autocomplete="off"><button class="btn primary" type="submit"><svg class="ic"><use href="#i-spark"/></svg>Compile to rules</button><label class="chk" title="Keep the current rules and add to them. By default a query replaces everything except the base confidence screen."><input type="checkbox" id="nlAdd"> Add to current rules</label><button class="btn ghost" type="button" id="btnClear"><svg class="ic"><use href="#i-reset"/></svg>Clear all rules</button></form>
+    <div class="nlex"></div>
+    <div class="nlout" id="nlOut" aria-live="polite"></div>
+  </section>
+  <main class="cols">
+    <!-- rules -->
+    <section class="panel col" aria-labelledby="h-rules">
+      <div class="panel-h"><h2 id="h-rules">Rules</h2><span class="sub" id="rulesSub"></span><span class="grow"></span><select id="preset" aria-label="Preset"></select></div>
+      <div class="scrollcol" id="rules" style="flex:1"></div>
+    </section>
+    <!-- funnel + results -->
+    <section class="col">
+      <div class="panel">
+        <div class="panel-h"><h2>Funnel</h2><span class="sub">designs left after each group of rules</span><span class="grow"></span><button class="btn sm" id="btnRecipe"><svg class="ic"><use href="#i-copy"/></svg><span>Copy recipe</span></button></div>
+        <div class="funnel2" id="funnel"></div>
+        <div class="panel-h" style="padding-top:0"><h2>Rules blocking the most near-misses</h2><span class="sub">designs that fail only this rule</span></div>
+        <div class="unl" id="unlock"></div>
+      </div>
+      <div class="panel" style="flex:1;min-height:320px">
+        <div class="tabs" role="tablist" id="tabs"><button role="tab" data-t="surv" aria-selected="true">Survivors<span class="n" id="nSurv"></span></button><button role="tab" data-t="near" aria-selected="false">Near-misses<span class="n" id="nNear"></span></button><button role="tab" data-t="rej" aria-selected="false"><span class="tl">Rejected</span><span class="n" id="nRej"></span></button></div>
+        <div class="scrollcol" id="results" style="flex:1"></div>
+      </div>
+    </section>
+    <!-- viewer -->
+    <section class="panel col r" aria-labelledby="h-v">
+      <div class="panel-h"><h2 id="h-v">Pick residues on the target</h2><span class="grow"></span><div class="seg" id="pickSeg" role="group" aria-label="What a click does"><button data-v="hot" aria-pressed="true" title="Clicked residues must be touched">Require</button><button data-v="avoid" title="Clicked residues must not be touched">Forbid</button></div></div>
+      <div class="vbox"><canvas id="cv3d" aria-label="Target structure. Click residues to require or forbid contact."></canvas><div class="vleg"><span><i class="dot" style="color:var(--hotspot)"></i>required</span><span><i class="dot" style="color:var(--bad)"></i>forbidden</span><span>◆ N-glycan</span><span id="vlegMem"></span></div></div>
+      <div style="padding:8px 12px 12px;display:grid;gap:6px"><div class="note" style="font-size:11.5px;color:var(--ink-3);line-height:1.45">Click any residue to add it to the required set (orange) or the forbidden set (red), depending on the toggle above. The Hotspots and Stays-off rules update immediately. Violet lines are the best survivors.</div><div id="setChips" class="consensus" style="display:flex;flex-wrap:wrap;gap:4px"></div></div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="assets/js/mini3d.js"></script>
+<script src="assets/js/bs.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="data/campaign.js"></script>
+<script src="data/homolog.js"></script>
+<script src="data/manifest.js"></script>
+<script>
+const RAW = BS.data('campaign');
+const HOM = BS.data('homolog');
+(function () {
+'use strict';
+/* Structure query: a stack of editable rules over the designs of the project, a funnel by rule group, near-miss rescue, and a result list.
+   Everything that names a target, a species, a paralog, a domain or a run comes from the profile (docs/profile_spec.md): rules.groups,
+   rules.overrides, rules.extra, specificity.rules, nl.*, checks.*, view.*, membrane.*, text keys and the capability flags. The BindCraft
+   filter group is built from runs[].filters. The first mockups of this page switched on one flag (REAL); the flags that replaced it are
+   caps.outcomes, caps.weights, caps.olig, caps.rest_ctx, caps.species_panel, caps.paralog_panel, caps.rejected and caps.multi_run. */
+const C = Common.load(RAW), T = C.T, ALL = C.designs, M3 = Mini3D, tip = C.tip(), SP = C.Spec(HOM), RUN = RAW.run || {};
+SP.attach(ALL);
+const RUNS = BS.runs(), MULTI = PF.cap('multi_run') && RUNS.length > 1;
+const RUNMODE = BS.hasProfile && PF.get('kind', '') === 'run';                   // real tool output: shows the rescue, export and rule-set controls
+const HASREJ = PF.cap('rejected') && ALL.some((d) => d.status === 'rejected');
+const OUTCOMES = PF.cap('outcomes');
+const nOrth = HOM.n_orth, glycanList = T.glycan.map((r) => 'N' + r).join(', ');
+const esc = C.esc, tok = (s) => (typeof s === 'string' ? BS.render(s, { n_orth: nOrth, glycan_list: glycanList }) : s);
+const QUERY_TIPS = ["Click an example under <b>Ask</b> and read the rules it compiled on the left.", "Click a rule name to see its histogram and what relaxing or tightening it would do.", "Open <b>Near-misses</b>, then click a rule under <i>Rules blocking the most near-misses</i> to see designs that fail only that rule.", "Click residues on the target to <b>Require</b> or <b>Forbid</b> contact. The Hotspots and Stays-off rules recount.", "Drag the sliders and watch the funnel; <b>Copy recipe</b> exports the rule set as JSON."]
+  .concat(RUNMODE ? [HASREJ ? "Switch the pool to <b>+ BindCraft-rejected</b>: the near-misses are rejected designs that fail one filter, with the gap and a next step. <b>Rescue as maybe</b> puts one on the board's maybe list with the reason." : "Tick designs, then <b>Send to board</b> to put them on the maybe or keep list, or export them as CSV or FASTA.", "<b>Save rules</b> writes the rule set as a JSON file you can load later or share."] : []);
+C.tips(BS.tipsFor('query', QUERY_TIPS));
+const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+/* in run projects a clickable tile or row is also reachable and operable from the keyboard (synthetic and dataset projects keep their published markup): Tab to it, Enter or Space to choose it (a nested checkbox or link keeps its own keys) */
+const keyable = (el, label, group) => { if (!RUNMODE) return el; el.tabIndex = 0; if (group) el.dataset.rv = group; if (label) el.setAttribute('aria-label', label); el.addEventListener('keydown', (e) => { if (e.target === el && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); el.click(); } }); return el; };
+/* a list of keyable items is one Tab stop (the first, or the one that has the focus); the arrow keys, Home and End move inside it, and the checkbox of a tile or row is reachable from the item that has the stop. Without this the page had 263 tab stops. */
+function rovify() {
+  const groups = {}; $$('[data-rv]').forEach((el) => { (groups[el.dataset.rv] = groups[el.dataset.rv] || []).push(el); });
+  Object.keys(groups).forEach((g) => {
+    const items = groups[g], act = items.find((e) => e === document.activeElement || e.contains(document.activeElement)) || items.find((e) => e.classList.contains('sel')) || items[0];
+    items.forEach((el) => { el.tabIndex = el === act ? 0 : -1; $$('input[type="checkbox"]', el).forEach((cb) => { cb.tabIndex = el === act ? 0 : -1; }); });
+  });
+}
+document.addEventListener('keydown', (e) => {
+  const el = e.target && e.target.dataset && e.target.dataset.rv ? e.target : null; if (!el || e.altKey || e.ctrlKey || e.metaKey) return;
+  const step = { ArrowDown: 1, ArrowRight: 1, ArrowUp: -1, ArrowLeft: -1 }[e.key]; if (!step && e.key !== 'Home' && e.key !== 'End') return;
+  const items = $$('[data-rv="' + el.dataset.rv + '"]'), i = items.indexOf(el), j = e.key === 'Home' ? 0 : e.key === 'End' ? items.length - 1 : Math.max(0, Math.min(items.length - 1, i + step));
+  e.preventDefault(); if (j === i) return; items[j].tabIndex = 0; items[j].focus(); rovify(); items[j].scrollIntoView({ block: 'nearest' });
+});
+{ let pending = false; new MutationObserver(() => { if (pending) return; pending = true; queueMicrotask(() => { pending = false; rovify(); }); }).observe($('.cols'), { childList: true, subtree: true }); }
+const icon = (id) => '<svg class="ic"><use href="#' + id + '"/></svg>';
+const shapeSvg = (m, size) => '<svg viewBox="0 0 12 12" width="' + (size || 11) + '" height="' + (size || 11) + '" style="color:' + C.modeCss(m) + '" fill="currentColor">' + C.SHAPE_SVG[C.MODE_SHAPE[m]] + '</svg>';
+const SM = { t: M3.smooth(T.caF, 2), b(d) { return d._sm || (d._sm = M3.smooth(d.caF, 2)); } };
+ALL.forEach((d) => { let n = 0; for (const a of d.seq) if (a === 'E' || a === 'K') n++; d.ek = n / d.len; d.minGly = Math.min(...Object.values(d.glycan)); });
+const hasLiab = (d, pat) => d.liab.some((l) => l.k.indexOf(pat) >= 0);
+const hotSet = new Set(T.hotspots), avoidSet = new Set();
+let hotCustom = false, hotNamedSet = null;                                     // hotNamedSet: the residues a typed query named (they replace the run's hotspots until reset); false: the hotspots of each design's own run; true: the residues chosen on the target
+const countIn = (s, set) => { let n = 0; set.forEach((r) => { if (s.has(r)) n++; }); return n; };
+const hotCount = (d) => (!RUNMODE || hotCustom ? countIn(d.tcSet, hotSet) : d.hot.length);
+const hotDen = (d) => (!RUNMODE || hotCustom ? hotSet.size : C.hotOf(d));
+const hotDenText = () => { if (!RUNMODE || hotCustom || !D.length) return String(hotSet.size); return Array.from(new Set(D.map(C.hotOf))).sort((a, b) => a - b).join('/'); };
+const resLabel = (r) => (T.resn[T.idx[r]] || '') + r;
+const headline = (d) => (C.caps.ipsae && C.has(d.m.ipsae) ? ['ipSAE', d.m.ipsae] : C.has(d.m.iptm_b) ? ['i_pTM', d.m.iptm_b] : C.has(d.m.iptm) ? ['i_pTM', d.m.iptm] : ['pLDDT', d.m.plddt]);
+const HL = C.caps.ipsae ? 'ipSAE' : 'i_pTM';
+const sid = (d) => { const m = d.id.match(/_s(\d+)_mpnn(\d+)$/), s = m ? 'seed ' + m[1] + ' · m' + m[2] : d.id; return MULTI ? d.run + ' · ' + s : s; };
+const fmtN = (n) => (n == null ? '' : n.toLocaleString());
+
+/* the pool: accepted designs (all of them in a project without rejected designs), optionally plus the designs BindCraft rejected, restricted by the header run filter */
+let D = [];
+const st = { reveal: false, sel: null, tab: 'surv', focus: null, hoverRule: null, pick: 'hot', collapsed: new Set(), nlAdded: [], pool: 'acc', nearRule: null };
+function setPool() {
+  D = BS.runFilter.filter(HASREJ && st.pool === 'acc' ? ALL.filter((d) => d.status !== 'rejected') : ALL);
+  const by = {}; D.forEach((d) => { (by[d.run + '|' + d.bb] = by[d.run + '|' + d.bb] || []).push(d); });
+  Object.keys(by).forEach((k) => by[k].slice().sort((a, b) => b.q - a.q).forEach((d, i) => { d._fr = i + 1; }));   // rank of the sequence in its family (best quality first)
+  syncHot(); drawPoolCounts();
+}
+/* the default epitope is the hotspots of the runs in view (the header run filter); residues chosen on the target (hotCustom) are never touched */
+function hotsInView() {
+  if (!RUNMODE || !MULTI || !T.hotspots_by_run) return T.hotspots;
+  const inView = new Set(D.map((d) => d.run)), u = new Set(); Object.keys(T.hotspots_by_run).forEach((k) => { if (inView.has(k)) (T.hotspots_by_run[k] || []).forEach((x) => u.add(x)); });
+  const l = T.hotspots.filter((x) => u.has(x)); return l.length ? l : T.hotspots;
+}
+function syncHot() {
+  if (!RUNMODE || hotCustom) return;
+  const l = hotsInView(); hotSet.clear(); l.forEach((r) => hotSet.add(r)); RB.hot.hi = Math.max(1, l.length); RB.hot.val = Math.min(RB.hot.val, RB.hot.hi);
+}
+/* the pool buttons count what the header run filter leaves */
+function drawPoolCounts() {
+  const row = $('#poolRow'); if (!row) return;
+  const L = BS.runFilter.filter(ALL), nRej = L.filter((d) => d.status === 'rejected').length;
+  $('button[data-v="acc"] .c', row).textContent = L.length - nRej; $('button[data-v="all"] .c', row).textContent = nRej;
+}
+
+/* ---------------- rule catalogue ---------------- */
+const R = (o) => Object.assign({ on: false, src: 'preset', type: 'num', dec: 2, unit: '', step: 0.01, scope: null }, o);
+const RULES = [
+  R({ id: 'plddt', g: 'Confidence', label: 'Binder pLDDT', metric: 'plddt', op: '>=', val: 0.80, lo: 0.6, hi: 0.97, get: (d) => d.m.plddt, on: true, note: 'BindCraft default filter is 0.80.' }),
+  R({ id: 'ptm', g: 'Confidence', label: 'Binder pTM', metric: 'ptm', op: '>=', val: 0.75, lo: 0.55, hi: 0.95, get: (d) => d.m.ptm, on: true }),
+  R({ id: 'ipsae', g: 'Confidence', label: 'ipSAE (co-fold re-score)', metric: 'ipsae', op: '>=', val: 0.60, lo: 0.2, hi: 0.9, get: (d) => d.m.ipsae, on: true, note: 'A 3,766-binder meta-analysis found ipSAE_min from AF3 the best single predictor, with a suggested cut-off near 0.61. It works best as a negative filter.' }),
+  R({ id: 'ipae', g: 'Confidence', label: 'Min iPAE (co-fold re-score)', metric: 'min_ipae', op: '<=', val: 8, lo: 2, hi: 20, step: 0.5, dec: 1, unit: ' Å', get: (d) => d.m.min_ipae, on: true, note: 'Published pipelines use 7 to 11 Å for interface PAE.' }),
+  R({ id: 'rmsd', g: 'Confidence', label: 'Re-score RMSD vs design', metric: 'complex_rmsd', op: '<=', val: 2.5, lo: 0.5, hi: 10, step: 0.1, dec: 1, unit: ' Å', get: (d) => d.m.complex_rmsd, on: true, note: 'BoltzGen rejects refolds more than 2.5 Å from the design.' }),
+  R({ id: 'agree', g: 'Confidence', label: 'Predictors in agreement (of 3)', metric: 'n_agree', op: '>=', val: 2, lo: 0, hi: 3, step: 1, dec: 0, get: (d) => d.m.n_agree, note: 'The model that made the design is not an independent check, so only the other predictors count. Hard agreement gates collapse recall in published benchmarks. Treat as a soft signal.' }),
+  R({ id: 'seeds', g: 'Confidence', label: 'Pose spread across seeds', metric: 'seed_spread', op: '<=', val: 2.5, lo: 0.3, hi: 10, step: 0.1, dec: 1, unit: ' Å', get: (d) => d.m.seed_spread }),
+
+  R({ id: 'hot', g: 'Epitope and geometry', label: 'Hotspots touched', op: '>=', val: 3, lo: 0, hi: T.hotspots.length, step: 1, dec: 0, get: hotCount, on: true, nodrop: true, note: 'Counts contacts with the orange residues you choose on the target.' }),
+  R({ id: 'avoid', g: 'Epitope and geometry', label: 'Stays off chosen residues', type: 'bool', test: (d) => countIn(d.tcSet, avoidSet) === 0, fails: (d) => countIn(d.tcSet, avoidSet) + ' forbidden residues touched', note: 'Uses the red residues you choose on the target, for example the glycan shell.' }),
+  R({ id: 'mem', g: 'Epitope and geometry', label: 'Clear of the membrane-side zone', type: 'bool', test: (d) => !(d.m.mem_excess > 0), fails: (d) => PF.t('query.rule.mem.fail', { mem: d.m.mem_excess.toFixed(0) }, 'reaches {mem} Å into the zone'), on: true, note: 'The membrane-side end of the target faces the membrane on the full-length protein. Binders there would clash.' }),
+  R({ id: 'gly', g: 'Epitope and geometry', label: 'Distance to N-glycan sites', op: '>=', val: 8, lo: 0, hi: 25, step: 0.5, dec: 1, unit: ' Å', get: (d) => d.minGly, note: 'N-glycans sit at {glycan_list}. A binder close to one would collide with the sugar.' }),
+  R({ id: 'cterm', g: 'Epitope and geometry', label: 'Free C-terminus (tag side)', metric: 'cterm_d', op: '>=', val: 12, lo: 0, hi: 35, step: 0.5, dec: 1, unit: ' Å', get: (d) => d.m.cterm_d, note: 'Assays that immobilise the binder through a C-terminal tag need that end clear of the target.' }),
+  R({ id: 'iface', g: 'Epitope and geometry', label: 'Target residues in the interface', op: '>=', val: 6, lo: 0, hi: 16, step: 1, dec: 0, get: (d) => d.tc.length, nodrop: true }),
+
+  R({ id: 'consv', g: 'Specificity', label: 'Mean epitope conservation grade', op: '>=', val: 4, lo: 1, hi: 9, step: 0.5, dec: 1, get: (d) => d.sp.meanG, note: 'ConSurf-style grade (1 variable to 9 conserved) computed from {n_orth} orthologs. Conserved sites are shared across species; interfaces are often only weakly conserved.' }),
+
+  R({ id: 'sc', g: 'Interface chemistry', label: 'Shape complementarity', metric: 'sc', op: '>=', val: 0.60, lo: 0.4, hi: 0.85, get: (d) => d.m.sc, on: true }),
+  R({ id: 'dsasa', g: 'Interface chemistry', label: 'Buried surface area', metric: 'dsasa', op: '>=', val: 600, lo: 200, hi: 1400, step: 25, dec: 0, unit: ' Å²', get: (d) => d.m.dsasa }),
+  R({ id: 'dg', g: 'Interface chemistry', label: 'Interface ΔG', metric: 'dg', op: '<=', val: -30, lo: -80, hi: 0, step: 1, dec: 0, unit: ' REU', get: (d) => d.m.dg }),
+  R({ id: 'unsat', g: 'Interface chemistry', label: 'Buried unsatisfied polars', metric: 'n_unsat', op: '<=', val: 3, lo: 0, hi: 8, step: 1, dec: 0, get: (d) => d.m.n_unsat, on: true, note: 'BindCraft allows up to 4. Some winners of open competitions would fail that, so keep it soft.' }),
+  R({ id: 'hb', g: 'Interface chemistry', label: 'Interface H-bonds', metric: 'n_hbonds', op: '>=', val: 3, lo: 0, hi: 12, step: 1, dec: 0, get: (d) => d.m.n_hbonds }),
+  R({ id: 'patch', g: 'Interface chemistry', label: 'Exposed hydrophobic patch', metric: 'hphob_patch', op: '<=', val: 500, lo: 100, hi: 1000, step: 25, dec: 0, unit: ' Å²', get: (d) => d.m.hphob_patch, on: true, note: 'Large exposed hydrophobic patches are the usual suspects for sticky, aggregation-prone binders.' }),
+  R({ id: 'loops', g: 'Interface chemistry', label: 'Loop share of the interface', metric: 'loop_frac', op: '<=', val: 0.5, lo: 0, hi: 1, step: 0.05, get: (d) => d.m.loop_frac }),
+  R({ id: 'helixif', g: 'Interface chemistry', label: 'Helical share of the interface', metric: 'iface_helix', op: '>=', val: 0.4, lo: 0, hi: 1, step: 0.05, get: (d) => d.m.iface_helix }),
+
+  R({ id: 'cys', g: 'Sequence', label: 'No unpaired cysteine', type: 'bool', test: (d) => !hasLiab(d, 'Unpaired'), fails: (d) => 'unpaired Cys' + (d.liab.some((l) => l.k.indexOf('Unpaired') >= 0 && l.b === 'inferred') ? ' (pairing inferred from the model)' : ''), on: true, note: 'Disulfides are those the structure file records; BindCraft 2 writes none, so then they are read from SG–SG distances in the model.' }),
+  R({ id: 'sequon', g: 'Sequence', label: 'No N-glycosylation sequon', type: 'bool', test: (d) => !hasLiab(d, 'N-glycosylation'), fails: (d) => d.liab.filter((l) => l.k.indexOf('N-glyc') >= 0).map((l) => l.m + ' at ' + l.p).join(', '), on: true, note: 'Matters for mammalian or yeast expression, less for E. coli or cell-free.' }),
+  R({ id: 'ng', g: 'Sequence', label: 'No NG deamidation motif', type: 'bool', test: (d) => !hasLiab(d, 'NG'), fails: (d) => 'NG at ' + d.liab.filter((l) => l.k.indexOf('NG') >= 0).map((l) => l.p).join(', ') }),
+  R({ id: 'stretch', g: 'Sequence', label: 'No hydrophobic stretch (6 or more)', type: 'bool', test: (d) => !hasLiab(d, 'Hydrophobic'), fails: (d) => d.liab.filter((l) => l.k.indexOf('Hydrophobic') >= 0).map((l) => l.m).join(', ') }),
+  R({ id: 'pi', g: 'Sequence', label: 'pI between', metric: 'pI', type: 'range', val: 4.5, val2: 9.5, lo: 3.5, hi: 11.8, step: 0.1, dec: 1, get: (d) => d.m.pI }),
+  R({ id: 'ek', g: 'Sequence', label: 'Glu + Lys fraction', op: '>=', val: 0.15, lo: 0.05, hi: 0.4, step: 0.01, get: (d) => d.ek, note: 'Glu and Lys content predicted expression in the EGFR competition.', nodrop: true }),
+  R({ id: 'len', g: 'Sequence', label: 'Length', op: '<=', val: 110, lo: 50, hi: 130, step: 1, dec: 0, unit: ' aa', get: (d) => d.len, nodrop: true }),
+  R({ id: 'helix', g: 'Sequence', label: 'Helical fraction', metric: 'helix_frac', op: '>=', val: 0.6, lo: 0, hi: 1, step: 0.05, get: (d) => d.m.helix_frac }),
+];
+const BCROWS = [
+  R({ id: 'bc_iptm', g: 'BindCraft filters', label: 'i_pTM (Average_i_pTM)', metric: 'iptm_b', op: '>=', val: 0.5, lo: 0.3, hi: 0.95, get: (d) => d.m.iptm_b, note: 'BindCraft 1 accepts 0.5 and up; BindCraft 2 defaults to 0.7. Every design here already passed the defaults, so tighten to rank.' }),
+  R({ id: 'bc_ipae', g: 'BindCraft filters', label: 'Interface PAE, normalised (Average_i_pAE)', metric: 'ipae_norm', op: '<=', val: 0.35, lo: 0.1, hi: 0.6, get: (d) => d.m.ipae_norm, note: 'BindCraft stores PAE divided by 31, so 0.35 is about 11 Å.' }),
+  R({ id: 'bc_surf', g: 'BindCraft filters', label: 'Surface hydrophobicity', metric: 'surf_hyd', op: '<=', val: 0.35, lo: 0.15, hi: 0.6, get: (d) => d.m.surf_hyd, note: 'Fraction of surface residues that are hydrophobic. BindCraft default 0.35.' }),
+  R({ id: 'bc_hrmsd', g: 'BindCraft filters', label: 'Hotspot RMSD', metric: 'hotspot_rmsd', op: '<=', val: 6, lo: 1, hi: 12, step: 0.5, dec: 1, unit: ' Å', get: (d) => d.m.hotspot_rmsd, note: 'How far the binder moves when it is re-predicted. BindCraft 1 only: BindCraft 2 no longer reports it.' }),
+];
+
+/* BindCraft's own filters, from runs[].filters: one editable rule per filter (one per run when the runs differ). The value is BindCraft's number (design.src);
+   a filter with a per-model limit also needs every model to pass, the limit moving with the one you edit. */
+const AA_STEM = /^InterfaceAAs_([A-Z])$/;
+const bfValue = (d, stem, k) => { const s = d.src; if (!s) return null; const m = AA_STEM.exec(stem); if (m) { const t = s.interface_aas && s.interface_aas[k || 'avg']; return t && C.has(t[m[1]]) ? t[m[1]] : null; } const t = k ? s.models && s.models[k] : s.average; return t && C.has(t[stem]) ? t[stem] : null; };
+const passOp = (op, v, lim) => (op === '>=' ? v >= lim - 1e-9 : v <= lim + 1e-9);
+const stemLabels = {}; RUNS.forEach((r) => (r.failure || []).forEach((x) => { if (!stemLabels[x[0]]) stemLabels[x[0]] = x[1]; }));
+const stemLabel = (s) => stemLabels[s] || s;
+const decimals = (x) => { const t = String(+x); const i = t.indexOf('.'); return i < 0 ? 0 : Math.min(3, t.length - i - 1); };
+/* Where a rule's threshold came from. "campaign" is the strongest of these: the run
+   recorded the thresholds it was actually judged by, so nothing is reconstructed. The
+   others are inferred from BindCraft 1 runs, which do not copy their filter file into
+   the output, and are ordered here by how well the data supports them. */
+const PROV = { campaign: 'The threshold this campaign recorded and was judged by, read from its own settings. Not a reconstruction.', 'counter-verified': 'The rule reproduces the run\'s failure counters exactly. The counters pin the per-model threshold; some Average-column thresholds are only consistent with them (BindCraft\'s documented defaults).', bounded: 'Threshold only bounded by the data.', memory: 'Threshold from BindCraft\'s defaults; the data cannot confirm it.' };
+function bfRules() {
+  const have = RUNS.filter((r) => Array.isArray(r.filters) && r.filters.length); if (!have.length) return [];
+  const by = new Map(); have.forEach((r) => r.filters.forEach((f) => { if (!by.has(f.stem)) by.set(f.stem, []); by.get(f.stem).push({ run: r.id, f }); }));
+  const out = [];
+  const mk = (stem, f, scope, runId) => {
+    const vals = ALL.map((d) => bfValue(d, stem)).filter(C.has), unit01 = f.threshold > 0 && f.threshold < 1 && vals.every((v) => v >= 0 && v <= 1);   // a share or a score between 0 and 1 reads with two decimals
+    const dec = unit01 ? 2 : decimals(f.threshold), step = dec === 0 ? 1 : Math.pow(10, -Math.min(2, dec));
+    const mn = Math.min(f.threshold, ...vals), mx = Math.max(f.threshold, ...vals), pad = (mx - mn) * 0.1 || Math.abs(f.threshold) * 0.2 || 1;
+    let lo = Math.floor((mn - pad) / step) * step, hi = Math.ceil((mx + pad) / step) * step; if (mn >= 0 && lo < 0) lo = 0; if (mx <= 1 && f.threshold <= 1 && hi > 1) hi = 1; lo = +lo.toFixed(4); hi = +hi.toFixed(4);
+    const pm = f.per_model === null || f.per_model === undefined ? null : f.per_model - f.threshold, lab = stemLabel(stem);
+    return R({ id: 'bf_' + stem + (runId ? '_' + runId : ''), g: 'BindCraft filters', label: lab + (runId ? ' (' + runId + ')' : ''), metric: f.metric || null, op: f.op, val: f.threshold, lo, hi, step, dec, unit: /RMSD/.test(stem) ? ' Å' : '', on: true, scope, nodrop: true,
+      bf: { stem, pm, prov: f.provenance }, get: (d) => bfValue(d, stem) === null && f.metric ? d.m[f.metric] : bfValue(d, stem),
+      note: 'BindCraft filter ' + stem + ' ' + (f.op === '>=' ? '≥ ' : '≤ ') + f.threshold + (pm ? ' (each model ' + (f.op === '>=' ? '≥ ' : '≤ ') + +(f.threshold + pm).toFixed(3) + ')' : '') + '. ' + (PROV[f.provenance] || '') + (f.note ? ' ' + f.note : '') });
+  };
+  by.forEach((list, stem) => {
+    const sigs = new Map(); list.forEach((e) => { const k = [e.f.op, e.f.threshold, e.f.per_model].join('|'); if (!sigs.has(k)) sigs.set(k, []); sigs.get(k).push(e); });
+    if (sigs.size === 1 && list.length === RUNS.length) out.push(mk(stem, list[0].f, null, null));
+    else list.forEach((e) => out.push(mk(stem, e.f, e.run, RUNS.length > 1 ? e.run : null)));
+  });
+  return out;
+}
+const HASF = RUNS.some((r) => Array.isArray(r.filters) && r.filters.length);
+
+/* rules of the profile: base overrides, extra rules, and the rules of the specificity panel */
+const metricGet = (m) => (m === 'unsat_density' ? (d) => C.unsatDensity(d.m) : (d) => d.m[m]);
+const ovr = PF.get('rules.overrides', {});
+const drop = (id) => { const i = RULES.findIndex((r) => r.id === id); if (i >= 0) RULES.splice(i, 1); };
+const specGet = (x) => { const e = x.expr || {};
+  if (e.species) return (d) => (d.sp.fr[e.species] === undefined ? 1 : d.sp.fr[e.species]);
+  if (e.min_species) return (d) => Math.min(...e.min_species.map((k) => (d.sp.fr[k] === undefined ? 1 : d.sp.fr[k])));
+  if (e.paralog) return (d) => { const p = d.sp.par.find((q) => q.key === e.paralog); return p && d.sp.n ? p.ov.id / d.sp.n : 0; };
+  if (e.paralog_max_excl) return (d) => { let b = 0; d.sp.par.forEach((q) => { if (q.key !== e.paralog_max_excl && d.sp.n) b = Math.max(b, q.ov.id / d.sp.n); }); return b; };
+  return () => NaN; };
+const specOk = (x) => { const e = x.expr || {}; if (!PF.cap('species_panel')) return false; const have = (k) => SP.orth.some((o) => o.key === k);
+  if (e.species) return have(e.species); if (e.min_species) return e.min_species.every(have);
+  if (e.paralog || e.paralog_max_excl) return PF.cap('paralog_panel') && SP.hasPar; return false; };
+const profRule = (x) => R({ id: x.id, g: x.group, label: x.label, metric: x.metric || null, op: x.op, val: x.val, lo: x.lo, hi: x.hi, step: x.step === undefined ? 0.01 : x.step, dec: x.dec === undefined ? 2 : x.dec, unit: x.unit || '', on: !!x.on, note: tok(x.note), rescue: x.rescue, nl: x.nl, get: x.expr ? specGet(x) : metricGet(x.metric) });
+const SPECR = (PF.get('specificity.rules', []) || []).filter(specOk).map((x) => Object.assign(profRule(x), { spec: true }));
+if (!PF.cap('membrane')) drop('mem');
+if (!PF.cap('glycan') || !T.glycan.length) drop('gly');
+if (!PF.cap('species_panel')) drop('consv');
+if (HASF) ['bc_iptm', 'bc_ipae', 'bc_surf'].forEach((id) => BCROWS.splice(BCROWS.findIndex((r) => r.id === id), 1));
+RULES.push(...BCROWS);
+const hostPanel = PF.get('specificity.kind', 'host') !== 'virus';
+if (hostPanel) { const i = RULES.findIndex((r) => r.id === 'consv'); RULES.splice(i < 0 ? RULES.length : i, 0, ...SPECR); }
+RULES.slice().forEach((r) => { if (r.type !== 'bool' && !r.nodrop && ALL.every((d) => !C.has(r.get(d)))) drop(r.id); });   // metrics this project does not carry
+Object.keys(ovr).forEach((id) => { const r = RULES.find((x) => x.id === id); if (r) Object.assign(r, ovr[id], ovr[id].note !== undefined ? { note: tok(ovr[id].note) } : {}); });
+RULES.forEach((r) => { if (r.note) r.note = tok(r.note); });
+PF.get('rules.extra', []).forEach((x) => { const r = profRule(x); if (r.get && (x.metric === 'unsat_density' || ALL.some((d) => C.has(r.get(d))))) RULES.push(r); });
+if (!hostPanel) RULES.push(...SPECR);
+bfRules().forEach((r) => RULES.push(r));
+if (RUNMODE) {
+  if (MULTI) RULES.push(R({ id: 'run', g: 'Run and family', label: 'Only designs from the runs', type: 'set', opts: RUNS.map((r) => r.id), sel: new Set(RUNS.map((r) => r.id)), get: (d) => d.run, nodrop: true, note: 'Keeps the designs of the ticked runs. The runs differ in hotspots, construct and settings, so a rule can also be scoped to one run with the selector under it.' }));
+  RULES.push(R({ id: 'mode', g: 'Epitope and geometry', label: 'Binding mode', type: 'set', opts: C.MODES.slice(), sel: new Set(C.MODES), get: (d) => d.mode, nodrop: true, note: 'Keeps the designs whose contacts fall in the ticked binding modes (see the map page).' }));
+  RULES.push(R({ id: 'famrank', g: 'Run and family', label: 'Sequences kept per family', op: '<=', val: 2, lo: 1, hi: 8, step: 1, dec: 0, get: (d) => d._fr, nodrop: true, note: 'Ranks the sequences of one backbone by the quality score of this page and keeps the first N. Families are what count, so one or two sequences per family are usually enough.' }));
+  RULES.push(R({ id: 'liabn', g: 'Sequence', label: 'Sequence liabilities (warn or worse)', op: '<=', val: 3, lo: 0, hi: 10, step: 1, dec: 0, get: (d) => d.liabBad + d.liabWarn, nodrop: true, note: 'Number of flagged liabilities of warning or bad severity: oxidation, deamidation, sequons, isomerisation and cleavage motifs.' }));
+}
+/* a base rule that measures the same quantity as a BindCraft filter is switched off: the BindCraft copy is the one in force */
+RULES.filter((r) => r.bf).forEach((b) => { if (!b.metric) return; RULES.forEach((r) => { if (!r.bf && !r.spec && r.metric === b.metric && r.op === b.op && r.on) { r.on = false; r.note = (r.note ? r.note + ' ' : '') + 'Also a BindCraft filter: see the BindCraft filters group.'; } }); });
+const RB = {}; RULES.forEach((r) => { RB[r.id] = r; r.def = { on: r.on, val: r.val, val2: r.val2, op: r.op, sel: r.sel ? new Set(r.sel) : null, scope: r.scope }; });
+/* BindCraft's own filters come first. They are the thresholds the campaign was
+   already judged by, so they are where a reader starts -- every design in front
+   of them passed these, and tightening one is the first question anybody asks.
+   The groups below them are Binderscope's own recomputed rules. A profile that
+   sets rules.groups still decides its own order. */
+const GROUPS = (() => { const g = PF.get('rules.groups', ['BindCraft filters', 'Confidence', 'Epitope and geometry', 'Specificity', 'Interface chemistry', 'Sequence']).filter((x) => RULES.some((r) => r.g === x));
+  const extra = []; RULES.forEach((r) => { if (g.indexOf(r.g) < 0 && extra.indexOf(r.g) < 0) extra.push(r.g); });
+  return g.concat(extra); })();
+const rescueOf = (r) => r.rescue || (r.bf ? BFRESCUE[r.bf.stem] : null) || RESCUE[r.id] || ['Review', ''];
+setPool();
+
+function testRule(r, d, o) {
+  if (r.scope && d.run !== r.scope) return true;                                     // a rule scoped to a run does not touch the others
+  if (r.type === 'bool') return r.test(d);
+  if (r.type === 'set') return r.sel.has(r.get(d));
+  const v = r.get(d), val = o && o.val !== undefined ? o.val : r.val;
+  if (!C.has(v)) return true;                                                          // no value: the rule is switched off for this design
+  if (r.type === 'range') return v >= val && v <= r.val2;
+  if (r.id === 'hot') return r.op === '>=' ? v >= Math.min(val, hotDen(d)) - 1e-9 : v <= val + 1e-9;   // a design is judged against the hotspots of its own run
+  if (r.bf) { if (!passOp(r.op, v, val)) return false; if (r.bf.pm !== null && d.src && d.src.models) for (const k of Object.keys(d.src.models)) { const mv = bfValue(d, r.bf.stem, k); if (C.has(mv) && !passOp(r.op, mv, val + r.bf.pm)) return false; } return true; }
+  return r.op === '>=' ? v >= val - 1e-9 : v <= val + 1e-9;
+}
+const fmtVal = (r, v) => (r.dec === 0 ? Math.round(v) : v.toFixed(r.dec)) + r.unit;
+const ruleText = (r) => r.type === 'bool' ? '' : r.type === 'set' ? (r.sel.size === r.opts.length ? 'all' : Array.from(r.sel).join(', ') || 'none') : r.type === 'range' ? fmtVal(r, r.val) + ' to ' + fmtVal(r, r.val2) : (r.op === '>=' ? '≥ ' : '≤ ') + fmtVal(r, r.val) + (r.id === 'hot' ? ' of ' + hotDenText() : '');
+const actualText = (r, d) => { if (r.type === 'bool') return r.fails(d); if (r.type === 'set') return r.get(d) + ' (need ' + ruleText(r) + ')'; const v = r.get(d); return fmtVal(r, v) + (r.id === 'hot' ? ' of ' + hotDen(d) : '') + ' (need ' + ruleText(r) + ')'; };
+
+/* ---------------- evaluation ---------------- */
+let EV = null;
+function evaluate() {
+  const on = RULES.filter((r) => r.on); const n = D.length, m = on.length;
+  const pass = D.map((d) => on.map((r) => testRule(r, d)));
+  const fails = pass.map((row) => row.filter((x) => !x).length);
+  const surv = D.filter((d, i) => fails[i] === 0), near = D.filter((d, i) => fails[i] === 1), rej = D.filter((d, i) => fails[i] >= 2);
+  const unique = {}, rpass = {}; on.forEach((r, j) => { let u = 0, p = 0; D.forEach((d, i) => { if (pass[i][j]) p++; else if (fails[i] === 1) u++; }); unique[r.id] = u; rpass[r.id] = p; });
+  const gset = GROUPS.map((g, gi) => { const gi2 = on.map((r, j) => ({ r, j })).filter((x) => GROUPS.indexOf(x.r.g) <= gi); return D.filter((d, i) => gi2.every((x) => pass[i][x.j])); });
+  const gsur = gset.map((s) => s.length);
+  const idx = {}; on.forEach((r, j) => (idx[r.id] = j));
+  EV = { on, pass, fails, surv, near, rej, unique, rpass, gsur, gset, idx };
+}
+const survivorsWith = (id, o) => { const on = RULES.filter((r) => r.on); return D.filter((d) => on.every((r) => testRule(r, d, r.id === id ? o : null))); };
+const nD = () => Math.max(1, D.length);
+
+/* ---------------- rule panel ---------------- */
+/* the rule list is rebuilt on every change; the key that was in use keeps the keyboard focus across the rebuild */
+function focusKey() {
+  const a = document.activeElement; if (!a || !$('#rules').contains(a)) return null;
+  if (a.classList.contains('gh2')) return { gh: $('h3', a).textContent };
+  const rule = a.closest('.rule'); if (!rule) return null;
+  return a.matches('input[type=checkbox]') ? { id: rule.dataset.id, k: 'cb' } : a.classList.contains('lbl') ? { id: rule.dataset.id, k: 'lbl' } : a.matches('button.chip') ? { id: rule.dataset.id, k: 'chip', t: a.textContent } : null;
+}
+function focusBack(k) {
+  if (!k) return; let e = null;
+  if (k.gh) e = $$('#rules .gh2').find((x) => $('h3', x).textContent === k.gh);
+  else { const rule = $('.rule[data-id="' + k.id + '"]'); if (rule) e = k.k === 'cb' ? $('input[type=checkbox]', rule) : k.k === 'lbl' ? $('.lbl', rule) : $$('button.chip', rule).find((x) => x.textContent === k.t); }
+  if (e) e.focus({ preventScroll: true });
+}
+function drawRules() { const fk = focusKey(); drawRules0(); focusBack(fk); }
+function drawRules0() {
+  const el = $('#rules'); el.innerHTML = '';
+  GROUPS.forEach((g) => {
+    const rs = RULES.filter((r) => r.g === g); const nOn = rs.filter((r) => r.on).length;
+    const wrap = document.createElement('div'); wrap.className = 'grp';
+    const head = document.createElement('div'); head.className = 'gh2'; head.setAttribute('role', 'button'); head.tabIndex = 0; head.setAttribute('aria-expanded', String(!st.collapsed.has(g)));
+    head.innerHTML = '<svg class="ic chev"><use href="#i-chev"/></svg><h3>' + esc(g) + '</h3><span class="cnt">' + nOn + ' of ' + rs.length + ' on</span>';
+    const tog = () => { st.collapsed.has(g) ? st.collapsed.delete(g) : st.collapsed.add(g); drawRules(); }; head.onclick = tog; head.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tog(); } };
+    wrap.appendChild(head);
+    if (!st.collapsed.has(g)) rs.forEach((r) => wrap.appendChild(ruleEl(r)));
+    el.appendChild(wrap);
+  });
+  $('#rulesSub').textContent = BS.plural(RULES.filter((r) => r.on).length, 'rule') + ' on';
+}
+function ruleEl(r) {
+  const el = document.createElement('div'); el.className = 'rule' + (r.on ? '' : ' off') + (st.sel === r.id ? ' sel' : ''); el.dataset.id = r.id;
+  const pc = EV.rpass[r.id], nu = EV.unique[r.id];
+  const head = document.createElement('div'); head.className = 'rhead';
+  head.innerHTML = '<input type="checkbox" id="c_' + r.id + '" ' + (r.on ? 'checked' : '') + ' aria-label="Turn on ' + esc(r.label) + '"><div class="lbl"><span class="nm">' + esc(r.label) + '</span>' + (r.src === 'nl' ? '<span class="badge-nl">from query</span>' : '') + (r.scope ? '<span class="badge-nl" title="This rule only applies to designs of ' + esc(r.scope) + '">' + esc(r.scope) + ' only</span>' : '') + '</div><span class="rcount">' + (r.on ? '<b>' + pc + '</b>/' + D.length + (nu ? ' · kills ' + nu + ' alone' : '') : '') + '</span>';
+  el.appendChild(head);
+  const cb = $('input', head); cb.onchange = () => { r.on = cb.checked; r.src = r.src; refresh(); };
+  if (RUNMODE) { keyable($('.lbl', head), null, 'rule').setAttribute('role', 'button'); $('.lbl', head).setAttribute('aria-expanded', String(st.sel === r.id)); }
+  $('.lbl', head).onclick = () => { st.sel = st.sel === r.id ? null : r.id; drawRules(); drawViewer(); };
+  $('.lbl', head).onpointerenter = () => { st.hoverRule = r.id; drawViewer(); }; $('.lbl', head).onpointerleave = () => { st.hoverRule = null; drawViewer(); };
+  if (r.on) {
+    const ctl = document.createElement('div'); ctl.className = 'ctl-row';
+    if (r.type === 'num') { ctl.innerHTML = '<div style="display:flex;gap:8px;align-items:center"><input class="thin" type="range" min="' + r.lo + '" max="' + r.hi + '" step="' + r.step + '" value="' + r.val + '" aria-label="' + esc(r.label) + ' threshold"><span class="rhead val" style="min-width:74px;text-align:right"><span class="val">' + ruleText(r) + '</span></span></div>'; const inp = $('input', ctl); inp.oninput = () => { r.val = +inp.value; r.src = 'user'; refresh(true); }; }
+    else if (r.type === 'range') { ctl.innerHTML = '<div class="dual"><input class="thin" type="range" min="' + r.lo + '" max="' + r.hi + '" step="' + r.step + '" value="' + r.val + '" aria-label="pI minimum"><input class="thin" type="range" min="' + r.lo + '" max="' + r.hi + '" step="' + r.step + '" value="' + r.val2 + '" aria-label="pI maximum"></div><div class="rhead"><span></span><span></span><span class="val">' + ruleText(r) + '</span></div>'; const [a, b] = $$('input', ctl); a.oninput = () => { r.val = Math.min(+a.value, r.val2); refresh(true); }; b.oninput = () => { r.val2 = Math.max(+b.value, r.val); refresh(true); }; }
+    else if (r.type === 'set') { const box = document.createElement('div'); box.className = 'setchips'; r.opts.forEach((o) => { const c = document.createElement('button'); c.type = 'button'; c.className = 'chip btnlike' + (r.sel.has(o) ? ' on' : ''); c.setAttribute('aria-pressed', String(r.sel.has(o))); c.textContent = o; c.title = r.id === 'mode' && RAW.modes[o] ? RAW.modes[o].name : (RUNS.find((x) => x.id === o) || {}).label || o; c.onclick = () => { r.sel.has(o) ? r.sel.delete(o) : r.sel.add(o); r.src = 'user'; refresh(); }; box.appendChild(c); }); ctl.appendChild(box); }
+    else ctl.innerHTML = '<span class="note" style="font-size:11.5px;color:var(--ink-3)">' + (r.id === 'avoid' ? (avoidSet.size ? BS.plural(avoidSet.size, 'residue') + ' chosen on the target' : 'Choose residues on the target to forbid') : 'Pass or fail') + '</span>';
+    if (RUNMODE && r.id === 'hot') { const box = document.createElement('div'); box.className = 'hotchips'; hotChips().forEach((x) => { const c = document.createElement('button'); c.type = 'button'; const isOn = hotSet.has(x), picked = T.hotspots.indexOf(x) < 0; c.className = 'chip btnlike' + (isOn ? ' on' : '') + (picked ? ' picked' : ''); c.setAttribute('aria-pressed', String(isOn)); c.textContent = resLabel(x); const hr = T.hotspots_by_run || {}; c.title = picked ? 'Chosen on the target · click to drop it from the required set' : 'Click to ' + (isOn ? 'stop requiring' : 'require') + ' this residue' + (MULTI ? ' · hotspot of ' + (Object.keys(hr).filter((k) => hr[k].indexOf(x) >= 0).join(', ') || 'no run') : ''); c.onclick = () => toggleHot(x); box.appendChild(c); }); ctl.appendChild(box); }
+    el.appendChild(ctl);
+    const bar = document.createElement('div'); bar.className = 'rbar'; bar.innerHTML = '<i style="width:' + ((100 * pc) / nD()).toFixed(1) + '%"></i>'; el.appendChild(bar);
+  }
+  if (st.sel === r.id) el.appendChild(expandEl(r));
+  return el;
+}
+function expandEl(r) {
+  const ex = document.createElement('div'); ex.className = 'rexp';
+  if (r.type === 'num' || r.type === 'range') { const cv = document.createElement('canvas'); ex.appendChild(cv); requestAnimationFrame(() => drawHist(cv, r)); }
+  if (r.on && r.type === 'num') {
+    const span = r.hi - r.lo, rel = r.op === '>=' ? r.val - 0.1 * span : r.val + 0.1 * span, tig = r.op === '>=' ? r.val + 0.1 * span : r.val - 0.1 * span;
+    const base = EV.surv.length, relaxed = survivorsWith(r.id, { val: Math.min(r.hi, Math.max(r.lo, rel)) }), tight = survivorsWith(r.id, { val: Math.min(r.hi, Math.max(r.lo, tig)) });
+    const bbs = new Set(EV.surv.map((d) => d.bb)); const newBb = new Set(relaxed.filter((d) => !bbs.has(d.bb)).map((d) => d.bb)).size;
+    const vr = Math.min(r.hi, Math.max(r.lo, rel)), vt = Math.min(r.hi, Math.max(r.lo, tig));
+    const s = document.createElement('div'); s.className = 'sens'; s.innerHTML = '<div>Relax to <b>' + fmtVal(r, vr) + '</b><br>' + (relaxed.length - base >= 0 ? '+' : '') + '<b>' + (relaxed.length - base) + '</b> designs' + (newBb ? ' · ' + newBb + ' new backbone' + (newBb > 1 ? 's' : '') : '') + '</div><div>Tighten to <b>' + fmtVal(r, vt) + '</b><br><b>' + (tight.length - base) + '</b> designs</div>'; ex.appendChild(s);
+  }
+  if (MULTI && r.type !== 'set') { const sc = document.createElement('div'); sc.className = 'scoperow'; sc.innerHTML = '<span>Applies to</span><select aria-label="Runs this rule applies to"><option value="">all runs</option>' + RUNS.map((x) => '<option value="' + esc(x.id) + '"' + (r.scope === x.id ? ' selected' : '') + '>' + esc(x.id) + ' only</option>').join('') + '</select><span>The other runs pass it.</span>'; $('select', sc).onchange = (e) => { r.scope = e.target.value || null; r.src = 'user'; refresh(); }; ex.appendChild(sc); }
+  if (r.note) { const n = document.createElement('div'); n.className = 'note'; n.textContent = r.note; ex.appendChild(n); }
+  if (RUNMODE && r.type !== 'bool' && r.type !== 'set') { const miss = D.filter((d) => !C.has(r.get(d))).length; if (miss) { const n = document.createElement('div'); n.className = 'note'; n.textContent = miss + ' of ' + D.length + ' designs have no value for this rule and pass it.'; ex.appendChild(n); } }
+  return ex;
+}
+function drawHist(cv, r) {
+  const W = cv.clientWidth || 300, H = 54, dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const vals = D.map((d) => r.get(d)).filter(C.has); const lo = r.lo, hi = r.hi, nb = 30, bins = new Array(nb).fill(0); vals.forEach((v) => { const b = Math.min(nb - 1, Math.max(0, Math.floor(((v - lo) / (hi - lo)) * nb))); bins[b]++; });
+  const mx = Math.max(1, ...bins), bw = (W - 4) / nb; const pass = (c) => (r.type === 'range' ? c >= r.val && c <= r.val2 : r.op === '>=' ? c >= r.val : c <= r.val);
+  bins.forEach((c, i) => { const cen = lo + ((i + 0.5) / nb) * (hi - lo); const h = (c / mx) * (H - 18); g.fillStyle = r.on && pass(cen) ? C.css('--accent') : C.css('--line-strong'); g.fillRect(2 + i * bw, H - 14 - h, bw - 1, Math.max(1, h)); });
+  const x = (v) => 2 + ((v - lo) / (hi - lo)) * (W - 4); g.fillStyle = C.css('--ink'); g.fillRect(x(r.val) - 1, 2, 2, H - 14); if (r.type === 'range') g.fillRect(x(r.val2) - 1, 2, 2, H - 14);
+  g.font = '10px "IBM Plex Mono", monospace'; g.fillStyle = C.css('--ink-3'); g.textBaseline = 'bottom'; g.fillText(fmtVal(r, lo), 2, H); g.textAlign = 'right'; g.fillText(fmtVal(r, hi), W - 2, H); g.textAlign = 'center'; g.fillText('all ' + BS.plural(D.length, 'design'), W / 2, H); g.textAlign = 'left';
+}
+
+/* ---------------- funnel / unlockers ---------------- */
+const runCounts = (L) => { const c = {}; RUNS.forEach((r) => (c[r.id] = 0)); L.forEach((d) => { c[d.run] = (c[d.run] || 0) + 1; }); return c; };
+const runsInView = () => { const c = runCounts(D); return RUNS.filter((r) => c[r.id] > 0); };
+const runText = (L) => runsInView().map((r) => r.id + ' ' + runCounts(L)[r.id]).join(' · ');
+function drawFunnel() {
+  const el = $('#funnel'); let prev = D.length; el.innerHTML = '<div class="fr"' + (MULTI ? ' title="' + esc(runText(D)) + '"' : '') + '><span>' + (HASREJ ? (st.pool === 'all' ? 'Pool: accepted + BindCraft-rejected' : 'Pool: accepted by BindCraft') : PF.t('query.funnel.first', null, 'Generated')) + '</span><span class="bar"><i style="width:100%"></i></span><span class="num"><b>' + D.length + '</b></span></div>';
+  GROUPS.forEach((g, i) => { const n = EV.gsur[i]; const any = RULES.some((r) => r.on && r.g === g); el.innerHTML += '<div class="fr" title="' + esc(g) + (MULTI ? ' · ' + esc(runText(EV.gset[i])) : '') + '"><span>' + esc(g) + (any ? '' : ' <span class="muted">(none on)</span>') + '</span><span class="bar"><i class="prev" style="width:' + (100 * prev / nD()) + '%"></i><i style="width:' + (100 * n / nD()) + '%"></i></span><span class="num"><b>' + n + '</b><span>' + (n < prev ? '−' + (prev - n) : '') + '</span></span></div>'; prev = n; });
+  if (MULTI) el.insertAdjacentHTML('beforeend', '<div class="perrun">Survivors by run: ' + runsInView().map((r) => esc(r.id) + ' <b>' + runCounts(EV.surv)[r.id] + '</b> of ' + runCounts(D)[r.id]).join(' · ') + '</div>');
+  if (OUTCOMES && st.reveal) el.insertAdjacentHTML('beforeend', labStrip());
+  const un = Object.entries(EV.unique).filter((e) => e[1] > 0).sort((a, b) => b[1] - a[1]).slice(0, RUNMODE ? 4 : 5); const mx = Math.max(1, ...un.map((e) => e[1]));
+  $('#unlock').innerHTML = un.length ? un.map((e) => '<div class="ur" data-id="' + e[0] + '" role="button" tabindex="0"><span>' + esc(RB[e[0]].label) + ' <span class="muted">' + ruleText(RB[e[0]]) + '</span></span><span class="b"><i style="width:' + (100 * e[1] / mx) + '%"></i></span><output>+' + e[1] + '</output></div>').join('') : '<div class="note" style="font-size:11.5px;color:var(--ink-3)">No design fails just one rule right now.</div>';
+  $$('#unlock .ur').forEach((u) => keyable(u, null, 'ur') && (u.onclick = () => { st.sel = u.dataset.id; st.tab = 'near'; st.nearRule = u.dataset.id; refresh(); }));
+}
+
+/* ---------------- results ---------------- */
+function thumb(cv, d, w, h) { const dpr = Math.min(2, devicePixelRatio || 1); cv.width = w * dpr; cv.height = h * dpr; cv.style.width = '100%'; M3.drawThumb(cv.getContext('2d'), w, h, { dpr, target: SM.t, binder: SM.b(d), view: d.view, c: d.vc, tColor: M3.hex2rgb(C.css('--target')), bColor: M3.hex2rgb(C.css('--binder')), contacts: d.tcIdx.map((i) => i * 2), hot: d.hotIdx.map((i) => i * 2), pad: 6, tWidth: 2.8, bWidth: 3.2 }); }
+const RESCUE = {
+  unsat: ['Redesign the interface polars', 'ProteinMPNN with the backbone fixed, biased against Ser, Thr and Asn at buried positions'], patch: ['Surface redesign', 'Resample the exposed hydrophobic residues, keep the interface fixed'], cys: ['Mutate Cys', 'Replace the free cysteine with Ser or Ala'], sequon: ['Point mutation', 'Break the N-X-S/T motif (N→Q or S→A)'], ng: ['Point mutation', 'N→Q or G→A at the motif'], stretch: ['Surface redesign', 'Break the hydrophobic stretch with charged residues'],
+  ipsae: ['Re-predict', 'Run 5 seeds and a second predictor. Discard if it stays below the cut-off'], ipae: ['Re-predict', 'Run 5 seeds and a second predictor'], plddt: ['Re-design the sequence', 'Resample sequences on this backbone'], ptm: ['Re-design the sequence', 'Resample sequences on this backbone'], rmsd: ['Check the pose', 'Overlay design and refold. Usually discard'], agree: ['Re-predict', 'Add a third predictor and more seeds'], seeds: ['Re-predict', 'More seeds; discard if the pose still wanders'],
+  hot: ['Move to an alternative pool', 'Binds a different site. Keep as a hedge or discard'], avoid: ['Discard or truncate', 'Touches a forbidden residue'], mem: ['Discard', 'Clashes with the membrane-side zone'], gly: ['Discard', 'Too close to a glycan'], cterm: ['Truncate the tail', 'Trim the C-terminal residues or move the tag to the N-terminus'], iface: ['Grow the interface', 'Inpaint more contacts'],
+  consv: ['Review the epitope', 'Open the Specificity tab in the Inspector'],
+  bc_iptm: ['Re-design the sequence', 'Resample sequences on this backbone'], bc_ipae: ['Re-predict', 'Run 5 seeds and a second predictor'], bc_surf: ['Surface redesign', 'Resample exposed hydrophobic residues, keep the interface fixed'], bc_hrmsd: ['Check the pose', 'The binder moved on re-prediction; compare predictors in the Inspector'],
+  sc: ['Interface redesign', 'Resample residues at the interface for packing'], dsasa: ['Grow the interface', 'Redesign the rim residues'], dg: ['Interface redesign', 'Resample interface residues'], hb: ['Interface redesign', 'Add hydrogen-bond partners at hotspots'], loops: ['Re-diffuse the binder', 'The interface relies on loops'], helixif: ['Discard', 'Wrong interface architecture'], pi: ['Charge rebalancing', 'Swap surface residues to move the pI'], ek: ['Surface redesign', 'Add Glu or Lys on the surface'], len: ['Truncate', 'Trim termini'], helix: ['Discard', 'Wrong fold class'],
+  mode: ['Move to an alternative pool', 'Binds in a different mode. Keep as a hedge or discard'], famrank: ['Keep the best sibling', 'A better-scoring sequence of the same backbone is already in the list'], liabn: ['Point mutations', 'Fix the flagged motifs one at a time and re-predict'], run: ['Check the run', 'This design comes from a run you excluded'],
+};
+/* BindCraft filters by stem: what to do with a design that misses one */
+const BFRESCUE = {
+  pLDDT: RESCUE.plddt, pTM: RESCUE.ptm, i_pTM: RESCUE.bc_iptm, i_pAE: RESCUE.bc_ipae, ShapeComplementarity: RESCUE.sc, n_InterfaceHbonds: RESCUE.hb, n_InterfaceUnsatHbonds: RESCUE.unsat, Surface_Hydrophobicity: RESCUE.bc_surf,
+  Binder_pLDDT: ['Re-predict the binder alone', 'Run the binder on its own with a second model; discard if it does not fold without the target'], Binder_RMSD: ['Check the monomer', 'Re-predict the binder alone with a second model; discard if it still differs from the complex shape'],
+  InterfaceAAs_K: ['Point mutation', 'Swap surplus interface Lys for Arg or Gln and re-predict'], InterfaceAAs_M: ['Point mutation', 'Swap surplus interface Met for Leu or Ile and re-predict'],
+};
+const queued = new Set();
+const decOf = () => { const m = {}; try { BS.decisions.current({ unit: 'family' }).forEach((e) => { m['family|' + e.design] = e.decision; }); BS.decisions.current({ unit: 'design' }).forEach((e) => { m['design|' + e.design] = e.decision; }); } catch (e) { /* no decisions store */ } return m; };
+const decKey = (d) => (d.status !== 'rejected' && PF.cap('families') ? 'family|' + d.fam : 'design|' + d.id);
+const decPill = (d, M) => { const v = M[decKey(d)]; return v ? '<span class="decpill ' + v + '" title="Your decision on the board">' + v + '</span>' : ''; };
+const labBadgeQ = (d) => '<b class="lab ' + (d.outcome.binds ? 'y' : 'n') + '" title="' + (d.outcome.binds ? 'binds in the lab' : 'no binding detected') + '">' + (d.outcome.binds ? '✓' : '✕') + '</b>';
+const linkOf = (d) => (d.inspect || !HASREJ ? '<a href="' + esc(BS.link.design(d.id, d.run)) + '">' + esc(sid(d)) + '</a>' : esc(sid(d)));
+/* what BindCraft itself said about a rejected design: the filters it missed, grouped by stem, worst scope first */
+function bcFails(d) { const by = new Map(); (d.fail || []).forEach((f) => { const o = by.get(f.stem); if (!o || (f.scope === 'Average' && o.scope !== 'Average') || (o.scope !== 'Average' && (f.rel || 0) > (o.rel || 0))) by.set(f.stem, f); }); return Array.from(by.values()).sort((a, b) => (a.rel || 0) - (b.rel || 0)); }
+const nf = (v) => (Math.abs(v) >= 100 ? String(Math.round(v)) : String(+v.toFixed(2)));
+const bcFailText = (f) => stemLabel(f.stem) + ' ' + nf(f.value) + ' vs ' + (f.op === '>=' ? '≥ ' : '≤ ') + nf(f.threshold) + (f.scope && f.scope !== 'Average' ? ' (model ' + f.scope + ')' : '') + ' · off by ' + nf(f.gap) + (f.rel === null || f.rel === undefined ? '' : ' (' + Math.round(100 * f.rel) + '%)');
+const nmTag = (d) => (d.status !== 'rejected' ? '<span class="nmtag acc" title="Accepted by BindCraft">accepted</span>' : d.nm && d.nm.near ? '<span class="nmtag" title="BindCraft rejected it on one filter, by at most 25% of the threshold: a near-miss worth a second look">near-miss</span>' : '<span class="nmtag rej" title="Rejected by BindCraft on ' + ((d.nm && d.nm.n_failed) || '?') + ' filter(s)">rejected · ' + ((d.nm && d.nm.n_failed) || '?') + ' filter' + (d.nm && d.nm.n_failed === 1 ? '' : 's') + '</span>');
+function drawResults() {
+  const surv = EV.surv.slice().sort((a, b) => b.q - a.q), near = EV.near.slice().sort((a, b) => b.q - a.q), rej = EV.rej.slice().sort((a, b) => b.q - a.q);
+  $('#nSurv').textContent = surv.length; $('#nNear').textContent = near.length; $('#nRej').textContent = rej.length;
+  $$('#tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.t === st.tab)));
+  const el = $('#results'), M = RUNMODE ? decOf() : {};
+  if (st.tab === 'surv') {
+    el.innerHTML = surv.length ? '<div class="rgrid"></div>' : '<div class="note" style="padding:16px;font-size:12.5px;color:var(--ink-3)">No design passes every rule. Turn a rule off, relax a threshold, or look at the near-misses.</div>';
+    const g = $('.rgrid', el); if (g) surv.slice(0, 60).forEach((d) => { const t = document.createElement('div'); t.className = 'rt' + (st.focus === d.id ? ' sel' : ''); t.dataset.id = d.id; keyable(t, 'Show ' + d.id + ' on the target', 'tile'); const h = headline(d); t.innerHTML = (RUNMODE ? '<input type="checkbox" class="tk" data-id="' + esc(d.id) + '" ' + (queued.has(d.id) ? 'checked' : '') + ' aria-label="Select ' + esc(d.id) + '">' : '') + '<canvas></canvas><div class="m"><span class="a" title="' + d.id + '">' + shapeSvg(d.mode, 10) + sid(d) + '</span><span class="b">' + h[0] + ' ' + h[1].toFixed(2) + ' · ' + hotCount(d) + '/' + hotDen(d) + ' required' + (OUTCOMES && st.reveal ? labBadgeQ(d) : '') + (RUNMODE ? decPill(d, M) : '') + '</span></div>'; g.appendChild(t); thumb($('canvas', t), d, 150, 100); t.onclick = (e) => { if (e.target.closest('input')) return; st.focus = d.id; st.refocus = e.detail === 0; drawResults(); drawViewer(); }; t.onpointerenter = () => { st.hoverD = d.id; drawViewer(); }; t.onpointerleave = () => { st.hoverD = null; drawViewer(); }; const tk = $('.tk', t); if (tk) tk.onchange = () => { tk.checked ? queued.add(d.id) : queued.delete(d.id); drawTool(); }; });
+  } else if (st.tab === 'near') {
+    const only = st.nearRule; let list = only ? near.filter((d) => { const j = EV.on.findIndex((r, k) => !EV.pass[D.indexOf(d)][k]); return EV.on[j] && EV.on[j].id === only; }) : near;
+    if (RUNMODE && HASREJ && st.nmOnly) list = list.filter((d) => d.nm && d.nm.near);
+    const header = only ? '<div style="padding:8px 12px;display:flex;gap:8px;align-items:center"><span class="chipx chip on">Only designs blocked by ' + esc(RB[only].label) + '<button class="btn sm ghost" id="clrNear" aria-label="Show all near-misses">' + icon('i-x') + '</button></span></div>' : '';
+    el.innerHTML = header + (RUNMODE ? nmBar(near) + nearTableRun(list, M) : nearTable(list));
+    const nb = $('#nmOnly', el); if (nb) nb.onclick = () => { st.nmOnly = !st.nmOnly; drawResults(); };
+    $$('tbody tr', el).forEach((tr, k) => thumb($('canvas', tr), C.byId[tr.dataset.id], 72, 50)); $$('tbody tr', el).forEach((tr) => { keyable(tr, 'Show ' + tr.dataset.id + ' on the target', 'row'); tr.onclick = (e) => { if (e.target.closest('input,button,a')) return; st.focus = tr.dataset.id; drawViewer(); drawPick(); }; });
+    if (RUNMODE) { $$('.tk', el).forEach((c) => (c.onchange = () => { c.checked ? queued.add(c.dataset.id) : queued.delete(c.dataset.id); drawTool(); })); $$('.rescue', el).forEach((b) => (b.onclick = () => rescue(C.byId[b.dataset.id]))); }
+    else {
+      $$('.q', el).forEach((c) => (c.onchange = () => { c.checked ? queued.add(c.dataset.id) : queued.delete(c.dataset.id); $('#btnQueue').lastChild.textContent = 'Send ' + (queued.size || 'selected') + ' to redesign queue'; }));
+      $('#btnQueue').onclick = () => toast(queued.size ? queued.size + ' designs queued for redesign. Sequence and backbone stay tied to their parent design for provenance.' : 'Tick some near-misses first.'); $('#btnQAll').onclick = () => { list.slice(0, 40).forEach((d) => queued.add(d.id)); drawResults(); };
+    }
+    const cn = $('#clrNear'); if (cn) cn.onclick = () => { st.nearRule = null; drawResults(); };
+  } else {
+    el.innerHTML = '<table class="tbl"><thead><tr>' + (RUNMODE ? '<th></th>' : '') + '<th>Design</th><th>Mode</th><th>Rules failed</th><th>' + HL + '</th></tr></thead><tbody>' + rej.slice(0, 60).map((d) => { const i = D.indexOf(d); const fl = EV.on.filter((r, k) => !EV.pass[i][k]); return '<tr data-id="' + d.id + '" style="cursor:pointer">' + (RUNMODE ? '<td><input type="checkbox" class="tk" data-id="' + esc(d.id) + '" ' + (queued.has(d.id) ? 'checked' : '') + ' aria-label="Select ' + esc(d.id) + '"></td>' : '') + '<td class="mono" title="' + d.id + '">' + (RUNMODE ? linkOf(d) + ' ' + nmTag(d) : sid(d)) + '</td><td>' + shapeSvg(d.mode, 10) + ' ' + d.mode + '</td><td>' + fl.slice(0, 3).map((r) => '<span class="failchip" style="margin-right:4px">' + esc(r.label) + '</span>').join('') + (fl.length > 3 ? '<span class="muted">+' + (fl.length - 3) + '</span>' : '') + '</td><td class="num">' + headline(d)[1].toFixed(2) + (OUTCOMES && st.reveal ? labBadgeQ(d) : '') + '</td></tr>'; }).join('') + '</tbody></table><div class="note" style="padding:8px 12px;font-size:11.5px;color:var(--ink-3)">Designs failing two or more rules. Showing the top 60 of ' + rej.length + ' by quality score.</div>';
+    $$('tbody tr', el).forEach((tr) => { keyable(tr, 'Show ' + tr.dataset.id + ' on the target', 'row'); tr.onclick = (e) => { if (e.target.closest('input,a')) return; st.focus = tr.dataset.id; drawViewer(); drawPick(); }; });
+    if (RUNMODE) $$('.tk', el).forEach((c) => (c.onchange = () => { c.checked ? queued.add(c.dataset.id) : queued.delete(c.dataset.id); drawTool(); }));
+  }
+  drawTool(); drawPick();
+  if (st.refocus) { st.refocus = false; const k = $$('.rt', el).find((x) => x.dataset.id === st.focus); if (k) k.focus(); }
+}
+function nearTable(list) {
+  return '<table class="tbl nmt"><thead><tr><th></th><th>Design</th><th>Blocked by</th><th>Suggested next step</th><th>Queue</th></tr></thead><tbody>' + list.slice(0, 40).map((d) => {
+    const i = D.indexOf(d); const j = EV.on.findIndex((r, k) => !EV.pass[i][k]); const r = EV.on[j]; const rs = rescueOf(r);
+    return '<tr data-id="' + d.id + '"><td><canvas></canvas></td><td><span class="mono" title="' + d.id + '">' + sid(d) + '</span>' + (OUTCOMES && st.reveal ? labBadgeQ(d) : '') + '<br><span class="muted" style="font-size:11px">' + d.mode + ' · ' + HL + ' ' + headline(d)[1].toFixed(2) + '</span></td><td><span class="failchip">' + icon('i-x') + esc(r.label) + '</span><br><span class="muted" style="font-size:11px">' + actualText(r, d) + '</span></td><td><b style="font-weight:600">' + rs[0] + '</b><br><span class="muted" style="font-size:11px">' + rs[1] + '</span></td><td><input type="checkbox" class="q" data-id="' + d.id + '" ' + (queued.has(d.id) ? 'checked' : '') + ' aria-label="Queue ' + d.id + '"></td></tr>';
+  }).join('') + '</tbody></table><div style="padding:10px 12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn primary sm" id="btnQueue">' + icon('i-wrench') + 'Send ' + (queued.size || 'selected') + ' to redesign queue</button><button class="btn sm ghost" id="btnQAll">Select all shown</button><span class="note" style="font-size:11.5px;color:var(--ink-3)">Near-miss = fails exactly one enabled rule. Showing ' + Math.min(40, list.length) + ' of ' + list.length + '.</span></div>';
+}
+/* BindCraft's own near-misses (one filter missed by at most 25% of its threshold): how many are in the pool, how many only one rule of the stack blocks now */
+function nmBar(near) {
+  if (!HASREJ) return '';
+  const rj = D.filter((d) => d.status === 'rejected'); if (!rj.length) return '<div class="note" style="padding:8px 12px 0;font-size:11.5px;color:var(--ink-3)">Switch the pool to + BindCraft-rejected to see designs BindCraft rejected.</div>';
+  const nm = rj.filter((d) => d.nm && d.nm.near), here = near.filter((d) => d.nm && d.nm.near).length;
+  return '<div style="padding:8px 12px 0;display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:11.5px;color:var(--ink-2)"><span>' + nm.length + ' of ' + rj.length + ' rejected designs are BindCraft near-misses (one filter, at most 25% over); ' + here + ' of them are blocked by exactly one rule below.</span><button class="chip btnlike' + (st.nmOnly ? ' on' : '') + '" id="nmOnly" aria-pressed="' + !!st.nmOnly + '">BindCraft near-misses only</button></div>';
+}
+/* the near-miss table of a run project: what blocks the design here, what BindCraft itself said, the rescue tag and the rescue action */
+function nearTableRun(list, M) {
+  const body = list.slice(0, 40).map((d) => {
+    const i = D.indexOf(d); const j = EV.on.findIndex((r, k) => !EV.pass[i][k]); const r = EV.on[j]; const rs = rescueOf(r); const bc = d.status === 'rejected' ? bcFails(d) : [];
+    return '<tr data-id="' + esc(d.id) + '"><td style="width:22px"><input type="checkbox" class="tk" data-id="' + esc(d.id) + '" ' + (queued.has(d.id) ? 'checked' : '') + ' aria-label="Select ' + esc(d.id) + '"></td><td style="width:80px"><canvas></canvas></td><td><div class="nmi"><div><span class="mono" title="' + esc(d.id) + '">' + linkOf(d) + '</span> ' + nmTag(d) + decPill(d, M) + '</div><div class="muted" style="font-size:11px">' + d.mode + ' · ' + HL + ' ' + headline(d)[1].toFixed(2) + (MULTI ? ' · ' + esc(d.run) : '') + '</div><div><span class="failchip">' + icon('i-x') + esc(r.label) + '</span> <span class="muted" style="font-size:11px">' + esc(actualText(r, d)) + '</span></div>' + (bc.length ? '<div class="bcfail">BindCraft: ' + bc.map((f) => esc(bcFailText(f))).join('; ') + '</div>' : '') + '<div style="font-size:11.5px"><b style="font-weight:600">' + esc(rs[0]) + '</b> <span class="muted">' + esc(rs[1]) + '</span></div><div><button class="btn sm rescue" data-id="' + esc(d.id) + '"' + (M[decKey(d)] ? ' disabled title="You already have a decision on this one"' : '') + '>' + (M[decKey(d)] ? 'On the board' : d.status === 'rejected' ? 'Rescue as maybe' : 'Add as maybe') + '</button></div></div></td></tr>';
+  }).join('');
+  return '<table class="tbl nmt nmr"><thead><tr><th></th><th></th><th>Design, what blocks it and a next step</th></tr></thead><tbody>' + body + '</tbody></table><div class="note" style="padding:8px 12px;font-size:11.5px;color:var(--ink-3)">Near-miss = fails exactly one enabled rule. Showing ' + Math.min(40, list.length) + ' of ' + list.length + '.' + (HASREJ ? ' A design BindCraft rejected is tagged with the filters it missed and by how much.' : '') + '</div>';
+}
+$$('#tabs button').forEach((b) => (b.onclick = () => { st.tab = b.dataset.t; if (st.tab !== 'near') st.nearRule = null; drawResults(); }));
+
+/* ---------------- viewer ---------------- */
+const V = new M3.Viewer($('#cv3d'), { bg: () => C.css('--viewer-bg') });
+const vis = new Uint8Array(T.atomsF.sasa.length); for (let i = 0; i < vis.length; i++) vis[i] = T.atomsF.sasa[i] > 0.3 ? 1 : 0;
+V.setAtoms({ xyz: T.atomsF.xyz, res: T.atomsF.res, radius: 1.95, visible: vis }); V.fitTo(T.caF, 0.9);
+(function initView() { const n = T.sites.A1.normal; let cx = 0, cy = 0, cz = 0; for (let i = 0; i < T.n; i++) { cx += T.caF[i * 3]; cy += T.caF[i * 3 + 1]; cz += T.caF[i * 3 + 2]; } cx /= T.n; cy /= T.n; cz /= T.n;
+  let v = [1, 0.3, 0.2]; for (let it = 0; it < 30; it++) { const o = [0, 0, 0]; for (let i = 0; i < T.n; i++) { let x = T.caF[i * 3] - cx, y = T.caF[i * 3 + 1] - cy, z = T.caF[i * 3 + 2] - cz; const d = x * n[0] + y * n[1] + z * n[2]; x -= d * n[0]; y -= d * n[1]; z -= d * n[2]; const t = x * v[0] + y * v[1] + z * v[2]; o[0] += x * t; o[1] += y * t; o[2] += z * t; } const l = Math.hypot(...o) || 1; v = o.map((q) => q / l); }
+  const x = [v[1] * n[2] - v[2] * n[1], v[2] * n[0] - v[0] * n[2], v[0] * n[1] - v[1] * n[0]]; const R0 = M3.orthonormalize([x[0], x[1], x[2], v[0], v[1], v[2], n[0], n[1], n[2]]); const a = (25 * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a); V._layout(); V.fitRot(T.caF, M3.orthonormalize(M3.mmul([c, 0, s, 0, 1, 0, -s, 0, c], R0)), PF.get('view.query_fit_pad', 0.92)); })();
+const halo = () => (C.isDark() ? 'rgba(13,16,22,.85)' : 'rgba(255,255,255,.9)');
+function memPlane() { const ax = T.membrane.axis, c = T.membrane.centroid, o = T.membrane.offset; const p0 = [c[0] + ax[0] * o, c[1] + ax[1] * o, c[2] + ax[2] * o]; let u = [ax[1], -ax[0], 0]; if (Math.hypot(...u) < 0.1) u = [0, ax[2], -ax[1]]; const l = Math.hypot(...u); u = u.map((q) => q / l); const v = [ax[1] * u[2] - ax[2] * u[1], ax[2] * u[0] - ax[0] * u[2], ax[0] * u[1] - ax[1] * u[0]]; const s = PF.get('membrane.plane_half_size', 48), k = [[1, 1], [1, -1], [-1, -1], [-1, 1]]; return k.map(([a, b]) => [p0[0] + u[0] * s * a + v[0] * s * b, p0[1] + u[1] * s * a + v[1] * s * b, p0[2] + u[2] * s * a + v[2] * s * b]); }
+function drawViewer() {
+  const base = M3.hex2rgb(C.css('--target')), hot = M3.hex2rgb(C.css('--hotspot')), bad = M3.hex2rgb(C.css('--bad')), hl = st.hoverRule;
+  V.setColors((i) => { const r = T.resi[T.atomsF.res[i]]; if (hotSet.has(r)) return hot; if (avoidSet.has(r)) return bad; return base; });
+  V.tubes.clear(); const surv = EV.surv.slice().sort((a, b) => b.q - a.q).slice(0, 7);
+  surv.forEach((d, i) => V.setTube('s' + i, { xyz: SM.b(d), color: M3.hex2rgb(C.css('--binder')), width: 0.8, alpha: 0.4, outline: false }));
+  const f = st.hoverD || st.focus; if (f && C.byId[f]) { const d = C.byId[f]; V.setTube('f', { xyz: SM.b(d), color: M3.hex2rgb(C.css('--binder')), width: 2.0, alpha: 1 }); }
+  const mk = []; hotSet.forEach((r) => { const i = T.idx[r]; mk.push({ p: Array.from(T.caF.subarray(i * 3, i * 3 + 3)), label: T.resn[i] + r, r: 5.5, color: hot, halo: halo(), text: C.isDark() ? '#f59a6c' : '#b8430f' }); });
+  avoidSet.forEach((r) => { const i = T.idx[r]; mk.push({ p: Array.from(T.caF.subarray(i * 3, i * 3 + 3)), label: T.resn[i] + r, r: 4.5, shape: 'dot', color: bad, halo: halo(), text: C.isDark() ? '#f08280' : '#a82626' }); });
+  T.glycan.forEach((r) => mk.push({ p: T.glycan_xyz[r], label: 'N' + r, r: hl === 'gly' ? 7 : 4.5, shape: 'diamond', color: M3.hex2rgb(C.css(hl === 'gly' ? '--bad' : '--ink-2')), halo: halo(), text: C.css('--ink-2') }));
+  V.setMarkers(mk);
+  V.setPlanes(RB.mem && (RB.mem.on || hl === 'mem') ? [{ corners: memPlane(), color: M3.hex2rgb(C.css('--bad')), alpha: hl === 'mem' ? 0.25 : 0.10, label: 'membrane-side exclusion' }] : []);
+  $('#vlegMem').innerHTML = RB.mem && RB.mem.on ? '<i class="dot" style="color:var(--bad);opacity:.6"></i>exclusion zone' : '';
+  $('#setChips').innerHTML = [...hotSet].map((r) => '<span class="cres hot" style="font-family:var(--font-mono);font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--hotspot);color:var(--hotspot-ink)">' + T.resn[T.idx[r]] + r + '</span>').join('') + [...avoidSet].map((r) => '<span style="font-family:var(--font-mono);font-size:11px;padding:1px 6px;border-radius:4px;border:1px solid var(--bad);color:var(--bad-ink)">' + T.resn[T.idx[r]] + r + '</span>').join('');
+}
+/* The chips under the Hotspots rule. The campaign's own hotspots are always offered, so one
+   turned off can be turned back on; a residue required by clicking the target, or named in a
+   typed query, is offered beside them and drawn dashed, because it belongs to no run. Without
+   that second half such a residue counted towards the rule with nowhere to drop it. */
+function hotChips() { if (!hotCustom) return hotsInView(); return T.hotspots.concat([...hotSet].filter((r) => T.hotspots.indexOf(r) < 0).sort((a, b) => a - b)); }
+/* `avoid` follows its set: on with the first forbidden residue, off with the last. An empty one
+   passes every design, so leaving it ticked only inflates the group's "n of m on". Only a change
+   to the set may move it, so a box ticked by hand before any residue was chosen stands. */
+function syncAvoid(before) { if (avoidSet.size !== before) RB.avoid.on = avoidSet.size > 0; }
+function toggleHot(r) { hotCustom = true; const before = avoidSet.size; hotSet.has(r) ? hotSet.delete(r) : (avoidSet.delete(r), hotSet.add(r)); RB.hot.hi = Math.max(1, hotSet.size); RB.hot.val = Math.min(RB.hot.val, RB.hot.hi); syncAvoid(before); refresh(); }
+V.onClick = (h) => { if (!h || h.type !== 'atom') return; const r = T.resi[h.res]; hotCustom = true; const tgtSet = st.pick === 'hot' ? hotSet : avoidSet, other = st.pick === 'hot' ? avoidSet : hotSet; const before = avoidSet.size; other.delete(r); tgtSet.has(r) ? tgtSet.delete(r) : tgtSet.add(r); RB.hot.hi = Math.max(1, hotSet.size); RB.hot.val = Math.min(RB.hot.val, RB.hot.hi); syncAvoid(before); refresh(); };
+V.onHover = (h, e) => { if (h && h.type === 'atom') { const r = T.resi[h.res]; tip.show('<span class="v">' + T.resn[h.res] + r + '</span> <span class="k">· click to ' + (st.pick === 'hot' ? 'require' : 'forbid') + ' contact' + (hotSet.has(r) ? ' · required' : avoidSet.has(r) ? ' · forbidden' : '') + '</span>', e.clientX, e.clientY); } else tip.hide(); };
+$$('#pickSeg button').forEach((b) => (b.onclick = () => { st.pick = b.dataset.v; $$('#pickSeg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); }));
+
+/* ---------------- natural-language compile (keyword based; the words that name the target come from the profile) ---------------- */
+function num(t, re, dflt) { const m = t.match(re); return m ? +m[1] : dflt; }
+const NLW = PF.get('nl.words', {}), nlOf = (r) => r.nl && r.nl.words ? r : null;
+const groupIdx = (r) => GROUPS.indexOf(r.g);
+const NLRULES = RULES.filter((r) => nlOf(r) && !r.bf).sort((a, b) => groupIdx(b) - groupIdx(a));   // rules whose profile entry carries keywords; specific rules before geometric ones
+const rx = (src, flags) => { try { return new RegExp(src, flags); } catch (e) { return /(?!)/; } };
+const epiWords = ['hotspot', 'intended epitope', 'on[- ]target', 'epitope'].concat(NLW.epitope || []).join('|');
+const OFFEPI = rx('(do not|don\'t|not|never|off)[^.,]{0,18}(bind|touch|hit|on)?[^.,]{0,14}(intended|epitope|hotspot|' + ((NLW.epitope || []).join('|') || '(?!)') + '|target site)|off[- ]epitope|off[- ]target|wrong (site|epitope)');
+const OFFEXCL = rx(NLW.off_epitope_exclude || 'paralog');
+const GLYNAMED = NLW.glycan_named || {};
+const byMetric = (m) => RULES.find((r) => r.metric === m && !r.bf) || RULES.find((r) => r.metric === m);
+const findRun = (t) => { const m = /\brun\s*0*(\d+)\b/.exec(t); if (!m) return null; return RUNS.find((r) => r.id.replace(/\D+/g, '').replace(/^0+/, '') === m[1]) || null; };
+function compileNL(text) {
+  const t = text.toLowerCase(); if (!t.trim()) return [];
+  if (t.trim() === 'reset') { RULES.forEach(resetRule); avoidSet.clear(); hotCustom = false; hotNamedSet = null; hotSet.clear(); T.hotspots.forEach((r) => hotSet.add(r)); RB.hot.hi = T.hotspots.length; syncHot(); return ['Reset to the default rules']; }
+  const acts = []; const setR = (id, p, why) => { const r = RB[id]; if (!r) return; Object.assign(r, p); r.on = true; r.src = 'nl'; acts.push(why); };
+  const offEpi = !OFFEXCL.test(t) && OFFEPI.test(t);
+  const onFace = rx('(' + epiWords + ')').test(t);
+  if (offEpi) setR('hot', { op: '<=', val: 0, label: 'Hotspots touched' }, 'Touches none of the hotspots'); else if (onFace) { RB.hot.op = '>='; setR('hot', { val: /all (five )?hotspot/.test(t) ? Math.min(5, hotSet.size) : Math.min(3, hotSet.size) }, 'Touches at least ' + BS.plural(Math.min(3, hotSet.size), 'hotspot')); }
+  if (RUNMODE) { const seen = []; const re = /\b([ACDEFGHIKLMNPQRSTVWY])(\d{2,4})\b/g; let mm; const orig = text; while ((mm = re.exec(orig))) { const r = +mm[2]; if (T.idx[r] !== undefined && T.resn[T.idx[r]] === mm[1] && T.glycan.indexOf(r) < 0) seen.push({ r, pre: orig.slice(Math.max(0, mm.index - 24), mm.index).toLowerCase() }); }
+    if (seen.length) { const forb = seen.filter((s) => /avoid|not |never|without|forbid|clear of|off /.test(s.pre)).map((s) => s.r), req = seen.filter((s) => forb.indexOf(s.r) < 0).map((s) => s.r);
+      if (req.length) { hotCustom = true; hotSet.clear(); req.forEach((r) => hotSet.add(r)); hotNamedSet = new Set(hotSet); RB.hot.hi = Math.max(1, hotSet.size); RB.hot.op = '>='; setR('hot', { val: /\bor\b|any|either/.test(t) ? 1 : req.length }, 'Touches ' + (req.length > 1 && /\bor\b|any|either/.test(t) ? 'at least one of ' : req.length > 1 ? 'all of ' : '') + req.map(resLabel).join(', ')); }
+      if (forb.length) { hotCustom = true; forb.forEach((r) => { hotSet.delete(r); avoidSet.add(r); }); setR('avoid', {}, 'Stays off ' + forb.map(resLabel).join(', ')); } } }
+  if (/glycan|sugar|glycos/.test(t) && !/sequon|liabilit/.test(t)) { const k = Object.keys(GLYNAMED).find((x) => t.indexOf(x.toLowerCase()) >= 0); setR('gly', { val: 10 }, 'At least 10 Å from ' + (k ? GLYNAMED[k] : 'glycan') + ' sites'); }
+  if (/membrane/.test(t)) setR('mem', {}, 'Stays out of the membrane-side zone');
+  const tp = RUNMODE ? t.replace(/\b(per|each|every) (family|backbone)\b/g, ' ') : t;   // 'one per family' is about the family rule, not the paralog family
+  NLRULES.forEach((r) => { if (rx(r.nl.words).test(tp)) setR(r.id, { val: r.nl.val !== undefined ? r.nl.val : r.val }, r.nl.text); });   // the species, paralog and context rules of the profile
+  if (RUNMODE && RB.cut && !RB.cut.nl && /cut end|cut-end|construct end|truncat|cut point|cut site/.test(t)) setR('cut', { val: 1 }, 'At most 1 contacted residue next to a cut end');
+  if (RUNMODE && RB.cover && !RB.cover.nl && /buried (in the full|by the (rest|removed|full|whole))|buried epitope|covered by|full-length (protein )?(bur|cover)/.test(t)) setR('cover', { val: 1 }, 'At most 1 contacted residue that the rest of the protein would bury');
+  if (/unsatisf|buried polar/.test(t)) { const n = /no (buried )?unsatisf/.test(t) ? 0 : num(t, /(?:at most|max(?:imum)?|no more than|<=?|up to)\s*(\d+)[^.,]{0,30}(?:unsatisf|buried)/, 1); setR('unsat', { val: n }, 'At most ' + n + ' buried unsatisfied polars'); }
+  if (/sticky|hydrophobic patch|aggregat/.test(t)) setR('patch', { val: 350 }, 'Hydrophobic patch at most 350 Å²');
+  if (/confident|high[- ]confidence|strong score/.test(t)) { if (RB.ipsae) { setR('ipsae', { val: 0.7 }, 'ipSAE at least 0.70'); setR('ipae', { val: 6 }, 'Min iPAE at most 6 Å'); } else { const a = byMetric('iptm_b'), b = byMetric('ipae_norm'); if (a) setR(a.id, { val: 0.7 }, 'i_pTM at least 0.70'); if (b) setR(b.id, { val: 0.25 }, 'Interface PAE (normalised) at most 0.25'); } }
+  if (/consistent|self-consistent|refold|pose/.test(t)) { if (RB.rmsd) setR('rmsd', { val: 2.0 }, 'Refold within 2.0 Å of the design'); else { const b = byMetric('binder_rmsd'); if (b) setR(b.id, { val: 2.0 }, 'Binder alone refolds within 2.0 Å of its complex shape'); } }
+  if (/free c[- ]?term|c[- ]?terminus|tag|terminus|termini/.test(t)) setR('cterm', { val: 12 }, 'C-terminus at least 12 Å from the target');
+  if (/helical|helix|helices/.test(t)) setR('helix', { val: 0.6 }, 'At least 60% helical');
+  if (/liabilit|developab|clean sequence/.test(t)) { ['cys', 'sequon', 'ng', 'stretch'].forEach((id) => { RB[id].on = true; RB[id].src = 'nl'; }); acts.push('No unpaired Cys, N-glycosylation sequon, NG motif or hydrophobic stretch'); }
+  if (/loop/.test(t) && !/loopy|helical/.test(t)) setR('loops', { val: 0.3 }, 'Loops make up at most 30% of the interface');
+  const ln = /(?:length|long|size)[^.,;\d]{0,16}(\d{2,3})\b|\b(?:under|below|shorter than|at most|max(?:imum)?|up to|no (?:more|longer) than)\s*(\d{2,3})\s*(?:aa|residues|amino acids)/.exec(t);   // 'length at most 90', 'under 80 residues'
+  if (ln) { const n = Math.min(RB.len.hi, Math.max(RB.len.lo, +(ln[1] || ln[2]))); setR('len', { val: n }, 'At most ' + n + ' residues'); }
+  else if (/small|short|compact/.test(t)) setR('len', { val: 90 }, 'At most 90 residues');
+  if (/expression|express/.test(t)) setR('ek', { val: 0.18 }, 'Glu + Lys at least 18%');
+  if (RUNMODE) {
+    const run = MULTI ? findRun(t) : null; if (run && RB.run) { RB.run.sel = new Set([run.id]); RB.run.on = true; RB.run.src = 'nl'; acts.push('Only designs from ' + run.id); }
+    const md = /(?:mode|site)\s*m?([1-7])\b/.exec(t) || /\bM([1-7])\b/.exec(text); if (md && RB.mode && RB.mode.opts.indexOf('M' + md[1]) >= 0) { RB.mode.sel = new Set(['M' + md[1]]); RB.mode.on = true; RB.mode.src = 'nl'; acts.push('Binding mode M' + md[1] + ' only'); }
+    if (RB.famrank && /one (sequence |design )?per (family|backbone)|best (sequence )?per (family|backbone)|unique (family|backbone)/.test(t)) setR('famrank', { val: 1 }, 'At most 1 sequence per family');
+    else if (RB.famrank && /(\d+|two|three) (sequences |designs )?per (family|backbone)/.test(t)) { const w = { two: 2, three: 3 }, mm2 = /(\d+|two|three) (?:sequences |designs )?per (?:family|backbone)/.exec(t); setR('famrank', { val: w[mm2[1]] || +mm2[1] }, 'At most ' + (w[mm2[1]] || +mm2[1]) + ' sequences per family'); }
+  }
+  return acts;
+}
+function resetRule(r) { r.on = r.def.on; r.val = r.def.val; r.val2 = r.def.val2; r.op = r.def.op; r.src = 'preset'; r.scope = r.def.scope; if (r.sel) r.sel = new Set(r.def.sel); }
+
+/* ---------------- header, example chips, preset ---------------- */
+{
+  const ct = $('#crumbT'), cs = $('#crumbS'), nRuns = RAW.runs && RAW.runs.length ? RAW.runs.length : RUN.n_runs || 1;
+  const tk = { run_source: RUN.source || '', run_name: RUN.name || '', n_runs: nRuns, n_sample: RUN.n_sample, n_designs: ALL.length, n_accepted: ALL.filter((d) => d.status !== 'rejected').length, n_rejected: ALL.filter((d) => d.status === 'rejected').length, run_license: RUN.license || '', run_credit: RUN.credit || '' };
+  ct.textContent = PF.t('crumb.query.title', tk, T.name + ' · ' + (RUN.source || '')); cs.textContent = PF.t('crumb.query.sub', tk, '· structure query');
+  const ni = $('#nlIn'); ni.placeholder = PF.t('query.nl.placeholder', null, 'Describe the binders you want, for example: on the intended epitope, avoid the glycans, at most 1 buried unsatisfied polar');
+  const exs = PF.get('nl.examples', [{ label: 'On the epitope, clean chemistry', q: 'On the intended epitope, at most 1 buried unsatisfied polar, no sticky hydrophobic patch' }, { label: 'Confident but off-epitope', q: 'Confident designs that do not bind the intended epitope' }, { label: 'Helical, free C-terminus, no liabilities', q: 'Helical binders with a free C-terminus and no sequence liabilities' }, { label: 'Reset to defaults', q: 'reset' }]);
+  $('.nlex').innerHTML = '<span>Try</span>' + exs.map((e) => '<button class="chip btnlike" data-q="' + esc(e.q) + '">' + esc(e.label) + '</button>').join('');
+  const pr = $('#preset'), SHORT = { lit: 'Literature-informed', relaxed: 'Relaxed', strict: 'Strict' };
+  pr.innerHTML = Object.keys(C.PRESETS).map((k) => '<option value="' + esc(k) + '">' + esc(SHORT[k] || C.PRESETS[k].name) + '</option>').join(''); pr.value = C.PRESET_DEFAULT();
+  const cr = PF.get('credit.html', null); if (cr) { const f0 = document.createElement('div'); f0.className = 'credit'; f0.innerHTML = cr; $('.app').appendChild(f0); }
+  if (OUTCOMES) { const hdr = $('.hdr'), views = hdr.querySelector('.views'), tg = $('#tagMock'), b = document.createElement('button'); b.className = 'btn sm'; b.id = 'btnReveal'; b.setAttribute('aria-pressed', 'false'); b.textContent = 'Show lab results'; hdr.insertBefore(b, tg || views);
+    b.onclick = () => { st.reveal = !st.reveal; b.setAttribute('aria-pressed', String(st.reveal)); b.textContent = st.reveal ? 'Hide lab results' : 'Show lab results'; refresh(); }; }
+  if (RUNMODE) $('#tabs [data-t="rej"] .tl').textContent = 'Failing 2+ rules';
+}
+
+/* ---------------- lab results (projects with outcomes) ---------------- */
+const wOf = (d) => d.wt || 1;
+function labStrip() {
+  const sw = (L) => L.reduce((a, d) => a + wOf(d), 0), bw = (L) => L.reduce((a, d) => a + (d.outcome.binds ? wOf(d) : 0), 0), nb = (L) => L.filter((d) => d.outcome.binds).length, totB = bw(D);
+  const cell = (k, L, tp) => '<div title="' + tp + '"><div class="k">' + k + '</div><div class="v">' + (L.length ? (100 * bw(L) / sw(L)).toFixed(0) + '%' : '–') + ' <small>' + nb(L) + ' of ' + L.length + '</small></div></div>';
+  return '<div class="labstrip" aria-label="What the lab found for the current rules">' + cell('Survivors bound', EV.surv, 'Share of survivors that bound in the lab, weighted to the full dataset; counts are from the sample') + cell('Near-misses bound', EV.near, 'Designs failing exactly one rule') + cell('Rejected bound', EV.rej, 'Designs failing two or more rules') +
+    '<div title="Share of all binders that the rules keep as survivors, weighted to the full dataset"><div class="k">Binders kept</div><div class="v">' + (totB ? (100 * bw(EV.surv) / totB).toFixed(0) + '%' : '–') + ' <small>' + nb(EV.surv) + ' of ' + nb(D) + '</small></div></div></div><div class="note" style="font-size:11px;margin-top:2px">Weighted to the ' + fmtN(RUN.n_boltz) + ' designs with a ' + PF.get('predictors.primary.label', 'co-fold') + ' model. The sample keeps every binder but only some of the others, so compare the percentages; the counts are from the sample.</div>';
+}
+
+/* ---------------- rule snapshots, presets, undo ---------------- */
+let lastSnapshot = null;
+function snapshot() { return { rules: RULES.map((r) => ({ on: r.on, val: r.val, val2: r.val2, op: r.op, src: r.src, scope: r.scope, sel: r.sel ? new Set(r.sel) : null })), hot: new Set(hotSet), avoid: new Set(avoidSet), custom: hotCustom, pool: st.pool }; }
+function restore(s) { RULES.forEach((r, i) => { const x = s.rules[i]; Object.assign(r, { on: x.on, val: x.val, val2: x.val2, op: x.op, src: x.src, scope: x.scope }); if (x.sel) r.sel = new Set(x.sel); }); hotSet.clear(); s.hot.forEach((r) => hotSet.add(r)); avoidSet.clear(); s.avoid.forEach((r) => avoidSet.add(r)); hotCustom = s.custom; if (HASREJ && st.pool !== s.pool) { st.pool = s.pool; setPool(); } syncHot(); }
+$('#nlForm').onsubmit = (e) => { e.preventDefault(); runNL($('#nlIn').value); };
+/* a residue named in a query replaces the hotspots of the run for every later 'on the hotspots' until reset: the compile feedback says so and offers the way back */
+function hotNarrowNote() {
+  if (!RUNMODE || !hotCustom) return '';
+  const dflt = hotsInView(); if (hotSet.size === dflt.length && dflt.every((r) => hotSet.has(r))) return '';
+  const n = hotSet.size, named = !!hotNamedSet && hotNamedSet.size === n && Array.from(hotNamedSet).every((r) => hotSet.has(r));
+  return '<span class="muted" style="flex-basis:100%" id="hotNarrow">Hotspots are narrowed to <b>' + esc(Array.from(hotSet).map(resLabel).join(' ') || 'none') + '</b> (' + (named ? 'you named ' + (n === 1 ? 'it' : 'them') + ' in a query' : 'chosen on the target') + '), so "on the hotspots" now means ' + (n === 1 ? 'this residue' : 'these residues') + ', not ' + esc(dflt.map(resLabel).join(' ')) + '. <button class="btn sm ghost" id="btnHotDefault">Restore the default hotspots</button> or type reset.</span>';
+}
+function runNL(q) {
+  lastSnapshot = snapshot(); if (q === 'reset') $('#nlIn').value = ''; else $('#nlIn').value = q;
+  if (q !== 'reset' && !$('#nlAdd').checked) RULES.forEach((r) => { if (r.g !== 'Confidence' && !(RUNMODE && r.bf)) { resetRule(r); r.on = false; } else if (r.src === 'nl') { r.val = r.def.val; r.op = r.def.op; r.src = 'preset'; } });
+  const acts = compileNL(q);
+  $('#nlOut').innerHTML = acts.length ? '<span class="tagai" style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:2px 8px">Compiled</span>' + acts.map((a) => '<span class="chip">' + esc(a) + '</span>').join('') + '<button class="btn sm ghost" id="btnUndoNL">Undo</button><span class="muted">Confidence rules stay as the base screen. Review the rules on the left before trusting them. ' + (RUNMODE ? 'This box matches keywords and fills the same typed rules; it does not call a language model.' : 'This mockup matches keywords; a real version would hand the same typed rules to a language model.') + '</span>' : '<span class="muted">Nothing recognised. Try words like hotspot, glycan, membrane, unsatisfied, sticky, confident, C-terminus or helical.</span>';
+  { const nn = hotNarrowNote(); if (nn) { $('#nlOut').insertAdjacentHTML('beforeend', nn); const hb = $('#btnHotDefault'); if (hb) hb.onclick = () => { hotCustom = false; hotNamedSet = null; syncHot(); $('#nlOut').innerHTML = '<span class="muted">The hotspots are the default ones again.</span>'; refresh(); }; } }
+  const u = $('#btnUndoNL'); if (u) u.onclick = () => { restore(lastSnapshot); $('#nlOut').innerHTML = '<span class="muted">Undone.</span>'; refresh(); };
+  refresh();
+}
+$$('.nlex .chip').forEach((c) => (c.onclick = () => runNL(c.dataset.q)));
+$('#btnClear').onclick = () => { RULES.forEach((r) => (r.on = false)); $('#nlOut').innerHTML = '<span class="muted">All rules are off, so every design passes. Add rules on the left or describe them above.</span>'; refresh(); };
+function applyPreset(PV, turnOn) {
+  const map = { plddt: 'plddt', ptm: 'ptm', ipsae: 'ipsae', min_ipae: 'ipae', complex_rmsd: 'rmsd', sc: 'sc', dg: 'dg', n_unsat: 'unsat', hphob_patch: 'patch' };
+  const S = C.S;
+  /* A preset must not overwrite a threshold the run itself recorded. byMetric falls back
+     to a BindCraft-filter row when no plain rule carries that metric, which happens once
+     the static bc_* rows are dropped for a run that ships its own filters -- and then a
+     preset would quietly replace, say, a campaign's i_pTM of 0.70 with its own 0.50 and
+     pass designs the campaign rejected. Reconstructed BindCraft 1 defaults are left as
+     they were: they are a guess at the same thing and presets have always moved them. */
+  const put = (r, v) => { if (!r || v === undefined) return; if (r.bf && r.bf.prov === 'campaign') return; r.val = v; if (turnOn) { r.on = true; r.src = 'preset'; } };
+  Object.entries(map).forEach(([k, id]) => { if (!RB[id] || (id === 'sc' && !S.scCheck) || (id === 'unsat' && S.unsatDensity)) return; put(RB[id], PV[k]); });
+  if (RUNMODE) ['iptm_b', 'ipae_norm', 'binder_rmsd'].forEach((m) => put(byMetric(m), PV[m]));
+  RB.hot.val = Math.min(PV.hotspots, hotSet.size);
+}
+$('#preset').onchange = (e) => { applyPreset(C.PRESETS[e.target.value].v, true); refresh(); };
+if (C.PRESET_DEFAULT() !== 'lit') applyPreset(C.PRESETS[C.PRESET_DEFAULT()].v, false);   // a profile whose own preset is the default starts from its values (the rules keep their on or off state)
+RULES.forEach((r) => { r.def.val = r.val; r.def.val2 = r.val2; });
+
+/* ---------------- decisions, rescue, export, rule sets (run projects) ---------------- */
+function toast(msg, ms) { const t = $('#toast'); t.textContent = msg; t.classList.add('on'); clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove('on'), ms || 2600); }
+const rulesOnText = () => RULES.filter((r) => r.on).map((r) => r.label + (r.type === 'bool' ? '' : ' ' + ruleText(r))).join('; ');
+function tabList() { const ev = EV, by = (L) => L.slice().sort((a, b) => b.q - a.q); if (st.tab === 'surv') return by(ev.surv); if (st.tab === 'near') { let L = by(ev.near); if (st.nmOnly && HASREJ) L = L.filter((d) => d.nm && d.nm.near); return st.nearRule ? L.filter((d) => { const j = ev.on.findIndex((r, k) => !ev.pass[D.indexOf(d)][k]); return ev.on[j] && ev.on[j].id === st.nearRule; }) : L; } return by(ev.rej); }
+const queuedIn = () => Array.from(queued).filter((id) => D.some((d) => d.id === id));
+function chosen() { const ids = queuedIn(); return ids.length ? ids.map((id) => C.byId[id]) : tabList(); }
+function addDecision(unit, key, decision, run, seqs, note) { return BS.decisions.add({ unit, design: key, decision, run: run || null, sequences: seqs, reasons: [], note }); }
+/* what a send would do: a family (accepted designs) is one decision carrying every sequence of it in the list; a rejected design is decided on its own; what already has a decision is left alone */
+function planSend(list) {
+  const M = decOf(), fam = {}, singles = [];
+  list.forEach((d) => { if (d.status !== 'rejected' && PF.cap('families')) (fam[d.run + '|' + d.fam] = fam[d.run + '|' + d.fam] || { d, ids: [] }).ids.push(d.id); else singles.push(d); });
+  const famNew = Object.values(fam).filter((g) => !M['family|' + g.d.fam]), singNew = singles.filter((d) => !M['design|' + d.id]);
+  return { fam, singles, famNew, singNew, skipped: Object.keys(fam).length - famNew.length + singles.length - singNew.length };
+}
+function sendToBoard(list, decision, opts) {
+  const o = opts || {}, P0 = planSend(list); let made = 0;
+  P0.famNew.forEach((g) => { addDecision('family', g.d.fam, decision, g.d.run, g.ids, 'Query page: ' + g.ids.length + ' sequence' + (g.ids.length > 1 ? 's' : '') + ' passed ' + BS.plural(RULES.filter((r) => r.on).length, 'rule') + '. ' + rulesOnText().slice(0, 400)); made++; });
+  P0.singNew.forEach((d) => { addDecision('design', d.id, decision, d.run, [d.id], o.note ? o.note(d) : 'Query page: passed ' + BS.plural(RULES.filter((r) => r.on).length, 'rule') + '. ' + rulesOnText().slice(0, 400)); made++; });
+  return { made, skipped: P0.skipped, families: Object.keys(P0.fam).length };
+}
+function rescue(d, decision) {
+  decision = decision === 'keep' ? 'keep' : 'maybe';
+  if (!d) return; const bc = bcFails(d), why = d.status === 'rejected' ? 'Rescued from BindCraft rejection: ' + (bc.map(bcFailText).join('; ') || 'filters missed') + '.' : 'Added from the query page.';
+  const j = D.indexOf(d), failing = j < 0 ? [] : EV.on.filter((r, k) => !EV.pass[j][k]).map((r) => r.label);
+  const res = sendToBoard([d], decision, { note: () => why + (failing.length ? ' Blocked here only by ' + failing.join(', ') + '.' : ' Passes the ' + BS.plural(RULES.filter((r) => r.on).length, 'rule') + ' on.') });
+  toast(res.skipped ? 'You already have a decision on this one; it was left as it is.' : decision === 'keep' ? (d.status === 'rejected' ? 'Rescued ' : 'Kept ') + sid(d) + ': it is in the order list' + (d.status === 'rejected' ? ', marked near-miss.' : '.') + ' The reason is recorded in the note.' : (d.status === 'rejected' ? 'Rescued ' : 'Added ') + sid(d) + ' as maybe. A maybe is not in the order list; keep it to add it. The reason is recorded in the note.', 5000); refresh();
+}
+const csvCell = (v) => { if (v === null || v === undefined) return ''; const s = String(v); return /[",\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s; };
+function csvOf(list) {
+  const cols = [['id', (d) => d.id], ['run', (d) => d.run], ['status', (d) => d.status || 'accepted'], ['family', (d) => d.fam], ['sequence_index', (d) => d.s], ['rank', (d) => d.rank], ['mode', (d) => d.mode], ['fold_class', (d) => d.sc], ['length', (d) => d.len], ['quality', (d) => +d.q.toFixed(3)],
+    ['hotspots_touched', (d) => d.hot.length], ['hotspots_of', (d) => C.hotOf(d)], ['hotspot_residues', (d) => d.hot.map(resLabel).join(';')]];
+  [['plddt', 3], ['ptm', 3], ['iptm_b', 3], ['ipae_norm', 3], ['sc', 3], ['dg', 2], ['dsasa', 0], ['n_hbonds', 0], ['n_unsat', 0], ['hphob_patch', 0], ['surf_hyd', 3], ['binder_rmsd', 2], ['hotspot_rmsd', 2], ['olig_n3', 0], ['rest_n3', 0], ['cut_n', 0], ['cov_n', 0], ['epi_rec', 3], ['mem_excess', 1], ['pI', 2]].forEach(([k, dp]) => { if (list.some((d) => C.has(d.m[k]))) cols.push([k, (d) => (C.has(d.m[k]) ? +d.m[k].toFixed(dp) : null)]); });
+  SP.orth.filter((o) => SP.show.indexOf(o.key) >= 0).forEach((o) => cols.push(['identity_' + o.key, (d) => (d.sp.n ? +(d.sp.fr[o.key] === undefined ? 1 : d.sp.fr[o.key]).toFixed(3) : null)]));
+  cols.push(['liabilities_warn_or_bad', (d) => d.liabBad + d.liabWarn]);
+  cols.push(['rules_failed_here', (d) => { const j = D.indexOf(d); return j < 0 ? '' : EV.on.filter((r, k) => !EV.pass[j][k]).map((r) => r.label).join(';'); }]);
+  if (HASREJ) { cols.push(['bindcraft_failed_filters', (d) => bcFails(d).map((f) => f.stem).join(';')]); cols.push(['near_miss', (d) => (d.nm ? d.nm.near : '')]); }
+  return [cols.map((c) => c[0]).join(',')].concat(list.map((d) => cols.map((c) => csvCell(c[1](d))).join(','))).join('\r\n') + '\r\n';
+}
+function fastaOf(list) { return list.filter((d) => d.seq).map((d) => '>' + d.id + ' run=' + (d.run || '') + ' family=' + d.fam + ' mode=' + d.mode + ' length=' + d.len + '\n' + d.seq).join('\n') + '\n'; }
+const exportName = (ext, n) => 'binderscope-query-' + PF.get('id', 'project') + '-' + n + '.' + ext;
+function exportSet(kind) { const L = chosen(); if (!L.length) { toast('Nothing to export: the list is empty.'); return null; } const text = kind === 'csv' ? csvOf(L) : fastaOf(L), name = exportName(kind === 'csv' ? 'csv' : 'fasta', L.length); BS.download(name, text, kind === 'csv' ? 'text/csv' : 'text/plain'); window.__q.last = { name, text, n: L.length }; toast('Wrote ' + name + ' (' + L.length + ' designs). Sequences stay on this machine.'); return text; }
+const rulesetObj = () => { const man = BS.blob('manifest'); return { schema: 'binderscope.ruleset/1', bundle: (man && man.bundle && man.bundle.id) || null, profile: PF.get('id', null), saved: new Date().toISOString().slice(0, 19) + 'Z', pool: st.pool, hot_custom: hotCustom, hotspots: [...hotSet], forbidden: [...avoidSet],
+  rules: RULES.map((r) => { const o = { id: r.id, on: r.on }; if (r.type === 'num') { o.op = r.op; o.val = r.val; } else if (r.type === 'range') { o.val = r.val; o.val2 = r.val2; } if (r.sel) o.sel = Array.from(r.sel); if (r.scope) o.scope = r.scope; return o; }) }; };
+function applyRuleset(text) {
+  let o; try { o = typeof text === 'string' ? JSON.parse(text) : text; } catch (e) { return { ok: false, error: 'The file is not valid JSON.' }; }
+  if (!o || typeof o.schema !== 'string' || o.schema.indexOf('binderscope.ruleset/') !== 0 || !Array.isArray(o.rules)) return { ok: false, error: 'This is not a Binderscope rule set.' };
+  lastSnapshot = snapshot(); let applied = 0; const unknown = [];
+  o.rules.forEach((x) => { const r = x && RB[x.id]; if (!r) { unknown.push(x && x.id); return; } if (typeof x.on === 'boolean') r.on = x.on; if (r.type === 'num' && (x.op === '>=' || x.op === '<=')) r.op = x.op; if (Number.isFinite(x.val) && r.type !== 'bool' && r.type !== 'set') r.val = Math.min(r.hi, Math.max(r.lo, x.val)); if (Number.isFinite(x.val2) && r.type === 'range') r.val2 = Math.min(r.hi, Math.max(r.lo, x.val2)); if (Array.isArray(x.sel) && r.sel) r.sel = new Set(x.sel.filter((s) => r.opts.indexOf(s) >= 0)); r.scope = x.scope && RUNS.some((u) => u.id === x.scope) ? x.scope : null; r.src = 'user'; applied++; });
+  if (Array.isArray(o.hotspots)) { hotSet.clear(); o.hotspots.filter((r) => T.idx[r] !== undefined).forEach((r) => hotSet.add(r)); } if (Array.isArray(o.forbidden)) { avoidSet.clear(); o.forbidden.filter((r) => T.idx[r] !== undefined).forEach((r) => avoidSet.add(r)); }
+  hotCustom = !!o.hot_custom; RB.hot.hi = Math.max(1, hotCustom ? hotSet.size : T.hotspots.length); if (!hotCustom) { hotSet.clear(); T.hotspots.forEach((r) => hotSet.add(r)); syncHot(); }
+  if (HASREJ && (o.pool === 'acc' || o.pool === 'all')) st.pool = o.pool; setPool(); refresh();
+  return { ok: true, applied, unknown, other_profile: !!(o.profile && PF.get('id', null) && o.profile !== PF.get('id', null)) };
+}
+function loadRulesFile() { const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.style.display = 'none'; inp.onchange = () => { const f = inp.files && inp.files[0]; inp.remove(); if (!f) return; const rd = new FileReader(); rd.onload = () => rulesetLoaded(applyRuleset(String(rd.result)), f.name); rd.onerror = () => toast('Could not read the file.'); rd.readAsText(f); }; document.body.appendChild(inp); inp.click(); }
+function rulesetLoaded(res, name) { const out = $('#nlOut'); if (!res.ok) { out.innerHTML = '<span class="muted">' + esc(res.error) + '</span>'; return; } out.innerHTML = '<span class="tagai" style="font-size:10.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--accent);border:1px solid var(--accent);border-radius:99px;padding:2px 8px">Loaded</span><span class="chip">' + esc(name || 'rule set') + ': ' + BS.plural(res.applied, 'rule') + '</span>' + (res.unknown.length ? '<span class="chip" title="' + esc(res.unknown.join(', ')) + '">' + res.unknown.length + ' not in this project, skipped</span>' : '') + (res.other_profile ? '<span class="muted">The file was saved for another profile.</span>' : '') + '<button class="btn sm ghost" id="btnUndoNL">Undo</button>'; const u = $('#btnUndoNL'); if (u) u.onclick = () => { restore(lastSnapshot); out.innerHTML = '<span class="muted">Undone.</span>'; refresh(); }; }
+
+/* toolbar over the results, the pool switch and the rule-set buttons: only for projects that are real tool output */
+function drawTool() {
+  const el = $('#resTool'); if (!el) return; const L = chosen(), n = queuedIn().length ? queuedIn().length : tabList().length;
+  const nfam = new Set(L.map((d) => d.run + '|' + d.bb)).size;
+  $('#rtN', el).textContent = (queuedIn().length ? queuedIn().length + ' selected' : 'All ' + n + ' in this tab') + ' · ' + nfam + ' ' + (nfam === 1 ? 'family' : 'families');
+  $('#btnCsv', el).textContent = 'CSV (' + L.length + ')'; $('#btnFasta', el).textContent = 'FASTA (' + L.filter((d) => d.seq).length + ')'; $('#btnSend', el).textContent = 'Send ' + L.length + ' to board'; $('#btnTickNone', el).hidden = !queuedIn().length;
+  $('#btnFasta', el).disabled = !L.some((d) => d.seq); $('#btnSend', el).disabled = !L.length;
+  // what Send would do to the order list, said before it is pressed: a family sent as Keep adds every sequence of it that is in this list, not only its best one
+  const pl = planSend(L), keep = $('#rtDec', el).value === 'keep', nSeq = pl.famNew.reduce((a, g) => a + g.ids.length, 0) + pl.singNew.length, nf = pl.famNew.length, ns = pl.singNew.length;
+  $('#rtNote', el).innerHTML = !L.length ? '' : (keep ? (nSeq ? 'Keep adds <b>' + BS.plural(nSeq, 'sequence') + '</b> to the order list' + (nf ? ': ' + BS.plural(nf, 'family', 'families') + ' sent with every sequence of ' + (nf === 1 ? 'it' : 'them') + ' that is in this list, not only the best one' : '') + (ns ? (nf ? ', and ' : ': ') + BS.plural(ns, 'design') + ' decided one by one' + (L.some((d) => d.status === 'rejected') ? ' (BindCraft-rejected designs are marked near-miss)' : '') : '') + '.' : 'Nothing new to add.')
+    : (nSeq ? 'Maybe marks ' + (nf ? BS.plural(nf, 'family', 'families') : '') + (ns ? (nf ? ' and ' : '') + BS.plural(ns, 'design') : '') + '. A maybe is not in the order list; keep it later to add it.' : 'Nothing new to mark.')) +
+    (pl.skipped ? ' ' + BS.plural(pl.skipped, 'item') + ' already ' + BS.pl(pl.skipped, 'has', 'have') + ' a decision and ' + BS.pl(pl.skipped, 'is', 'are') + ' left as ' + BS.pl(pl.skipped, 'it is', 'they are') + '.' : '');
+}
+function drawPick() {
+  const el = $('#pickBox'); if (!el) return; const d = st.focus && C.byId[st.focus]; if (!d) { el.hidden = true; el.innerHTML = ''; return; } el.hidden = false;
+  const i = D.indexOf(d), M = decOf(), failing = i >= 0 ? EV.on.filter((r, k) => !EV.pass[i][k]) : [], bc = d.status === 'rejected' ? bcFails(d) : [], h = headline(d);
+  el.innerHTML = '<div class="row"><b class="mono">' + linkOf(d) + '</b> ' + nmTag(d) + decPill(d, M) + '</div><div class="row muted">' + shapeSvg(d.mode, 10) + ' ' + d.mode + ' · ' + h[0] + ' ' + h[1].toFixed(2) + ' · ' + hotCount(d) + '/' + hotDen(d) + ' hotspots · ' + d.len + ' aa' + (MULTI ? ' · ' + esc(d.run) : '') + '</div>' +
+    (failing.length ? '<div class="row">' + failing.slice(0, 4).map((r) => '<span class="failchip">' + icon('i-x') + esc(r.label) + '</span>').join('') + (failing.length > 4 ? '<span class="muted">+' + (failing.length - 4) + '</span>' : '') + '</div>' : i >= 0 ? '<div class="row"><span class="st pass">' + icon('i-check') + 'Passes every rule on</span></div>' : '') +
+    (bc.length ? '<div class="bcfail">BindCraft: ' + bc.map((f) => esc(bcFailText(f))).join('; ') + '</div>' : '') + '<div class="row"><button class="btn sm rescue" id="btnPickMaybe">' + (d.status === 'rejected' ? 'Rescue as maybe' : 'Add as maybe') + '</button><button class="btn sm rescue" id="btnPickKeep" title="Keep it: it is added to the order list">' + (d.status === 'rejected' ? 'Rescue and keep' : 'Keep') + '</button></div>';
+  $('#btnPickMaybe', el).onclick = () => rescue(d, 'maybe'); $('#btnPickKeep', el).onclick = () => rescue(d, 'keep');
+}
+function mountRunControls() {
+  const rt = document.createElement('div'); rt.className = 'restool'; rt.id = 'resTool';
+  rt.innerHTML = '<span class="rn" id="rtN"></span><span class="grow" style="flex:1"></span><button class="btn sm ghost" id="btnTickNone" hidden>Clear selection</button><label>Board <select id="rtDec" aria-label="Decision to send"><option value="maybe">Maybe</option><option value="keep">Keep</option></select></label><button class="btn sm primary" id="btnSend"></button><button class="btn sm" id="btnCsv"></button><button class="btn sm" id="btnFasta" title="The sequences are written to a file on this machine; nothing is sent anywhere."></button><span class="rnote" id="rtNote" aria-live="polite"></span>';
+  $('#results').parentNode.insertBefore(rt, $('#results'));
+  $('#btnTickNone', rt).onclick = () => { queued.clear(); drawResults(); };
+  $('#rtDec', rt).onchange = () => drawTool();
+  $('#btnSend', rt).onclick = () => { const L = chosen(); if (!L.length) return; const dec = $('#rtDec', rt).value, r = sendToBoard(L, dec); const n = BS.order.resolve().nRows; toast((r.made ? 'Sent ' + r.made + (r.families ? ' (' + r.families + ' famil' + (r.families > 1 ? 'ies' : 'y') + ')' : '') + ' to the board as ' + dec + '.' : 'Nothing new to send.') + (r.skipped ? ' ' + r.skipped + ' already had a decision and were left alone.' : '') + (dec === 'keep' && r.made ? ' The order list now holds ' + BS.plural(n, 'sequence') + '.' : dec === 'maybe' && r.made ? ' Maybes are not in the order list.' : ''), 5000); drawResults(); };
+  $('#btnCsv', rt).onclick = () => exportSet('csv'); $('#btnFasta', rt).onclick = () => exportSet('fasta');
+  const fh = $('#btnRecipe').parentNode, sv = document.createElement('button'); sv.className = 'btn sm'; sv.id = 'btnSaveRules'; sv.textContent = 'Save'; sv.title = 'Save the rule set as a JSON file'; const ld = document.createElement('button'); ld.className = 'btn sm'; ld.id = 'btnLoadRules'; ld.textContent = 'Load'; ld.title = 'Load a rule set from a JSON file';
+  fh.insertBefore(sv, $('#btnRecipe')); fh.insertBefore(ld, $('#btnRecipe'));
+  sv.onclick = () => { const o = rulesetObj(), name = 'binderscope-rules-' + PF.get('id', 'project') + '.json'; BS.download(name, JSON.stringify(o, null, 2) + '\n', 'application/json'); window.__q.lastRuleset = o; toast('Saved ' + name + '.'); };
+  ld.onclick = loadRulesFile;
+  const pk = document.createElement('div'); pk.id = 'pickBox'; pk.className = 'pickbox'; pk.hidden = true; $('.col.r').appendChild(pk);
+  if (HASREJ) { const L0 = BS.runFilter.filter(ALL), nRej = L0.filter((d) => d.status === 'rejected').length, nAcc = L0.length - nRej, row = document.createElement('div'); row.className = 'poolrow'; row.id = 'poolRow';
+    row.innerHTML = '<span>Pool</span><div class="seg" role="group" aria-label="Which designs the rules run over" title="Accepted: the designs BindCraft kept. + BindCraft-rejected: the designs it rejected that have a structure; they fail its own filters, and one blocked by a single rule is a near-miss."><button data-v="acc" aria-pressed="true">Accepted<span class="c">' + nAcc + '</span></button><button data-v="all" aria-pressed="false">+ BindCraft-rejected<span class="c">' + nRej + '</span></button></div>';
+    $('#funnel').parentNode.insertBefore(row, $('#funnel')); $$('#poolRow button').forEach((b) => (b.onclick = () => { st.pool = b.dataset.v; setPool(); $$('#poolRow button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); refresh(); })); }
+}
+
+/* ---------------- recipe, refresh ---------------- */
+$('#btnRecipe').onclick = () => { const rec = { version: 1, target: PF.t('query.recipe.target', null, T.name + ' ' + T.construct[0] + '-' + T.construct[1]), hotspots: [...hotSet], forbidden: [...avoidSet], rules: RULES.filter((r) => r.on).map((r) => Object.assign({ id: r.id }, r.type === 'bool' ? {} : r.type === 'set' ? { values: Array.from(r.sel) } : r.type === 'range' ? { min: r.val, max: r.val2 } : { op: r.op, value: r.val }, r.scope ? { run: r.scope } : {})) }; const sp = $('#btnRecipe span'); const done = (t) => { sp.textContent = t; setTimeout(() => (sp.textContent = 'Copy recipe'), 1500); }; try { navigator.clipboard.writeText(JSON.stringify(rec, null, 2)).then(() => done('Copied'), () => done('Clipboard blocked')); } catch (e) { done('Clipboard blocked'); } };
+function refresh(light) { evaluate(); if (!light) drawRules(); else { /* slider drag: update counts without rebuilding the DOM under the pointer */ const sel = RULES.filter((r) => r.on); $$('.rule').forEach((el) => { const r = RB[el.dataset.id]; if (!r.on) return; const rc = $('.rcount', el), v = $('.val', el), bar = $('.rbar i', el); if (rc) rc.innerHTML = '<b>' + EV.rpass[r.id] + '</b>/' + D.length + (EV.unique[r.id] ? ' · kills ' + EV.unique[r.id] + ' alone' : ''); if (v) v.textContent = ruleText(r); if (bar) bar.style.width = (100 * EV.rpass[r.id] / nD()) + '%'; const cv = $('.rexp canvas', el); if (cv) drawHist(cv, r); }); }
+  drawFunnel(); drawResults(); drawViewer(); $('#rulesSub').textContent = BS.plural(RULES.filter((r) => r.on).length, 'rule') + ' on'; }
+C.onTheme(() => refresh());
+addEventListener('resize', () => { if (st.sel) { const cv = $('.rexp canvas'); if (cv) drawHist(cv, RB[st.sel]); } });
+$$('[data-nav]').forEach((a) => a.addEventListener('click', (e) => { if (a.getAttribute('href') === '#') e.preventDefault(); }));
+window.__q = { RULES, RB, EV: () => EV, runNL, refresh, st, D: () => D, setPool, sendToBoard, csvOf, fastaOf, exportSet, rulesetObj, applyRuleset, rescue, bcFails, compileNL: (t) => compileNL(t), GROUPS };
+if (RUNMODE) { $('.cols > section.col:not(.panel)').classList.add('scroll'); mountRunControls(); const h = BS.link.parse(); if (h.pool === 'all' && HASREJ) { st.pool = 'all'; setPool(); $$('#poolRow button').forEach((x) => x.setAttribute('aria-pressed', String(x.dataset.v === 'all'))); } if (h.tab === 'near' || h.tab === 'rej' || h.tab === 'surv') st.tab = h.tab; }
+BS.runFilter.onChange(() => { setPool(); refresh(); });
+let decDirty = false; BS.decisions.onChange(() => { if (RUNMODE && !decDirty) { decDirty = true; setTimeout(() => { decDirty = false; drawResults(); }, 0); } });
+evaluate(); refresh();
+})();
+</script>
+</body>
+</html>

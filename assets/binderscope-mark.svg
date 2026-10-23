@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-label="Binderscope">
+  <!-- A lowercase b: a helix for the stem, a bowl holding the hotspot. The same
+       drawing as the launcher's mark. The stripes are cut with a mask rather
+       than painted in the background colour, so they show whatever is behind;
+       the stem and the bowl follow currentColor, which is what lets the header
+       colour them and favicon_svg() substitute a literal for a tab strip. -->
+  <defs>
+    <mask id="bs-mark-stem">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M9 57C12.5 57 16.5 50 20 50M9 46C12.5 46 16.5 39 20 39M9 35C12.5 35 16.5 28 20 28M9 24C12.5 24 16.5 17 20 17M9 13C12.5 13 16.5 6 20 6" fill="none" stroke="#000" stroke-width="2.6"/>
+    </mask>
+  </defs>
+  <g transform="translate(1.5 0)">
+    <rect x="9" y="3" width="11" height="57" rx="5.5" fill="currentColor" mask="url(#bs-mark-stem)"/>
+    <circle cx="36" cy="40" r="15" fill="none" stroke="currentColor" stroke-width="10"/>
+    <circle cx="36" cy="40" r="5.5" fill="#f08a24"/>
+  </g>
+</svg>

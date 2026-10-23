@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Demo · Overview · Q9NZQ7 · Binderscope</title>
+<script>if(location.hash=="#light")document.documentElement.setAttribute("data-theme","light");if(location.hash=="#dark")document.documentElement.setAttribute("data-theme","dark");</script>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/css/shared.css">
+<style>
+/* ---- Project overview ---- */
+.app { min-height: 100%; }
+.ov { flex: 1; min-height: 0; overflow: auto; padding: 18px 16px 28px; }
+.ovw { max-width: 1180px; margin: 0 auto; display: grid; gap: 16px; }
+.hero h1 { margin: 0 0 4px; font-size: 24px; font-weight: 600; letter-spacing: -.01em; line-height: 1.2; }
+.hero h1 .sh { color: var(--ink-3); font-weight: 500; margin-left: 8px; font-size: 18px; }
+.hero .lead { margin: 6px 0 10px; color: var(--ink-2); font-size: 14px; max-width: 78ch; line-height: 1.5; }
+.hero .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
+/* The pages are alternatives, not steps, and nothing on the page said so: five
+   identical boxes read as a checklist. Each carries its own colour and, above
+   its name, the question it answers, so the choice is between questions rather
+   than between names. The colour is an accent only -- the text is the ordinary
+   ink on the ordinary surface, so contrast does not depend on it. */
+.cardlede { margin: 0 0 10px; color: var(--ink-2); font-size: 13px; } .cardlede b { color: var(--ink); font-weight: 600; }
+.pcard { position: relative; display: grid; gap: 4px; align-content: start; padding: 13px 14px 13px 16px; background: var(--surface);
+         border: 1px solid var(--line); border-left: 3px solid var(--card, var(--accent)); border-radius: var(--radius);
+         color: var(--ink); text-decoration: none; min-width: 0; transition: border-color .12s ease, box-shadow .12s ease, transform .12s ease; }
+.pcard:hover { border-color: var(--card, var(--accent)); border-left-color: var(--card, var(--accent)); box-shadow: var(--shadow); transform: translateY(-1px); }
+.pcard:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
+.pcard .q { font-size: 11px; letter-spacing: .03em; color: var(--card, var(--accent)); font-weight: 600; }
+.pcard .t { font-weight: 600; font-size: 15px; display: flex; align-items: center; gap: 6px; } .pcard .t .ar { margin-left: auto; color: var(--card, var(--ink-3)); }
+.pcard .d { color: var(--ink-2); font-size: 12.5px; line-height: 1.45; }
+.pcard .s { margin-top: 4px; font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+/* Hues that hold up on both themes; they only ever carry an edge, a kicker and an arrow. */
+.pcard[data-page="board"] { --card: #9085e9; }
+.pcard[data-page="inspector"] { --card: #3fb3c8; }
+.pcard[data-page="map"] { --card: #e8833a; }
+.pcard[data-page="query"] { --card: #45b37a; }
+.pcard[data-page="guide"] { --card: #8a94ad; }
+.two { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 16px; }
+@media (max-width: 900px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.pad { padding: 0 12px 12px; min-width: 0; } .scrollx { overflow-x: auto; }
+table.rt { border-collapse: collapse; width: 100%; font-size: 12.5px; }
+table.rt th { text-align: left; font-weight: 600; font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+table.rt td { padding: 7px 10px 7px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+table.rt td.num, table.rt th.num { text-align: right; font-variant-numeric: tabular-nums; }
+table.rt tr:last-child td { border-bottom: 0; }
+.rt .sub { display: block; color: var(--ink-3); font-size: 11.5px; margin-top: 2px; }
+.fun { display: grid; gap: 14px; }
+.fun h3 { margin: 0 0 6px; font-size: 12px; font-weight: 600; color: var(--ink-2); }
+.fr { display: grid; grid-template-columns: minmax(130px, 220px) minmax(0, 1fr) 84px; gap: 8px; align-items: center; font-size: 12px; margin: 4px 0; }
+.fr .bar { height: 10px; background: var(--surface-2); border-radius: 3px; position: relative; overflow: hidden; }
+.fr .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 3px; }
+.fr.derived .bar i { background: repeating-linear-gradient(135deg, var(--accent) 0 4px, var(--accent-soft) 4px 8px); }
+.fr.unknown .bar { background: transparent; border: 1px dashed var(--line-strong); }
+.fr .n { text-align: right; font-variant-numeric: tabular-nums; } .fr .n b { font-weight: 600; } .fr .n span { color: var(--ink-3); margin-left: 4px; font-size: 11px; }
+.fr .l { min-width: 0; line-height: 1.3; }
+.kvl { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 6px 14px; margin: 0; font-size: 12.5px; }
+.kvl dt { color: var(--ink-3); } .kvl dd { margin: 0; min-width: 0; overflow-wrap: anywhere; } .kvl .mono { font-size: 11.5px; }
+.have { display: flex; flex-wrap: wrap; gap: 6px; }
+.have .chip.no { opacity: .55; text-decoration: line-through; text-decoration-color: var(--line-strong); }
+.revrow { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 10px; }
+.revrow input[type="text"] { width: 160px; }
+.note { color: var(--ink-3); font-size: 11.5px; line-height: 1.45; margin-top: 8px; }
+/* what stands out: statements counted from the data by the exporter */
+ul.hl { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.hl li { display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 10px; align-items: start; padding: 9px 12px; background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm); font-size: 13px; line-height: 1.5; color: var(--ink); }
+.hl li .dot { width: 10px; height: 10px; border-radius: 50%; margin-top: 5px; background: var(--info-ink); }
+.hl li.warn .dot { background: var(--warn); } .hl li.bad .dot { background: var(--bad); }
+.hl li .go { white-space: nowrap; font-size: 12px; color: var(--accent); text-decoration: none; padding: 1px 8px; border: 1px solid var(--line-strong); border-radius: 99px; }
+.hl li .go:hover { border-color: var(--accent); } .hl li .go:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
+@media (max-width: 640px) { .hl li { grid-template-columns: 10px minmax(0, 1fr); } .hl li .go { grid-column: 2; justify-self: start; } }
+</style>
+<meta name="description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:title" content="Binderscope demo: reviewing BindCraft binder designs">
+<meta property="og:description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:type" content="website">
+<meta name="robots" content="index,follow">
+<style id="bs-demo-css">
+.bs-demo{position:fixed;left:12px;bottom:12px;z-index:9999;display:flex;align-items:center;gap:8px;max-width:min(560px,calc(100vw - 24px));
+  padding:7px 10px 7px 12px;border-radius:10px;background:var(--surface,#fff);color:var(--ink-2,#444b5e);border:1px solid var(--line-strong,#c7ccda);
+  box-shadow:0 6px 24px rgba(0,0,0,.18);font:12px/1.35 var(--font-ui,system-ui,sans-serif)}
+.bs-demo b{color:var(--ink,#141824);font-weight:600}
+.bs-demo a{color:var(--accent,#4a3aa7);font-weight:600;text-decoration:none;white-space:nowrap}
+.bs-demo a:hover{text-decoration:underline}
+.bs-demo button{flex:none;border:0;background:none;color:var(--ink-3,#586280);font-size:15px;line-height:1;cursor:pointer;padding:0 2px}
+.bs-demo[hidden]{display:none}
+.bs-demo-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  text-decoration:none;color:var(--accent-ink,#fff);background:var(--accent,#4a3aa7);border:1px solid var(--accent,#4a3aa7);margin-left:6px}
+.bs-demo-chip:hover{filter:brightness(1.12)}
+@media print{.bs-demo,.bs-demo-chip{display:none}}
+</style>
+</head>
+<body data-page="index"><div class="bs-demo" id="bsDemo" role="note"><span><b>Demo.</b> One small BindCraft 2 run, reviewed by Binderscope. Click anything: decisions stay in your browser. These designs were never made or tested. <a href="https://github.com/schnickn/binderscope" target="_blank" rel="noopener">Get Binderscope &#8599;</a></span><button type="button" aria-label="Hide this note" title="Hide">&times;</button></div><script>(function(){var n=document.getElementById("bsDemo");try{if(sessionStorage.getItem("bs-demo-hidden"))n.hidden=true}catch(e){}n.querySelector("button").onclick=function(){n.hidden=true;try{sessionStorage.setItem("bs-demo-hidden","1")}catch(e){}}})();</script>
+
+<div class="app">
+  <header class="hdr">
+    <a class="brand" href="index.html" title="Project overview"><svg class="mark" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- A lowercase b: a helix for the stem, a bowl holding the hotspot. The same
+       drawing as the launcher's mark. The stripes are cut with a mask rather
+       than painted in the background colour, so they show whatever is behind;
+       the stem and the bowl follow currentColor, which is what lets the header
+       colour them and favicon_svg() substitute a literal for a tab strip. -->
+  <defs>
+    <mask id="bs-mark-stem">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M9 57C12.5 57 16.5 50 20 50M9 46C12.5 46 16.5 39 20 39M9 35C12.5 35 16.5 28 20 28M9 24C12.5 24 16.5 17 20 17M9 13C12.5 13 16.5 6 20 6" fill="none" stroke="#000" stroke-width="2.6"/>
+    </mask>
+  </defs>
+  <g transform="translate(1.5 0)">
+    <rect x="9" y="3" width="11" height="57" rx="5.5" fill="currentColor" mask="url(#bs-mark-stem)"/>
+    <circle cx="36" cy="40" r="15" fill="none" stroke="currentColor" stroke-width="10"/>
+    <circle cx="36" cy="40" r="5.5" fill="#f08a24"/>
+  </g>
+</svg><span class="bname">Binderscope</span><span class="bproj" title="Q9NZQ7">Q9NZQ7</span></a>
+    <div class="crumbs"><span>Campaigns</span><span>/</span><b id="crumbT">Overview</b><span class="muted" id="crumbS"></span></div>
+    <div class="grow"></div>
+    <span class="tag-run" id="tagMock">BindCraft output</span><a class="bs-demo-chip" href="https://github.com/schnickn/binderscope" target="_blank" rel="noopener" title="This is a demo with sample data. Binderscope is free to install and reviews your own runs.">Demo &middot; Get Binderscope &#8599;</a>
+    <div class="runslot" id="bsRunSlot" hidden></div>
+    <nav class="views" aria-label="Views"><a href="index.html" data-nav="index" aria-current="page">Overview</a><a href="board.html" data-nav="board">Board</a><a href="inspector.html" data-nav="inspector">Inspector</a><a href="map.html" data-nav="map">Map</a><a href="query.html" data-nav="query">Query</a><a class="extra" href="guide.html" data-nav="guide">Guide</a></nav>
+  </header>
+
+  <main class="ov" id="ov">
+    <div class="ovw">
+      <section class="hero" aria-label="Project">
+        <h1 id="hT">Project</h1>
+        <p class="lead" id="hLead"></p>
+        <div class="chips" id="hChips"></div>
+      </section>
+      <p class="cardlede" id="cardLede">Four ways in, and a guide. <b>Start with the question you actually have</b> &mdash; most reviews use one or two of these, not all of them.</p>
+      <section class="cards" id="cards" aria-label="Pages"></section>
+      <section class="panel" id="stand" aria-label="What stands out" hidden><div class="panel-h"><h2>What stands out</h2><span class="sub">counted from this bundle's data; screens, not verdicts</span></div><div class="pad"><ul class="hl" id="hlList"></ul></div></section>
+      <div class="two">
+        <section class="panel"><div class="panel-h"><h2>Runs</h2><span class="sub" id="runsSub"></span></div><div class="pad scrollx" id="runs"></div></section>
+        <section class="panel"><div class="panel-h"><h2>Funnel</h2><span class="sub">counts at each stage; a question mark is not known</span></div><div class="pad fun" id="funnel"></div></section>
+      </div>
+      <div class="two">
+        <section class="panel"><div class="panel-h"><h2>What this bundle carries</h2></div><div class="pad"><div class="have" id="have"></div><div class="note" id="haveNote">Checks that need data a bundle does not carry are switched off, never guessed.</div></div></section>
+        <section class="panel"><div class="panel-h"><h2>Your review</h2><span class="sub" id="revSub"></span></div><div class="pad"><div id="rev"></div></div></section>
+      </div>
+      <section class="panel"><div class="panel-h"><h2>Build</h2><span class="sub" id="buildSub"></span></div><div class="pad"><dl class="kvl" id="build"></dl></div></section>
+      <p class="note" id="foot">Count families, not sequences: a family is one backbone. Every score is a screen, not a verdict, and says what would confirm it.</p>
+      <p class="note" id="credit" hidden></p>
+    </div>
+  </main>
+</div>
+
+<script src="assets/js/bs.js"></script>
+<script src="data/campaign.js"></script>
+<script src="data/manifest.js"></script>
+<script>
+const RAW = BS.data('campaign');
+const MAN = BS.blob('manifest') || {};
+(function () {
+'use strict';
+const $ = (s, r) => (r || document).querySelector(s);
+const esc = BS.esc, P = BS.P, fmtN = BS.fmtN;
+const profile = BS.profile, T = RAW.target || {}, designs = RAW.designs || [], runs = BS.runs();
+const status = (d) => d.status || 'accepted';
+const accepted = designs.filter((d) => status(d) === 'accepted'), rejected = designs.filter((d) => status(d) === 'rejected');
+const famIds = (ds) => new Set(ds.map((d) => d.bb || d.id));
+const resName = (r) => { const i = (T.resi || []).indexOf(r); return (i >= 0 && T.resn ? T.resn[i] : '') + r; };
+const ranges = (rs) => (rs && rs.length ? rs.map((x) => (x[0] === x[1] ? x[0] : x[0] + '–' + x[1])).join(', ') : '');
+const pageList = Object.keys((MAN.bundle && MAN.bundle.pages) || {});
+const has = (name) => pageList.length === 0 || pageList.indexOf(name) >= 0;
+
+/* project header */
+const tName = profile.target.name || (RAW.run && RAW.run.name) || 'Binder designs', tShort = profile.target.short;
+$('#hT').innerHTML = esc(tName) + (tShort && tShort !== tName ? '<span class="sh">' + esc(tShort) + '</span>' : '');
+$('#crumbT').textContent = tShort || tName; $('#crumbS').textContent = '· ' + runs.length + (runs.length === 1 ? ' run' : ' runs') + ' · ' + accepted.length + ' designs';
+const nFam = famIds(accepted).size;
+$('#hLead').textContent = runs.length + (runs.length === 1 ? ' run' : ' runs') + ', ' + fmtN(accepted.length) + ' accepted designs' + (P.cap('families') ? ' in ' + fmtN(nFam) + ' backbone families' : '') + (rejected.length ? ', and ' + fmtN(rejected.length) + ' BindCraft-rejected structures (' + Array.from(new Set(rejected.map((d) => d.run || 'run'))).join(', ') + ') kept for near-miss rescue' : '') + '. Open a page below, or start with the family board.';
+const chips = []; const chip = (a, b) => chips.push('<span class="chip" title="' + esc(b || '') + '">' + a + '</span>');
+const tg = profile.target;
+if (tg.reference && tg.reference.given === false) chip('No reference structure', 'The construct is the frame: designs are compared on the construct, and the checks that need the rest of the protein were not run');
+else if (tg.reference && tg.reference.pdb) chip('Reference ' + esc(tg.reference.pdb) + (tg.reference.chain ? ' chain ' + esc(tg.reference.chain) : '') + (tg.reference.kind === 'experimental' ? ' · experimental' : tg.reference.kind ? ' · ' + (tg.reference.kind === 'unknown' ? 'taken as predicted' : 'predicted') : ''),
+  'Coordinates of every design are placed on this structure. ' + (tg.reference.evidence || []).join('; '));
+if (tg.uniprot) chip('UniProt ' + esc(tg.uniprot));
+if (tg.construct && tg.construct.first) chip('Construct ' + tg.construct.first + '–' + tg.construct.last + (tg.construct.label ? ' ' + esc(tg.construct.label) : ''), 'Union of the constructs of all runs');
+const hot = T.hotspots || []; if (hot.length) chip('Hotspots ' + hot.map(resName).join(', '), 'All hotspots of the project; each run has its own set (see the runs table)');
+$('#hChips').innerHTML = chips.join('');
+
+/* page cards */
+const CARDS = [
+  ['board', 'Family board', 'Triage backbone families: tiles, verdicts, diversity, decisions with a learning ranking, order list.', () => fmtN(nFam) + (P.cap('families') ? ' families' : ' designs'), 'Which do I order?'],
+  ['inspector', 'Design inspector', 'One design in depth: findings linked to 3D, contacts, confidence, specificity, sequence tracks.', () => fmtN(designs.filter((d) => d.inspect !== null && d.inspect !== undefined).length || accepted.length) + ' designs to inspect', 'Is this one any good?'],
+  ['map', 'Binding-mode map', 'Where the designs bind: epitope heat map, modes, fingerprints, picks, species and paralog specificity.', () => fmtN(Object.keys(RAW.modes || {}).length) + ' binding modes', 'Where do they bind?'],
+  ['query', 'Structure query', 'Rule stack with a funnel and near-miss rescue; type what you want in plain words.', () => fmtN(designs.length) + ' designs to query', 'Which meet my rule?'],
+];
+const pcard = (page, name, desc, sub, question) => '<a class="pcard" data-page="' + page + '" href="' + page + '.html">'
+  + '<span class="q">' + esc(question) + '</span><span class="t">' + esc(name) + '<span class="ar">→</span></span>'
+  + '<span class="d">' + esc(desc) + '</span><span class="s">' + esc(sub) + '</span></a>';
+const cards = CARDS.filter((c) => has(c[0])).map((c) => pcard(c[0], c[1], c[2], c[3](), c[4]));
+if ($('.views [data-nav="guide"]')) cards.push(pcard('guide', 'Guide', 'Quick start, the five pages, a 15-minute review recipe, how to read each check, shortcuts and a glossary.', 'about 10 minutes', 'How do I read this?'));
+$('#cards').innerHTML = cards.join('');
+
+/* what stands out: the exporter counts these from the data (campaign.highlights, also in the manifest); each may link to a page or a design */
+const HL = (RAW.highlights && RAW.highlights.length ? RAW.highlights : MAN.highlights) || [];
+if (HL.length) {
+  const LABEL = { board: 'Board', inspector: 'Inspector', map: 'Map', query: 'Query' };
+  $('#hlList').innerHTML = HL.map((h) => {
+    const l = h.link || {}, sev = ['info', 'warn', 'bad'].indexOf(h.severity) >= 0 ? h.severity : 'info';
+    const href = l.page && has(l.page) ? (l.design ? BS.link.design(l.design, l.run) : BS.link.page(l.page)) : '';
+    const go = href ? '<a class="go" href="' + esc(href) + '" title="' + esc(l.filter || '') + '">' + esc(l.design ? 'Open design' : 'Open ' + (LABEL[l.page] || l.page)) + '</a>' : '';
+    return '<li class="' + sev + '"><span class="dot" aria-hidden="true"></span><span>' + esc(h.text) + '</span>' + go + '</li>';
+  }).join('');
+  $('#stand').hidden = false;
+}
+
+/* runs table */
+function runRow(r) {
+  const own = designs.filter((d) => (d.run || 'run') === r.id), acc = own.filter((d) => status(d) === 'accepted'), rej = own.filter((d) => status(d) === 'rejected');
+  const nd = r.n_designs || {}, s = r.settings || {}, t = r.target || {};
+  const nA = nd.accepted !== undefined ? nd.accepted : acc.length, nR = nd.rejected !== undefined ? nd.rejected : rej.length, nF = nd.families !== undefined ? nd.families : famIds(acc).size;
+  const hs = (t.hotspots || s.hotspots || (runs.length === 1 ? T.hotspots : null) || []).map(resName).join(', ');
+  const cons = t.resi_ranges ? ranges(t.resi_ranges) + (t.removed && t.removed.length ? ' (without ' + ranges(t.removed) + ')' : '') : '';
+  const meta = [s.length_range ? 'length ' + s.length_range[0] + '–' + s.length_range[1] : '', s.protocol || '', s.advanced_settings || '', s.filters_name || ''].filter(Boolean).join(' · ');
+  return '<tr><td><b>' + esc(r.label || r.id) + '</b><span class="sub mono">' + esc(r.id) + (r.source ? ' · ' + esc(r.source) + (/^v\d/.test(r.tool_version || '') ? ' (' + esc(String(r.tool_version).replace(/\s*\(.*$/, '')) + ')' : '') : '') + (r.experimental ? ' · experimental reader' : '') + '</span></td><td class="num">' + fmtN(nA) + '</td><td class="num">' + (rejected.length || nR ? fmtN(nR) + '<span class="sub">' + (rej.length ? fmtN(rej.length) + ' with structures' : nR ? 'scores only, no structures' : '') + '</span>' : '–') + '</td><td class="num">' + fmtN(nF) + '</td>' +
+    '<td>' + esc(hs || '–') + (cons ? '<span class="sub">construct ' + esc(cons) + '</span>' : '') + (meta ? '<span class="sub">' + esc(meta) + '</span>' : '') + '</td></tr>';
+}
+$('#runs').innerHTML = '<table class="rt"><thead><tr><th>Run</th><th class="num">Accepted</th><th class="num" title="Sequences BindCraft scored and rejected (rows of its statistics). Only some runs keep their rejected structures: the inspector, map and query pages hold those, and the near-miss rescue works on them.">Rejected</th><th class="num">' + (P.cap('families') ? 'Families' : 'Designs') + '</th><th>Hotspots and settings</th></tr></thead><tbody>' + runs.map(runRow).join('') + '</tbody></table>' +
+  (runs.length > 1 ? '<div class="note">Runs with different settings are never pooled in an estimate: diversity and “need more designs” are per run.</div>' : '');
+$('#runsSub').textContent = runs.length + (runs.length === 1 ? ' run' : ' runs');
+
+/* funnel: observed counts as bars, derived estimates hatched, unknown counts as a question mark */
+const LEGACY_FUNNEL = [['n_total', 'Designs in the collection'], ['n_boltz', 'With a co-fold model'], ['n_sample', 'In this sample'], ['n_traj', 'Trajectories attempted'], ['n_traj_pass', 'Passed the trajectory filters'], ['n_scored', 'Sequences scored'], ['n_accepted', 'Accepted']];
+function funnelRows(r) {
+  if (r.funnel && r.funnel.length) return r.funnel.map((f) => ({ label: f.label, n: f.n, status: f.status || 'observed', note: f.note || '' }));
+  const src = r.n_traj !== undefined || r.n_accepted !== undefined || r.n_total !== undefined ? r : (RAW.run || {});
+  return LEGACY_FUNNEL.filter((k) => Number.isFinite(src[k[0]])).map((k) => ({ label: k[1], n: src[k[0]], status: 'observed', note: '' }));
+}
+$('#funnel').innerHTML = runs.map((r) => {
+  const rows = funnelRows(r), mx = Math.max(1, ...rows.map((x) => (Number.isFinite(x.n) ? x.n : 0)));
+  return '<div><h3>' + esc(r.label || r.id) + '</h3>' + (rows.length ? rows.map((x) => { const known = Number.isFinite(x.n); return '<div class="fr ' + x.status + '" title="' + esc(x.note || x.label) + '"><span class="l">' + esc(x.label) + '</span><span class="bar">' + (known ? '<i style="width:' + Math.max(0.5, 100 * x.n / mx).toFixed(1) + '%"></i>' : '') + '</span><span class="n">' + (known ? '<b>' + fmtN(x.n) + '</b>' : '<b class="muted" style="font-weight:400;font-style:italic">unknown</b>') + (x.status === 'derived' ? '<span>est.</span>' : '') + '</span></div>'; }).join('') : '<div class="muted">No funnel counts in this bundle.</div>') + '</div>';
+}).join('');
+
+/* capabilities */
+const HAVE = [['families', 'Backbone families'], ['has_traj', 'Generation order'], ['has_fold', 'Fold similarity (TM-align)'], ['rejected', 'Rejected designs with structures'], ['olig', 'Other-subunit context'], ['rest_ctx', 'Rest-of-protein context'], ['glycan', 'Glycan sites'], ['membrane', 'Membrane plane'], ['species_panel', 'Species panel'], ['paralog_panel', 'Paralog panel'], ['outcomes', 'Lab outcomes'], ['has_pae', 'PAE matrices'], ['ipsae', 'ipSAE'], ['has_boltz', 'Independent co-fold']];
+const OFF = P.get('caps_off', {}) || {};      // why a context flag is off: no reference was given, or the reference holds nothing for it
+$('#have').innerHTML = HAVE.map((h) => '<span class="chip' + (P.cap(h[0]) ? '' : ' no') + '" title="' + esc(P.cap(h[0]) ? 'in this bundle' : OFF[h[0]] ? 'not run: ' + OFF[h[0]].note : 'not in this data, so the checks that need it are off') + '">' + esc(h[1]) + '</span>').join('');
+{ // Two situations look the same in the chips and are not: the checks never ran (no reference), or they ran on a reference that held nothing to test against. Neither is a pass.
+  const names = { olig: 'the other subunits', rest_ctx: 'the rest of the protein and the cut ends', glycan: 'glycan sites', membrane: 'the membrane plane' };
+  const list = (why) => Object.keys(names).filter((k) => OFF[k] && OFF[k].why === why).map((k) => names[k]);
+  const nr = list('no_reference'), rl = list('reference_lacks'), say = [], and = (a) => (a.length > 1 ? a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1] : a.join(''));
+  if (nr.length) say.push('<b>No reference structure was given</b>, so no design was compared with ' + esc(and(nr)) + '. A design with no finding there was not found clear of them; it was not tested.');
+  if (rl.length) say.push('<b>The reference structure had nothing to test against</b> for ' + esc(and(rl)) + ' (' + Object.keys(names).filter((k) => OFF[k] && OFF[k].why === 'reference_lacks').map((k) => esc(OFF[k].note)).join('; ') + '). Those checks ran on nothing, which is not the same as passing.');
+  if (P.get('checks.context.hard', false) !== true && (P.cap('olig') || P.cap('rest_ctx'))) say.push('<b>The Context check is advisory</b>: ' + esc(P.get('checks.context.hard_basis', 'it places the binder against the reference as one static model')) + '. It is shown with its reasons and can lead to REVIEW, never to NO PASS on its own.');
+  $('#haveNote').innerHTML = (say.length ? say.join(' ') + ' ' : '') + 'Checks that need data a bundle does not carry are switched off, never guessed.';
+}
+
+/* review: decisions live in this browser; save and load a review file */
+function drawReview() {
+  const D = BS.decisions, fam = Object.keys(D.state('family')).length, des = Object.keys(D.state('design')).length, n = fam + des;
+  $('#revSub').textContent = n ? n + (n === 1 ? ' decision' : ' decisions') + ' in this browser' : 'no decisions yet';
+  $('#rev').innerHTML = '<div class="note" style="margin:0">Decisions you make on the board are saved in this browser' + (BS.storage.persistent === false ? ' (storage is blocked here: they are kept in memory only, so save a review file)' : '') + ' and can be saved as a review file, one JSONL line per decision.</div>' +
+    '<div class="revrow"><label class="chk">Reviewer <input type="text" id="revName" value="' + esc(D.reviewer()) + '" maxlength="80" aria-label="Reviewer name"></label><button class="btn sm" id="revSave">Save review file</button><button class="btn sm" id="revLoad">Load review file</button></div><div class="note" id="revMsg" aria-live="polite"></div>';
+  $('#revName').onchange = (e) => { D.setReviewer(e.target.value); };
+  if (!D.count()) { $('#revSave').disabled = true; $('#revSave').title = 'Nothing to save yet: make decisions on the board first'; }
+  $('#revSave').onclick = () => { const fn = D.saveFile(); $('#revMsg').textContent = 'Saved ' + fn + '. Move it into the bundle’s reviews/ folder to keep it with the bundle.'; };
+  $('#revLoad').onclick = () => { D.pickFile().then((r) => { if (r) { $('#revMsg').textContent = r.added + ' added, ' + r.duplicates + ' already known' + (r.restored ? ', ' + r.restored + ' brought back after a clear' : '') + (r.invalid.length ? ', ' + r.invalid.length + ' lines skipped' : '') + '.'; drawReview(); } }, () => { $('#revMsg').textContent = 'Could not read that file.'; }); };
+}
+drawReview();
+
+/* credit line of the profile (HTML written by the exporter) */
+if (profile.credit && profile.credit.html) { const c = $('#credit'); c.innerHTML = profile.credit.html; c.hidden = false; }
+
+/* build info */
+const tool = MAN.tool || {}, b = MAN.bundle || {}, val = MAN.validation || {}, srcs = MAN.sources || [];
+const rows = [];
+const kv = (k, v) => { if (v !== undefined && v !== null && v !== '') rows.push('<dt>' + esc(k) + '</dt><dd>' + v + '</dd>'); };
+kv('Tool', tool.name ? esc(tool.name + (tool.version ? ' ' + tool.version : '')) : '');
+kv('Built', esc(MAN.created || ''));
+kv('Bundle id', b.id ? '<span class="mono">' + esc(b.id) + '</span> <span class="muted">(review files refer to it)</span>' : '');
+kv('Reference structure', profile.target.reference && profile.target.reference.given === false ? 'none given: the construct is the frame' : (profile.target.reference && profile.target.reference.pdb ? esc(profile.target.reference.pdb) + (profile.target.reference.kind === 'experimental' ? ' (experimental' + (profile.target.reference.method ? ', ' + esc(profile.target.reference.method) : '') + ')' : profile.target.reference.kind === 'unknown' ? ' (the file does not say whether it is predicted; taken as predicted)' : ' (predicted)') : ''));
+kv('Inputs', srcs.length ? srcs.length + (srcs.length === 1 ? ' file' : ' files') + ' with sha256 in the manifest' : '');
+kv('Counts check', val.counts_match_csv === true ? 'match the run CSVs' : val.counts_match_csv === false ? '<b>do not match the CSVs</b>: see data/manifest.json' : '');
+const agree = val.metric_agreement ? Object.keys(val.metric_agreement).length : 0;
+kv('Recomputed metrics', agree ? agree + ' compared with the values the design tool wrote (data/manifest.json)' : '');
+const wr = MAN.warnings || []; kv('Warnings', wr.length ? '<b>' + wr.length + '</b>: ' + esc(wr.slice(0, 3).join(' | ')) : '');
+const pv = MAN.privacy; kv('Privacy', pv ? 'no binder sequence and no design id left the machine while building' + (pv.network_requests === 0 ? '; no network requests' : '') : '');
+kv('Data files', '<span class="mono">data/*.json</span> for tools, <span class="mono">data/*.js</span> for the pages (the same objects)');
+$('#build').innerHTML = rows.join('') || '<dt>Manifest</dt><dd>none</dd>'; $('#buildSub').textContent = b.name || '';
+})();
+</script>
+</body>
+</html>

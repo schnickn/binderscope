@@ -1,0 +1,1385 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Demo · Binder Family Board</title>
+<script>if(location.hash=="#light")document.documentElement.setAttribute("data-theme","light");if(location.hash=="#dark")document.documentElement.setAttribute("data-theme","dark");</script>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/css/shared.css">
+<style>
+/* ---- Family Board ---- */
+.app { min-height: 820px; }
+.sumrow { flex: none; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.15fr); gap: 10px; padding: 10px 16px 0; }
+.sumrow .panel { min-height: 0; }
+.sumb { padding: 0 12px 10px; display: grid; gap: 8px; min-width: 0; }
+.fr2 { display: grid; grid-template-columns: 150px minmax(0, 1fr) 92px; gap: 8px; align-items: center; font-size: 12px; }
+.fr2 .bar { height: 10px; background: var(--surface-2); border-radius: 3px; position: relative; overflow: hidden; }
+.fr2 .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 3px; }
+.fr2 .n { text-align: right; font-variant-numeric: tabular-nums; } .fr2 .n b { font-weight: 600; } .fr2 .n span { color: var(--ink-3); margin-left: 4px; font-size: 11px; }
+.fr2.dim .bar i { background: var(--ink-3); opacity: .55; }
+.reasons2 { display: flex; flex-wrap: wrap; gap: 5px; font-size: 11px; color: var(--ink-3); align-items: center; }
+.reasons2 .chip { font-size: 11px; }
+.big2 { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.big2 b { font-size: 26px; font-weight: 600; letter-spacing: -.02em; font-variant-numeric: tabular-nums; line-height: 1; } .big2 span { color: var(--ink-2); font-size: 12.5px; }
+.sumcv { width: 100%; height: 92px; display: block; }
+.kv { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.kv > div { background: var(--surface); padding: 5px 8px; min-width: 0; } .kv .k { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; } .kv .v { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.advice { display: flex; gap: 8px; align-items: flex-start; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--surface-2); font-size: 12px; line-height: 1.4; color: var(--ink-2); }
+.advice b { color: var(--ink); } .advice.keep { border-color: var(--warn); background: var(--warn-soft); } .advice.enough { border-color: var(--good); background: var(--good-soft); } .advice.maybe { border-color: var(--line-strong); }
+.advice .ic { margin-top: 2px; flex: none; } .advice.early { border-color: var(--line-strong); border-style: dashed; }
+.grp3 { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink-2); flex-wrap: wrap; }
+.replay { font-size: 11.5px; line-height: 1.4; color: var(--ink-2); padding: 6px 9px; border-radius: 8px; background: var(--accent-soft); border: 1px solid var(--accent); } .replay b { color: var(--ink); }
+.kv .k { overflow: hidden; text-overflow: ellipsis; }
+.sl { display: grid; grid-template-columns: auto 1fr auto; gap: 8px; align-items: center; font-size: 11.5px; color: var(--ink-2); }
+.sl output { font-family: var(--font-mono); font-size: 11.5px; color: var(--ink); }
+.toolbar { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 16px; min-width: 0; }
+.toolbar .grp { display: flex; align-items: center; gap: 6px; color: var(--ink-3); font-size: 11.5px; } .toolbar .grow { flex: 1; }
+.prog { display: flex; align-items: center; gap: 10px; min-width: 0; } .progbar { display: flex; height: 8px; width: 150px; border-radius: 4px; overflow: hidden; background: var(--surface-3); gap: 1px; } .progbar i { display: block; height: 100%; }
+.counts { display: flex; gap: 10px; font-size: 12px; white-space: nowrap; } .counts b { font-variant-numeric: tabular-nums; }
+/* The workbench: families on the left, the design you are deciding on in the
+   middle with the room to be looked at, what the decisions add up to on the
+   right. The statistics are a drawer below, because they are read once and the
+   decision is made many times. */
+.main { flex: 1; min-height: 400px; display: grid; grid-template-columns: var(--famrail, 250px) minmax(0, 1fr) var(--side, 330px); gap: 10px; padding: 0 16px 10px; }
+.side { min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: auto; } .side .panel { flex: none; }
+.sheet { position: relative; min-height: 360px; overflow: auto; border-radius: var(--radius); background: var(--surface); border: 1px solid var(--line); padding: 10px; }
+/* One family per row in the rail: the rail is a list of what is left to do, and
+   a grid of small squares is harder to walk with the arrow keys than a column. */
+.tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--tile, 190px), 1fr)); gap: 8px; }
+.main > .sheet { padding: 8px; }
+.main > .sheet .tiles { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+.gh { grid-column: 1 / -1; display: flex; align-items: center; gap: 8px; padding: 10px 2px 2px; font-weight: 600; font-size: 12.5px; } .gh .c { color: var(--ink-3); font-weight: 400; } .gh .ln { flex: 1; height: 1px; background: var(--line); }
+.tile { position: relative; border: 1px solid var(--line); border-radius: 9px; background: var(--surface); overflow: hidden; cursor: pointer; display: flex; flex-direction: column; outline: none; }
+.tile:hover { border-color: var(--line-strong); } .tile.focus { border-color: var(--accent); box-shadow: 0 0 0 2px var(--accent); z-index: 2; }
+.tile .cw { position: relative; } .tile canvas { width: 100%; aspect-ratio: 190 / 124; background: var(--viewer-bg); }
+.tile.keep { box-shadow: inset 0 0 0 2px var(--good); } .tile.reject { opacity: .45; } .tile.maybe { box-shadow: inset 0 0 0 2px var(--warn); } .tile.focus.keep { box-shadow: 0 0 0 2px var(--accent), inset 0 0 0 2px var(--good); }
+.tile .tl { position: absolute; left: 6px; top: 6px; display: flex; gap: 4px; align-items: center; pointer-events: none; flex-wrap: wrap; max-width: 80%; } .tile .tr { position: absolute; right: 6px; top: 6px; display: flex; gap: 4px; align-items: center; pointer-events: none; }
+.tile .bl { position: absolute; left: 6px; bottom: 6px; pointer-events: none; display: flex; gap: 4px; }
+.pill { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px 1px 4px; background: color-mix(in srgb, var(--surface) 88%, transparent); border: 1px solid var(--line); border-radius: 99px; font-size: 10.5px; font-weight: 600; color: var(--ink-2); backdrop-filter: blur(3px); white-space: nowrap; }
+.pill.dec { padding: 2px; width: 20px; height: 20px; justify-content: center; } .pill.keep { background: var(--good); border-color: var(--good); color: #fff; } .pill.reject { background: var(--ink-3); border-color: var(--ink-3); color: var(--surface); } .pill.maybe { background: var(--warn); border-color: var(--warn); color: #2a1d00; } .pill.q { color: var(--accent); border-color: var(--accent); }
+.tile .ft { display: grid; gap: 4px; padding: 6px 8px 7px; border-top: 1px solid var(--line); font-size: 11px; }
+.tile .r1 { display: flex; justify-content: space-between; gap: 6px; align-items: baseline; } .tile .id { font-family: var(--font-mono); font-weight: 500; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; } .tile .m { color: var(--ink-2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.sibs { display: flex; gap: 3px; align-items: center; } .sibs i { width: 14px; height: 9px; border-radius: 2px; display: block; background: var(--surface-3); position: relative; } .sibs i.pass { background: var(--good); } .sibs i.review { background: var(--warn); } .sibs i.fail { background: var(--bad); opacity: .75; } .sibs i.rep { outline: 2px solid var(--ink); outline-offset: 1px; } .sibs i.pick::after { content: ""; position: absolute; right: -2px; top: -4px; width: 6px; height: 6px; border-radius: 50%; background: var(--hotspot); border: 1px solid var(--surface); }
+.tile .pbar { height: 3px; border-radius: 2px; background: var(--surface-3); overflow: hidden; } .tile .pbar i { display: block; height: 100%; background: var(--accent); }
+.rail { min-height: 0; display: flex; flex-direction: column; gap: 10px; overflow: auto; } .rail .panel { flex: none; }
+/* The stage. #pFocus fills the column and the viewer takes what is left after
+   the heading and the buttons, so the structure is the largest thing on screen
+   instead of a 393x248 thumbnail three screens down. */
+.rail { min-height: 0; }
+.rail > #pFocus { display: flex; flex-direction: column; height: 100%; min-height: 0; }
+#pFocus > .fh, #pFocus > .why, #pFocus > .decbtns, #pFocus > .decnote { flex: none; }
+#pFocus > .fv { flex: 1 1 auto; min-height: 320px; height: auto; }
+/* The sequence table, the checks and the reasons scroll inside a third of the
+   column at most. They are read after the structure, not instead of it. */
+.fdetail { flex: 0 1 auto; min-height: 0; max-height: 34%; overflow: auto; }
+.fv { position: relative; height: 250px; background: var(--viewer-bg); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); } .fv canvas { position: absolute; inset: 0; } .fv .ov { position: absolute; left: 8px; bottom: 6px; right: 8px; display: flex; justify-content: space-between; gap: 6px; pointer-events: none; font-size: 11px; color: var(--ink-3); }
+.fh { display: flex; align-items: center; gap: 8px; padding: 10px 12px 6px; flex-wrap: wrap; } .fh .id { font-family: var(--font-mono); font-weight: 600; font-size: 13.5px; min-width: 0; }
+.decnote { padding: 0 12px 8px; font-size: 11.5px; line-height: 1.4; color: var(--ink-3); } .decnote:empty { display: none; } .decnote b { color: var(--ink-2); font-weight: 600; }
+.decbtns { display: flex; gap: 6px; padding: 8px 12px 10px; } .decbtns .btn { flex: 1; justify-content: center; }
+#pFocus > .decbtns { padding: 10px 12px; border-top: 1px solid var(--line); background: var(--surface); }
+#pFocus > .decbtns .btn { padding: 11px 10px; font-size: 14px; }
+
+/* Statistics, below the work rather than above it. */
+.statdrawer { flex: none; margin: 0 16px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
+.drawer-h { width: 100%; display: flex; align-items: center; gap: 10px; padding: 9px 12px; background: none; border: 0;
+            color: var(--ink-2); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.drawer-h:hover { color: var(--ink); }
+.drawer-h .dh-t { font-weight: 600; color: var(--ink); }
+.drawer-h .chev { display: inline-block; font-size: 10px; color: var(--ink-3); transition: transform .12s ease; }
+.statdrawer[data-open="1"] .drawer-h .chev { transform: rotate(90deg); }
+.drawer-b { border-top: 1px solid var(--line); padding-bottom: 10px; }
+.drawer-b .sumrow { padding-top: 10px; }
+.btn.keep { border-color: var(--good); color: var(--good-ink); } .btn.keep:hover { background: var(--good-soft); } .btn.maybe { border-color: var(--warn); color: var(--warn-ink); } .btn.maybe:hover { background: var(--warn-soft); } .btn.reject { border-color: var(--bad); color: var(--bad-ink); } .btn.reject:hover { background: var(--bad-soft); }
+.btn.on.keep { background: var(--good); color: #fff; } .btn.on.maybe { background: var(--warn); color: #2a1d00; } .btn.on.reject { background: var(--bad); color: #fff; }
+table.sib { border-collapse: collapse; width: 100%; font-size: 11.5px; } table.sib th { text-align: left; font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); padding: 4px 6px; border-bottom: 1px solid var(--line); font-weight: 600; white-space: nowrap; } table.sib td { padding: 4px 6px; border-bottom: 1px solid var(--line); white-space: nowrap; font-variant-numeric: tabular-nums; } table.sib tr { cursor: pointer; } table.sib tr:hover td { background: var(--surface-2); } table.sib tr.cur td { background: var(--accent-soft); } table.sib tr.best td:first-child { font-weight: 700; }
+.ck { display: grid; grid-template-columns: 18px 74px 1fr; gap: 6px; align-items: start; padding: 5px 12px; font-size: 12px; border-top: 1px solid var(--line); } .ck .ic { margin-top: 2px; } .ck.pass .ic { color: var(--good-ink); } .ck.warn .ic { color: var(--warn-ink); } .ck.fail .ic { color: var(--bad-ink); } .ck .n { font-weight: 600; } .ck .d { color: var(--ink-2); } .ck.off .ic, .ck.off .d { color: var(--ink-3); } .ck .adv { color: var(--ink-3); font-style: italic; }
+.reasons { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 12px 10px; border-top: 1px solid var(--line); } .reasons .chip.btnlike kbd { font-family: var(--font-mono); font-size: 10px; color: var(--ink-3); }
+.secth { padding: 9px 12px 5px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; display: flex; gap: 8px; align-items: center; } .secth .grow { flex: 1; } .secth .nt { text-transform: none; letter-spacing: 0; font-weight: 400; }
+.switch { display: inline-flex; align-items: center; gap: 7px; cursor: pointer; font-size: 12px; color: var(--ink-2); user-select: none; text-transform: none; letter-spacing: 0; font-weight: 500; }
+.switch input { appearance: none; width: 30px; height: 17px; border-radius: 9px; background: var(--line-strong); position: relative; cursor: pointer; margin: 0; transition: background .15s; }
+.switch input::after { content: ""; position: absolute; left: 2px; top: 2px; width: 13px; height: 13px; border-radius: 50%; background: var(--surface); box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .15s; }
+.switch input:checked { background: var(--accent); } .switch input:checked::after { transform: translateX(13px); } .switch input:focus-visible { outline: 2px solid var(--accent-hi); outline-offset: 2px; }
+.stat2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-top: 1px solid var(--line); } .stat2 > div { background: var(--surface); padding: 8px 12px; } .stat2 .k { font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); } .big { font-size: 22px; font-weight: 600; letter-spacing: -.01em; font-variant-numeric: tabular-nums; }
+.wrow { display: grid; grid-template-columns: 150px 1fr 38px; gap: 8px; align-items: center; padding: 2px 12px; font-size: 11.5px; color: var(--ink-2); } .wrow .bar { position: relative; height: 10px; background: var(--surface-2); border-radius: 3px; } .wrow .bar::before { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--line-strong); } .wrow .bar i { position: absolute; top: 1px; bottom: 1px; border-radius: 2px; } .wrow .bar i.pos { left: 50%; background: var(--m1); } .wrow .bar i.neg { right: 50%; background: var(--bad); } .wrow output { text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-3); }
+.paused .wrow { opacity: .55; }
+.qrow { display: grid; grid-template-columns: 64px 1fr auto; gap: 8px; align-items: center; padding: 4px 12px; cursor: pointer; } .qrow:hover { background: var(--surface-2); } .qrow canvas { width: 64px; height: 44px; border-radius: 5px; background: var(--viewer-bg); border: 1px solid var(--line); } .qrow .a { font-family: var(--font-mono); font-size: 11.5px; font-weight: 500; } .qrow .b { font-size: 11px; color: var(--ink-3); }
+.banner { display: none; align-items: center; gap: 10px; padding: 6px 16px; background: var(--accent-soft); border-bottom: 1px solid var(--accent); font-size: 12px; } .banner.on { display: flex; }
+.modal { position: fixed; inset: 0; z-index: 80; display: none; align-items: center; justify-content: center; background: rgba(10, 12, 18, .55); padding: 16px; } .modal.on { display: flex; }
+.mbox { width: min(1040px, 100%); max-height: 100%; background: var(--surface); border-radius: 12px; border: 1px solid var(--line-strong); box-shadow: var(--shadow); display: flex; flex-direction: column; overflow: hidden; }
+.mbox .mh { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--line); } .mbox .mh h2 { margin: 0; font-size: 15px; font-weight: 600; flex: 1; } .mbox .mb { overflow: auto; padding: 14px 16px 16px; min-height: 0; }
+.cmpgrid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0; } .cmpgrid .cvw { position: relative; min-height: 420px; background: var(--viewer-bg); } .cmpgrid canvas { position: absolute; inset: 0; }
+.cmp td:first-child, .cmp th:first-child { position: sticky; left: 0; background: var(--surface); } .cmp td.best { font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.hintbar { display: flex; gap: 12px; flex-wrap: wrap; color: var(--ink-3); font-size: 11.5px; align-items: center; } .hintbar span { display: inline-flex; gap: 4px; align-items: center; white-space: nowrap; }
+.tree { font-family: var(--font-mono); font-size: 12px; line-height: 1.6; background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; } .tree .ok { color: var(--good-ink); } .tree .miss { color: var(--warn-ink); } .tree .mu { color: var(--ink-3); }
+.cols2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; } .card { border: 1px solid var(--line); border-radius: 10px; padding: 12px; display: grid; gap: 8px; align-content: start; } .card h3 { margin: 0; font-size: 13px; } .card p { margin: 0; color: var(--ink-2); font-size: 12.5px; line-height: 1.45; }
+.map td, .map th { padding: 4px 8px; } .tag { font-size: 10.5px; font-weight: 600; letter-spacing: .05em; text-transform: uppercase; padding: 1px 7px; border-radius: 99px; } .tag.ok { background: var(--good-soft); color: var(--good-ink); } .tag.warn { background: var(--warn-soft); color: var(--warn-ink); } .tag.mu { background: var(--surface-3); color: var(--ink-3); }
+@media (max-width: 1400px) { .main { grid-template-columns: var(--famrail, 230px) minmax(0, 1fr); } .side { grid-column: 1 / -1; flex-direction: row; flex-wrap: wrap; } .side .panel { flex: 1 1 320px; } }
+@media (max-width: 1200px) { .sumrow, .sumrow.scaf { grid-template-columns: minmax(0, 1fr); } .main { grid-template-columns: minmax(0, 1fr); } .sheet { max-height: 40vh; } .main > .sheet .tiles { grid-template-columns: repeat(auto-fill, minmax(var(--tile, 190px), 1fr)); } .rail { overflow: visible; } .rail > #pFocus { height: auto; } #pFocus > .fv { min-height: 320px; } }
+@media (max-width: 860px) { html, body { height: auto; } .app { height: auto; } .cmpgrid, .cols2 { grid-template-columns: 1fr; } .fr2 { grid-template-columns: 110px 1fr 80px; } }
+
+.credit { flex: none; padding: 4px 16px 8px; font-size: 11px; color: var(--ink-3); } .credit a { color: var(--ink-2); }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.labbar { display: grid; grid-template-columns: 74px minmax(0, 1fr) 118px; gap: 8px; align-items: center; font-size: 12px; }
+.labbar .bar { height: 10px; background: var(--surface-2); border-radius: 3px; position: relative; overflow: visible; } .labbar .bar i { position: absolute; left: 0; top: 0; bottom: 0; border-radius: 3px; } .labbar .bar u { position: absolute; top: -3px; bottom: -3px; width: 2px; background: var(--ink); border-radius: 1px; }
+.labbar .n { text-align: right; font-variant-numeric: tabular-nums; } .labbar .n b { font-weight: 600; } .labbar .n span { color: var(--ink-3); margin-left: 4px; font-size: 11px; }
+.labh { font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin-top: 2px; }
+/* ---- Binderscope additions (elements marked data-new are not part of the mockup pages) ---- */
+.fr3 { display: grid; gap: 3px 8px; align-items: baseline; font-size: 12px; min-width: 0; } .fr3 .h { font-weight: 600; color: var(--ink-2); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .fr3 .l { min-width: 0; line-height: 1.3; }
+.fr3 .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; } .fr3 .n b { font-weight: 600; } .fr3 .u { color: var(--ink-3); font-style: italic; } .fr3 .n span:not(.u) { color: var(--ink-3); margin-left: 3px; font-size: 10.5px; font-style: normal; }
+.fr2 .n .u { color: var(--ink-3); font-style: italic; font-weight: 400; } .fr2 .n .e { color: var(--ink-3); font-size: 10.5px; margin-left: 3px; }
+.rblk { border: 1px solid var(--line); border-radius: 8px; padding: 6px 8px 8px; display: grid; gap: 6px; min-width: 0; } .rblk .rh { font-size: 11px; color: var(--ink-3); line-height: 1.35; } .rblk .rh b { color: var(--ink); font-weight: 600; }
+.rblk .big2 b { font-size: 20px; } .rblk .kv .k { font-size: 9.5px; letter-spacing: .02em; }
+.mets { font-size: 10.5px; color: var(--ink-3); line-height: 1.35; font-variant-numeric: tabular-nums; } .pill.run { color: var(--ink); } .pill.off { color: var(--bad-ink); border-color: var(--bad); }
+.why { padding: 2px 12px 8px; font-size: 12px; color: var(--ink-2); line-height: 1.4; } .why b { color: var(--ink); } .why ul { margin: 3px 0 0; padding-left: 16px; } .why li { margin: 1px 0; }
+table.sib.dense th, table.sib.dense td { padding: 4px 4px; } table.sib.dense .st { padding: 1px 5px 1px 4px; letter-spacing: 0; }
+.rejrow td { color: var(--ink-3); } .rejrow .tag { margin-left: 4px; } table.sib tr.rejrow:hover td { background: var(--surface-2); }
+.srch { width: 190px; max-width: 100%; } .rowbtns { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.notice { margin: 0 16px 8px; padding: 6px 10px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--surface); font-size: 12px; color: var(--ink-2); } .notice.bad { border-color: var(--bad); background: var(--bad-soft); color: var(--bad-ink); } .notice.good { border-color: var(--good); background: var(--good-soft); color: var(--good-ink); } .notice[hidden] { display: none; }
+.slrow { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: baseline; font-size: 11.5px; padding: 2px 0; } .slrow a { color: var(--ink); text-decoration: none; font-family: var(--font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .slrow a:hover { text-decoration: underline; } .slrow .m { color: var(--ink-3); }
+.helpt { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: 12.5px; } .helpt td { padding: 4px 8px; border-bottom: 1px solid var(--line); vertical-align: top; } .helpt td:first-child { white-space: nowrap; width: 112px; } .helpt h4 { margin: 10px 0 4px; font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); }
+.revrow { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; } .revrow input[type="text"] { width: 150px; }
+.notice.confirm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; border-color: var(--warn); background: var(--warn-soft); color: var(--warn-ink); } .notice.confirm[hidden] { display: none; } .notice.confirm .msg { flex: 1 1 320px; min-width: 0; }
+.rescue { padding: 5px 8px; border-radius: 8px; border: 1px dashed var(--line-strong); font-size: 11.5px; line-height: 1.4; color: var(--ink-2); } .rescue[hidden] { display: none; } .rescue a { color: var(--accent); }
+.tip .pnote { max-width: 300px; white-space: normal; line-height: 1.4; }
+@media (max-width: 860px) { .fr3 { font-size: 11.5px; } .srch { width: 100%; } }
+/* ---- paratope card (scaffolded runs): replaces the fold-diversity card; see docs/viewer_board.md ---- */
+.pbox { display: grid; gap: 9px; min-width: 0; }
+.pnote { display: flex; gap: 8px; align-items: flex-start; padding: 6px 9px; border-radius: 8px; border: 1px dashed var(--line-strong); background: var(--surface-2); font-size: 12px; line-height: 1.4; color: var(--ink-2); } .pnote b { color: var(--ink); } .pnote .ic { flex: none; margin-top: 2px; }
+.pstack { display: grid; grid-template-columns: 54px minmax(0, 1fr); gap: 5px 8px; align-items: center; font-size: 11.5px; color: var(--ink-2); }
+.pbar { display: flex; gap: 1px; height: 15px; border-radius: 4px; overflow: hidden; background: var(--surface-2); } .pbar i { display: block; min-width: 2px; } .pbar.none { align-items: center; padding: 0 7px; font-size: 11px; color: var(--ink-3); font-style: italic; border: 1px dashed var(--line-strong); background: transparent; }
+.pleg { display: flex; flex-wrap: wrap; gap: 3px 12px; font-size: 11.5px; color: var(--ink-2); } .pleg span { display: inline-flex; gap: 5px; align-items: center; white-space: nowrap; } .pleg i { display: inline-block; width: 9px; height: 9px; border-radius: 2px; } .pleg b { font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.pcon { font-size: 12px; line-height: 1.45; color: var(--ink-2); } .pcon b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.pcols { display: grid; gap: 9px 18px; min-width: 0; } .pcol { display: grid; gap: 9px; align-content: start; min-width: 0; }
+.sumb { container-type: inline-size; } @container (min-width: 540px) { .pcols { grid-template-columns: minmax(0, 1.08fr) minmax(0, 1fr); } }
+@media (min-width: 1201px) { .sumrow.scaf { grid-template-columns: minmax(0, .82fr) minmax(0, 1.6fr) minmax(0, .92fr); } }
+.pax { display: grid; grid-template-columns: 74px minmax(0, 1fr); gap: 7px 10px; font-size: 12px; align-items: baseline; line-height: 1.4; } .pax .h { font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; } .pax b { font-weight: 600; font-variant-numeric: tabular-nums; } .pax .u { color: var(--ink-3); font-style: italic; } .pax .res { font-family: var(--font-mono); font-size: 11.5px; }
+.pax svg { display: block; width: 100%; max-width: 330px; height: 38px; margin-top: 2px; } .pax svg text { font-family: var(--font-mono); font-size: 9.5px; fill: var(--ink-3); }
+.pfoot { font-size: 11px; line-height: 1.4; color: var(--ink-3); } .pfoot p { margin: 0 0 3px; }
+.pchips { display: flex; flex-wrap: wrap; gap: 4px; } .pchips .chip { font-size: 11px; padding: 1px 7px; } .pchips .chip b { color: var(--ink); font-weight: 600; }
+/* ---- tag and fusion: the summary card, the tile pill and the focus panel (docs/termini.md); the chips are shared styles from common.js ---- */
+.tagrow { grid-template-columns: minmax(0, 1fr); padding-top: 10px; } .tagrow[hidden] { display: none; }
+.tmruns { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 12px 22px; align-items: start; }
+.tmrun { display: grid; gap: 7px; min-width: 0; } .tmh { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-size: 12.5px; }
+.tmr { display: grid; grid-template-columns: 150px minmax(0, 1fr) 218px; gap: 8px; align-items: center; font-size: 12px; padding: 1px 4px; border-radius: 6px; cursor: pointer; } .tmr:hover { background: var(--surface-2); } .tmr.on { background: var(--accent-soft); }
+.tmr .l { color: var(--ink-2); line-height: 1.25; } .tmr.on .l { color: var(--ink); font-weight: 600; }
+.tmr .bar { display: flex; height: 11px; gap: 1px; border-radius: 3px; overflow: hidden; background: var(--surface-2); } .tmr .bar i { display: block; min-width: 2px; }
+.tmr .n { color: var(--ink-2); font-variant-numeric: tabular-nums; font-size: 11.5px; white-space: nowrap; } .tmr .n b { color: var(--ink); font-weight: 600; }
+.tmnote { font-size: 11.5px; line-height: 1.45; color: var(--ink-2); } .tmnote b { color: var(--ink); font-weight: 600; } .tmnote.dim { color: var(--ink-3); }
+.tmrow { display: grid; grid-template-columns: 86px auto minmax(0, 1fr); gap: 6px 8px; align-items: baseline; font-size: 11.5px; padding: 2px 12px; } .tmrow .h { color: var(--ink-3); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; font-weight: 600; } .tmrow .m { color: var(--ink-2); min-width: 0; }
+.tile .br { position: absolute; right: 6px; bottom: 6px; pointer-events: none; display: flex; gap: 4px; }
+@media (max-width: 860px) { .tmruns { grid-template-columns: minmax(0, 1fr); } .tmr { grid-template-columns: 92px minmax(0, 1fr); } .tmr .n { grid-column: 1 / -1; } }
+/* ---- across runs: which families of different runs bind the same site (diversity.pooled). Descriptive only: no coverage, no estimate, no forecast ---- */
+.xrrow { grid-template-columns: minmax(0, 1fr); padding-top: 10px; } .xrrow[hidden] { display: none; }
+.xrcols { display: grid; gap: 12px 22px; min-width: 0; } .xrcol { display: grid; gap: 8px; align-content: start; min-width: 0; }
+@container (min-width: 640px) { .xrcols { grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); } }
+.xrt { font-size: 12px; line-height: 1.45; color: var(--ink-2); } .xrt b { color: var(--ink); font-weight: 600; }
+.xrr { display: grid; grid-template-columns: 60px minmax(0, 1fr) auto; gap: 1px 8px; align-items: center; font-size: 12px; padding: 4px 6px; border-radius: 6px; border: 1px solid transparent; }
+.xrr.multi { border-color: var(--accent); background: var(--accent-soft); }
+.xrr .l { color: var(--ink-2); font-weight: 600; } .xrr.multi .l { color: var(--ink); }
+.xrr .bar { height: 8px; background: var(--surface-2); border-radius: 3px; position: relative; overflow: hidden; } .xrr.multi .bar { background: var(--surface); }
+.xrr .bar i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--ink-3); opacity: .55; border-radius: 3px; } .xrr.multi .bar i { background: var(--accent); opacity: 1; }
+.xrr .n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; color: var(--ink-2); } .xrr .n b { color: var(--ink); font-weight: 600; }
+.xrr .c { grid-column: 2 / -1; color: var(--ink-3); font-size: 11.5px; line-height: 1.4; overflow-wrap: anywhere; } .xrr.multi .c { color: var(--ink-2); } .xrr .c b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; } .xrr .chip { margin-left: 4px; font-size: 10.5px; padding: 0 6px; vertical-align: 1px; }
+.xrn { font-size: 11.5px; line-height: 1.4; color: var(--ink-3); padding: 0 6px; overflow-wrap: anywhere; }
+.xrf { display: flex; gap: 8px; align-items: flex-start; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line-strong); background: var(--info-soft); font-size: 12px; line-height: 1.4; color: var(--ink-2); } .xrf .ic { flex: none; margin-top: 2px; color: var(--info-ink); } .xrf > div { min-width: 0; overflow-wrap: anywhere; }
+.xrf.warn { border-color: var(--warn); background: var(--warn-soft); } .xrf.warn .ic { color: var(--warn-ink); }
+.xrf.bad { border-color: var(--bad); background: var(--bad-soft); } .xrf.bad .ic { color: var(--bad-ink); }
+.xrflags { display: grid; gap: 6px; min-width: 0; }
+</style>
+<meta name="description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:title" content="Binderscope demo: reviewing BindCraft binder designs">
+<meta property="og:description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:type" content="website">
+<meta name="robots" content="index,follow">
+<style id="bs-demo-css">
+.bs-demo{position:fixed;left:12px;bottom:12px;z-index:9999;display:flex;align-items:center;gap:8px;max-width:min(560px,calc(100vw - 24px));
+  padding:7px 10px 7px 12px;border-radius:10px;background:var(--surface,#fff);color:var(--ink-2,#444b5e);border:1px solid var(--line-strong,#c7ccda);
+  box-shadow:0 6px 24px rgba(0,0,0,.18);font:12px/1.35 var(--font-ui,system-ui,sans-serif)}
+.bs-demo b{color:var(--ink,#141824);font-weight:600}
+.bs-demo a{color:var(--accent,#4a3aa7);font-weight:600;text-decoration:none;white-space:nowrap}
+.bs-demo a:hover{text-decoration:underline}
+.bs-demo button{flex:none;border:0;background:none;color:var(--ink-3,#586280);font-size:15px;line-height:1;cursor:pointer;padding:0 2px}
+.bs-demo[hidden]{display:none}
+.bs-demo-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  text-decoration:none;color:var(--accent-ink,#fff);background:var(--accent,#4a3aa7);border:1px solid var(--accent,#4a3aa7);margin-left:6px}
+.bs-demo-chip:hover{filter:brightness(1.12)}
+@media print{.bs-demo,.bs-demo-chip{display:none}}
+</style>
+</head>
+<body data-page="board">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></symbol>
+<symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4M12 8h.01"/></symbol>
+<symbol id="i-help" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.1 9a3 3 0 0 1 5.8 1c0 2-3 3-3 3M12 17h.01"/></symbol>
+<symbol id="i-play" viewBox="0 0 24 24"><path d="m6 4 14 8-14 8z"/></symbol>
+<symbol id="i-stop" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="2"/></symbol>
+<symbol id="i-cols" viewBox="0 0 24 24"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+<symbol id="i-pose" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></symbol>
+<symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V4M7 9l5-5 5 5M4 20h16"/></symbol>
+<symbol id="i-share" viewBox="0 0 24 24"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></symbol>
+<symbol id="i-trend" viewBox="0 0 24 24"><path d="m3 17 6-6 4 4 8-8M15 7h6v6"/></symbol>
+<symbol id="i-down" viewBox="0 0 24 24"><path d="M12 4v12M7 11l5 5 5-5M4 20h16"/></symbol>
+<symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/></symbol>
+</defs></svg>
+
+<div class="app">
+  <header class="hdr">
+    <a class="brand" href="index.html" title="Project overview"><svg class="mark" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- A lowercase b: a helix for the stem, a bowl holding the hotspot. The same
+       drawing as the launcher's mark. The stripes are cut with a mask rather
+       than painted in the background colour, so they show whatever is behind;
+       the stem and the bowl follow currentColor, which is what lets the header
+       colour them and favicon_svg() substitute a literal for a tab strip. -->
+  <defs>
+    <mask id="bs-mark-stem">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M9 57C12.5 57 16.5 50 20 50M9 46C12.5 46 16.5 39 20 39M9 35C12.5 35 16.5 28 20 28M9 24C12.5 24 16.5 17 20 17M9 13C12.5 13 16.5 6 20 6" fill="none" stroke="#000" stroke-width="2.6"/>
+    </mask>
+  </defs>
+  <g transform="translate(1.5 0)">
+    <rect x="9" y="3" width="11" height="57" rx="5.5" fill="currentColor" mask="url(#bs-mark-stem)"/>
+    <circle cx="36" cy="40" r="15" fill="none" stroke="currentColor" stroke-width="10"/>
+    <circle cx="36" cy="40" r="5.5" fill="#f08a24"/>
+  </g>
+</svg><span class="bname">Binderscope</span><span class="bproj" title="Q9NZQ7">Q9NZQ7</span></a>
+    <div class="crumbs"><span>Campaigns</span><span>/</span><b id="crumbRun"></b><span class="muted" id="crumbSub"></span></div>
+    <div class="grow"></div>
+    <button class="btn sm" id="btnImport"><svg class="ic"><use href="#i-upload"/></svg>Import run</button>
+    <button class="btn sm" id="btnShare"><svg class="ic"><use href="#i-share"/></svg>Share</button>
+    <span class="tag-run" id="tagMock" title="Designs and scores come from BindCraft runs. Structures are relaxed AlphaFold2 models, placed on the reference structure. Every score is a screen, not a verdict.">BindCraft output</span><a class="bs-demo-chip" href="https://github.com/schnickn/binderscope" target="_blank" rel="noopener" title="This is a demo with sample data. Binderscope is free to install and reviews your own runs.">Demo &middot; Get Binderscope &#8599;</a>
+    <div class="runslot" id="bsRunSlot" hidden></div>
+    <nav class="views" aria-label="Views"><a href="index.html" data-nav="index">Overview</a><a href="board.html" data-nav="board" aria-current="page">Board</a><a href="inspector.html" data-nav="inspector">Inspector</a><a href="map.html" data-nav="map">Map</a><a href="query.html" data-nav="query">Query</a><a class="extra" href="guide.html" data-nav="guide">Guide</a></nav>
+  </header>
+  <div class="banner" id="banner"><svg class="ic"><use href="#i-play"/></svg><span id="bannerTxt"></span><span style="flex:1"></span><button class="btn sm" id="btnStop"><svg class="ic"><use href="#i-stop"/></svg>Stop</button></div>
+
+  <div class="toolbar" role="toolbar" aria-label="Board controls">
+    <div class="prog"><div class="progbar" id="progbar" aria-hidden="true"></div><div class="counts" id="counts"></div></div>
+    <div class="grp">Unit <div class="seg" id="unitSeg"><button data-v="fam" aria-pressed="true">Families</button><button data-v="seq">Sequences</button></div></div>
+    <div class="grp">Sort <div class="seg" id="sortSeg"><button data-v="learned" aria-pressed="true" title="Expected keep probability from the reviewer model">Learned</button><button data-v="q">Quality</button><button data-v="traj">Generation order</button><button data-v="group">Group</button></div></div>
+    <div class="grp">Group by <div class="seg" id="grpSeg"><button data-v="cluster" aria-pressed="true">Cluster</button><button data-v="mode">Mode</button></div></div>
+    <div class="grp">Colour <div class="seg" id="colSeg"><button data-v="chain" aria-pressed="true">Chain</button><button data-v="conf">pLDDT</button><button data-v="foot">Footprint</button></div></div>
+    <div class="grp" id="tagGrp" hidden data-new>Tag <div class="seg" id="tagSeg" role="group" aria-label="Tag size"></div></div>
+    <div class="grp"><label class="chk"><input type="checkbox" id="fUndec"> Undecided only</label><label class="chk"><input type="checkbox" id="fHideRej" checked> Hide rejected</label></div>
+    <div class="grp" data-new><input type="search" class="srch" id="qSearch" placeholder="Find a design id  ( / )" aria-label="Find a design or family by id" autocomplete="off" spellcheck="false"></div>
+    <div class="grow"></div>
+    <button class="btn sm" id="btnDemo"><svg class="ic"><use href="#i-play"/></svg>Simulate a reviewer</button>
+    <button class="btn sm ghost" id="btnReset"><svg class="ic"><use href="#i-reset"/></svg>Clear decisions</button>
+  </div>
+  <div class="notice" id="notice" role="status" aria-live="polite" hidden data-new></div>
+  <div class="notice confirm" id="resetBar" role="alertdialog" aria-labelledby="resetMsg" hidden data-new><span class="msg" id="resetMsg"></span><button class="btn sm" id="btnResetYes">Clear decisions</button><button class="btn sm ghost" id="btnResetNo">Keep them</button></div>
+
+  <main class="main">
+    <section class="sheet" id="sheet" aria-label="Backbone families"><div class="tiles" id="tiles" role="listbox" aria-label="Families"></div></section>
+    <aside class="rail" aria-label="Focused family">
+      <section class="panel" id="pFocus">
+        <div class="fh"><span class="id" id="fId"></span><span id="fVerdict"></span><span id="fMode"></span><span style="flex:1"></span><a class="btn sm ghost" id="btnOpen" href="#" data-new><svg class="ic"><use href="#i-link"/></svg>Inspect</a><button class="btn sm ghost" id="btnCmp" title="Add to compare (C)"><svg class="ic"><use href="#i-cols"/></svg><span>Compare</span></button></div>
+        <div class="why" id="whyV" data-new></div>
+        <div class="fv" id="fv"><canvas id="cvF" aria-label="Interactive view of the focused family"></canvas><div class="ov"><span id="fvL"></span><span>drag to rotate · wheel to zoom</span></div></div>
+        <div class="decbtns"><button class="btn keep" id="dK"><kbd class="kbd">K</kbd> Keep</button><button class="btn maybe" id="dM"><kbd class="kbd">M</kbd> Maybe</button><button class="btn reject" id="dX"><kbd class="kbd">X</kbd> Reject</button></div>
+        <div class="decnote" id="decNote" data-new></div>
+        <div class="fdetail" id="fDetail">
+          <div class="secth">Sequences on this backbone<span class="grow"></span><span class="nt" id="sibNote"></span></div>
+          <div style="padding:0 8px 8px;overflow:auto"><table class="sib" id="sibT"></table></div>
+          <div id="tagFocus" data-new></div>
+          <div id="checks"></div>
+          <div class="reasons" id="reasons"></div>
+        </div>
+      </section>
+    </aside>
+    <aside class="side" aria-label="Order list, reviewer model and what to review next">
+      <section class="panel" id="pOrder" aria-label="Order list"><div class="secth">Order list<span class="grow"></span><span class="nt" id="slN"></span></div><div style="padding:0 12px 12px"><div id="olBox"></div></div></section>
+      <section class="panel" id="pModel">
+        <div class="secth">Reviewer model<span class="grow"></span><label class="switch" title="When off, the ranking stays on the quality prior and your decisions do not change it. Decisions are still recorded."><input type="checkbox" id="learnT" checked><span id="learnL">Learning on</span></label></div>
+        <div class="stat2"><div><div class="k">Ranking vs simulated taste</div><div class="big" id="prec">–</div><div class="muted" style="font-size:11px" id="precNote"></div></div><div><div class="k">Decisions used</div><div class="big" id="nUsed">0</div><div class="muted" style="font-size:11px" id="mAcc"></div></div></div>
+        <div style="padding:6px 0 8px" id="weights"></div>
+      </section>
+      <section class="panel"><div class="secth">Review next<span class="grow"></span><span class="nt" id="qNote">highest expected keep</span></div><div id="queue"></div><div class="secth" style="padding-top:10px">Worth a look<span class="grow"></span><span class="nt">model is unsure</span></div><div id="uncertain" style="padding-bottom:8px"></div></section>
+    </aside>
+  </main>
+  <section class="statdrawer" id="statDrawer" aria-label="Campaign statistics">
+    <button class="drawer-h" id="statToggle" aria-expanded="false" aria-controls="statBody">
+      <span class="chev" aria-hidden="true">&#9654;</span>
+      <span class="dh-t">Campaign statistics</span>
+      <span class="nt" id="statSub">run funnel &middot; diversity &middot; whether more designs would pay &middot; where a tag can go</span>
+    </button>
+    <div class="drawer-b" id="statBody" hidden>
+  <section class="sumrow" aria-label="Campaign summary">
+    <div class="panel"><div class="panel-h"><h2>Run funnel</h2><span class="sub" id="runSub"></span></div><div class="sumb" id="funnel"></div></div>
+    <div class="panel"><div class="panel-h"><h2 id="divH">Backbone diversity</h2><span class="sub" id="divSub">families grouped by how alike they are</span></div><div class="sumb" id="div"></div></div>
+    <div class="panel"><div class="panel-h"><h2>Do you need more designs?</h2><span class="sub">new design clusters per trajectory</span></div><div class="sumb" id="yield"></div></div>
+  </section>
+
+  <section class="sumrow tagrow" id="tagRow" aria-label="Where a tag can go" hidden data-new>
+    <div class="panel"><div class="panel-h"><h2>Where a tag can go</h2><span class="sub" id="tagSub">which end of each family can carry a tag or a fusion · a prediction</span></div><div class="sumb" id="tagSum"></div></div>
+  </section>
+
+  <section class="sumrow xrrow" id="poolRow" aria-label="Families that bind the same site in different runs" hidden data-new>
+    <div class="panel"><div class="panel-h"><h2>Across runs</h2><span class="sub" id="poolSub">which families from different runs bind the same site · descriptive, no estimates</span></div><div class="sumb" id="poolSum"></div></div>
+  </section>
+    </div>
+  </section>
+  <div style="flex:none;padding:0 16px 10px"><div class="hintbar"><span><kbd class="kbd">←↑↓→</kbd> move</span><span><kbd class="kbd">K</kbd> keep</span><span><kbd class="kbd">M</kbd> maybe</span><span><kbd class="kbd">X</kbd> reject</span><span><kbd class="kbd">1</kbd>–<kbd class="kbd">7</kbd> tag a reason</span><span><kbd class="kbd">U</kbd> undo</span><span><kbd class="kbd">C</kbd> compare</span><span data-hint="sibs"><kbd class="kbd">[</kbd> <kbd class="kbd">]</kbd> pick sequence</span><span><kbd class="kbd">L</kbd> learning on/off</span><span data-new><kbd class="kbd">↵</kbd> inspect</span><span data-new><kbd class="kbd">/</kbd> find</span><span data-new><kbd class="kbd">?</kbd> all shortcuts</span></div></div>
+</div>
+
+<div class="modal" id="mCmp" role="dialog" aria-modal="true" aria-label="Compare"><div class="mbox"><div class="mh"><h2>Compare</h2><span class="muted" id="cmpSub"></span><button class="btn sm" data-close><svg class="ic"><use href="#i-x"/></svg>Close</button></div><div class="cmpgrid"><div class="cvw"><canvas id="cvC"></canvas></div><div class="scroll" id="cmpBody" style="max-height:520px"></div></div></div></div>
+<div class="modal" id="mImport" role="dialog" aria-modal="true" aria-label="Import a BindCraft run"><div class="mbox"><div class="mh"><h2>Import a BindCraft run</h2><button class="btn sm" data-close><svg class="ic"><use href="#i-x"/></svg>Close</button></div><div class="mb" id="importBody"></div></div></div>
+<div class="modal" id="mShare" role="dialog" aria-modal="true" aria-label="Share this review"><div class="mbox"><div class="mh"><h2>Share this review</h2><button class="btn sm" data-close><svg class="ic"><use href="#i-x"/></svg>Close</button></div><div class="mb" id="shareBody" data-new>
+  <div class="cols2">
+    <div class="card"><h3>Review file</h3><p>Every keep, maybe, reject and reason you record becomes one line in an append-only event log. The log is kept in this browser; save it as a file to keep it, move it to another machine or hand it to someone else, and load a file to bring a review back.</p>
+      <div class="rowbtns"><button class="btn sm primary" id="btnSaveReview" data-autofocus><svg class="ic"><use href="#i-down"/></svg>Save review file</button><button class="btn sm" id="btnLoadReview"><svg class="ic"><use href="#i-upload"/></svg>Load review file</button></div>
+      <div class="muted" id="rvInfo" style="font-size:11.5px;line-height:1.45"></div></div>
+    <div class="card"><h3>Reviewer and bundle</h3><p>Events carry the reviewer name, a time stamp, the learning switch and the bundle id. Put saved files in the bundle's <span class="mono">reviews/</span> folder: nothing else needs to move. Files of several reviewers can be combined later because every event has its own id; this page shows one reviewer at a time and does not merge.</p>
+      <div class="revrow"><label for="revName" class="muted">Reviewer</label><input type="text" id="revName" maxlength="80" aria-label="Reviewer name"><select id="revPick" aria-label="Switch to another reviewer in the log" hidden></select></div>
+      <div class="muted" id="rvStore" style="font-size:11.5px;line-height:1.45"></div></div>
+  </div></div></div></div>
+<div class="modal" id="mHelp" role="dialog" aria-modal="true" aria-label="Keyboard shortcuts" data-new><div class="mbox" style="width:min(720px,100%)"><div class="mh"><h2>Keyboard shortcuts</h2><button class="btn sm" data-close><svg class="ic"><use href="#i-x"/></svg>Close</button></div><div class="mb" id="helpBody"></div></div></div>
+
+<script src="assets/js/mini3d.js"></script>
+<script src="assets/js/bs.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="assets/js/family.js"></script>
+<script src="data/campaign.js"></script>
+<script src="data/manifest.js"></script>
+<script>
+const RAW = BS.data('campaign');
+(function () {
+'use strict';
+const C = Common.load(RAW), T = C.T, M3 = Mini3D, tip = C.tip(), RUN = RAW.run || {}, cap = (f) => PF.cap(f), has = C.has;
+const FAM = cap('families'), OUT = cap('outcomes'), RUNS = Array.isArray(RAW.runs) && RAW.runs.length ? RAW.runs : null;
+if (cap('has_fold')) Family.setFold(RAW.fold);
+const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const icon = (id) => '<svg class="ic"><use href="#' + id + '"/></svg>';
+const esc = C.esc, fmtN = (n) => n.toLocaleString(), f2 = (v) => (has(v) ? v.toFixed(2) : '–');
+const shapeSvg = (m, size) => '<svg viewBox="0 0 12 12" width="' + (size || 11) + '" height="' + (size || 11) + '" style="color:' + C.modeCss(m) + '" fill="currentColor">' + C.SHAPE_SVG[C.MODE_SHAPE[m]] + '</svg>';
+const SM = { t: M3.smooth(T.caF, 2), b(d) { return d._sm || (d._sm = M3.smooth(d.caF, 2)); } };
+const GENERIC_TIPS = ['Click a <b>tile</b> to look at a family. The panel on the right lists its sequences with the BindCraft scores and says in plain words why each check passed or did not.', 'Press <b>K</b>, <b>M</b> or <b>X</b> to keep, maybe or reject. <b>1</b> to <b>7</b> tag a reason, <b>U</b> undoes. Everything is saved in this browser; <b>Save review file</b> writes it to a file you can load again.', 'Turn <b>Learning</b> off with the switch (or <b>L</b>) to freeze the ranking while you decide. Decisions are still recorded.', 'With several runs, pick one at the top: the funnel, the diversity count and the "do you need more designs" estimate are made per run and are never pooled across runs with different hotspots or targets.', 'Press <b>Enter</b> or double-click a tile to open it in the inspector, <b>/</b> to find a design by id and <b>?</b> for every shortcut.'];
+C.tips(BS.tipsFor('board', GENERIC_TIPS));
+
+/* ---------------- runs ---------------- */
+const RUNIDS = RUNS ? RUNS.map((r) => r.id) : ['run'];
+const runIdOf = (d) => d.run || 'run';
+const RB = (id) => (RUNS && RUNS.find((r) => r.id === id)) || RUN;          // the run block: funnel, failure, settings; the legacy single run block without runs[]
+const runLabel = (id) => { const r = RUNS && RUNS.find((x) => x.id === id); return r ? r.label || r.id : RUN.name || id; };
+const MULTI = cap('multi_run') && RUNIDS.length > 1;
+const scopeIds = () => BS.runFilter.selected() || RUNIDS;                   // runs in view; several means 'all', shown side by side
+const inView = (d) => BS.runFilter.includes(d.run);
+const hotName = (r) => { const i = T.idx[r]; return (i === undefined ? '' : T.resn[i]) + r; };
+
+/* ---------------- designs, families ---------------- */
+const isAcc = (d) => d.status !== 'rejected';
+const D = C.designs.filter(isAcc), REJ = C.designs.filter((d) => !isAcc(d));
+const HM = C.headMetric(), HEAD = HM.key, headLabel = HM.label, headVal = HM.val;   // the headline score, shared with the order-list files (common.js)
+const FAMS = Family.group(D); const FB = {}; FAMS.forEach((f) => (FB[f.id] = f));
+FAMS.forEach((f) => { f.n = f.designs.length; f.score = 0.7 * f.rep.q + 0.3 * f.designs.reduce((a, d) => a + d.q, 0) / f.n; f.nPass = f.designs.filter((d) => d.verdict !== 'fail').length; f.seed = f.rep.seed; f.run = f.rep.run; f.best = f.designs.reduce((a, d) => (headVal(d) > headVal(a) ? d : a, f.rep), f.rep);
+  f.vOrder = { pass: 0, review: 1, fail: 2 }; f.verdict = f.designs.reduce((a, d) => (f.vOrder[d.verdict] < f.vOrder[a] ? d.verdict : a), 'fail'); f.flag = cap('complex_rmsd') && f.designs.some((d) => d.m.complex_rmsd > 2.5 && d.m.ipsae >= 0.6);
+  f.rej = cap('rejected') ? REJ.filter((d) => d.bb === f.id).sort((a, b) => a.s - b.s) : []; });
+const famsOfRun = {}; RUNIDS.forEach((id) => (famsOfRun[id] = FAMS.filter((f) => runIdOf(f.rep) === id)));
+const unitNoun = () => (FAM ? (st.unit === 'fam' ? 'families' : 'sequences') : 'designs');
+const famLabel = (f) => PF.t('board.tile.family', { fam: f.id, seed: f.id.replace(/^.*_s/, ''), id: f.rep.id }, '{fam}');
+function tileLab(it) { const d = repOf(it); return !FAM ? d.id : it.designs ? famLabel(it) : PF.t('board.tile.seq', { fam: d.fam, seed: String(d.fam).replace(/^.*_s/, ''), s: d.s, id: d.id }, '{fam} · m{s}'); }
+const REASONS = (Array.isArray(BS.profile.reasons) && BS.profile.reasons.length ? BS.profile.reasons : [['wrong site', 'Binds the wrong site'], ['small interface', 'Small interface'], ['floppy', 'Floppy or loopy'], ['sticky', 'Sticky surface'], ['low confidence', 'Low confidence'], ['liability', 'Sequence liability'], ['duplicate', 'Near-duplicate']]).slice(0, 9);
+
+/* ---------------- clusters and the estimate of what more designs would bring: per run, never pooled ---------------- */
+const BASIS_W = { fold: 1, site: 0, both: cap('has_fold') && RAW.diversity && RAW.diversity.fold_weight !== undefined ? RAW.diversity.fold_weight : 0.5 };
+const DIV0 = (RAW.diversity && RAW.diversity.distance_default) || null;
+const basisValue = (b) => { const v = DIV0 && DIV0[b] !== undefined ? 1 - DIV0[b] : b === 'fold' && !cap('has_fold') ? 0.65 : 0.5; return Math.min(0.7, Math.max(0.3, v)); };
+const st = { reveal: false, basis: (RAW.diversity && RAW.diversity.basis_default) || 'both', upto: null, theta: 0.5, unit: 'fam', sort: 'learned', group: 'cluster', col: 'chain', focus: null, sib: null, undecided: false, hideRej: true, learn: true, demo: null, cmp: new Set(), tile: 190, q: '' };
+st.theta = 1 - basisValue(st.basis);
+const CL = {}, ADV = {};                                                      // run id -> clusters, advice
+const trajN = (id) => { const R = RB(id); if (R.traj_basis === 'none') return null; if (R.n_traj > 0) return R.n_traj; const fr = (R.funnel || []).find((x) => x.key === 'trajectory_rows'); return fr && fr.n > 0 && cap('has_traj') ? fr.n : null; };
+const trajUnit = (id) => (RB(id).n_traj > 0 || RB(id).traj_basis !== 'passed' ? 'trajectories' : 'passed trajectories');
+const stepM = (N) => (N >= 800 ? 600 : Math.max(50, Math.round((N * 0.5) / 50) * 50));    // the 'more designs' step: 600 trajectories for a big run, half the run (to 50) for a small one
+const minUpto = (id) => { const t = famsOfRun[id].map((f) => f.traj).sort((a, b) => a - b); return Math.ceil((t[2] || 100) / 10) * 10; };
+function computeAdv(id) {
+  const fams = famsOfRun[id], N = trajN(id), cl = CL[id] || [];
+  if (!fams.length) { ADV[id] = null; return; }
+  if (!N) { ADV[id] = { A: Family.advice(fams, cl, fams.length), ACT: null, N: null, cut: null }; return; }
+  const cut = scopeIds().length === 1 && st.upto ? st.upto : N;
+  if (cut >= N) { ADV[id] = { A: Family.advice(fams, cl, N), ACT: null, N, cut: N }; return; }
+  // replay: only the families found by trajectory `cut`, grouped by the clusters of the full run
+  const famsP = fams.filter((f) => f.traj <= cut), by = new Map(); famsP.forEach((f) => by.set(f.cluster, (by.get(f.cluster) || 0) + 1));
+  ADV[id] = { A: Family.advice(famsP, Array.from(by, ([cid, size]) => ({ id: cid, size })), cut), ACT: Family.advice(fams, cl, N), N, cut };
+}
+// a scaffolded run has one fold by construction, so its families are clustered by binding site alone (weight 0 on fold); a run without a paratope block is clustered exactly as before
+const PT = C.para, SCAF = {}; RUNIDS.forEach((id) => (SCAF[id] = PT.present(RB(id))));
+const runW = (id) => (SCAF[id] ? 0 : BASIS_W[st.basis]);
+function recluster() { RUNIDS.forEach((id) => { CL[id] = Family.cluster(famsOfRun[id], st.theta, runW(id)); computeAdv(id); }); }
+const clustersInView = () => scopeIds().reduce((n, id) => n + (CL[id] || []).length, 0);
+recluster();
+
+/* ---------------- decisions: BS.decisions is the single source of truth (append-only events, guarded localStorage) ---------------- */
+let store = cap('reviews') ? BS.decisions : BS.createDecisions({ persist: false }), sandbox = false, evCache = null, hist = [];   // without caps.reviews decisions live in memory only
+const uName = (u) => (u === 'fam' ? 'family' : 'design'), uUi = (n) => (n === 'family' ? 'fam' : 'seq');
+function evs() { if (!evCache) { evCache = { fam: store.current({ unit: 'family' }), seq: store.current({ unit: 'design' }) }; } return evCache; }
+const evOf = (unit, id) => evs()[unit].get(uName(unit) + '\u0000' + id);
+function decAll() { const c = evs(); if (!c.dec) { c.dec = { fam: {}, seq: {} }; ['fam', 'seq'].forEach((u) => c[u].forEach((e) => { if (e.decision !== 'clear') c.dec[u][e.design] = e.decision; })); } return c.dec; }
+const dec = () => decAll()[st.unit];
+const pickMem = new Map(), reasonMem = new Map();                          // volatile copies that survive a decision change; seeded from the events
+function seedMemories() { pickMem.clear(); reasonMem.clear(); ['fam', 'seq'].forEach((u) => evs()[u].forEach((e) => { if (e.decision === 'clear') return; if (u === 'fam' && e.sequences && e.sequences.length) pickMem.set(e.design, new Set(e.sequences)); reasonMem.set(u + ':' + e.design, new Set(e.reasons || [])); })); }
+function bindStore(s) { s.onChange(() => { evCache = null; try { drawOrder(); } catch (e) { /* the panel is redrawn by the next decision */ } }); }   // also on a decision made in another tab or page
+bindStore(store); st.learn = store.learning(); seedMemories();
+const picksOf = (f) => pickMem.get(f.id) || new Set();
+const reasonsOf = (key) => reasonMem.get(key) || new Set();
+function addEv(it, decision, extra) {
+  const unit = st.unit, id = it.id, rep = repOf(it), key = unit + ':' + id;
+  const seqs = unit === 'fam' && (decision === 'keep' || decision === 'maybe') ? Array.from(picksOf(it)) : [];
+  return store.add(Object.assign({ unit: uName(unit), design: id, run: rep.run || null, decision, sequences: seqs, reasons: decision === 'clear' ? [] : Array.from(reasonsOf(key)), learning: st.learn }, extra || {}));
+}
+
+/* ---------------- reviewer model (regularised logistic regression; unit = family or sequence) ---------------- */
+const unsatD = (d) => C.unsatDensity(d.m);
+const hotConst = new Set(D.map((d) => C.hotOf(d))).size <= 1, HF = hotConst ? (d) => d.hot.length : (d) => d.hot.length / Math.max(1, C.hotOf(d));
+const FEAT_REG = {
+  ipsae: ['ipSAE', (d) => d.m.ipsae, () => cap('ipsae')], min_ipae: ['Low interface PAE', (d) => -d.m.min_ipae, () => cap('min_ipae')],
+  iptm: ['ipTM', (d) => d.m.iptm, () => true], iptm_b: ['i_pTM', (d) => d.m.iptm_b, () => cap('iptm_b') && !cap('ipsae')], ipae_norm: ['Low i_pAE', (d) => -d.m.ipae_norm, () => cap('ipae_norm') && !cap('min_ipae')],
+  plddt: ['Binder pLDDT', (d) => d.m.plddt, () => true], ciplddt: ['Interface pLDDT', (d) => d.m.ciplddt, () => cap('ciplddt')],
+  complex_rmsd: [PF.t('features.rescore_pose', {}, 'Re-score pose matches'), (d) => -d.m.complex_rmsd, () => cap('complex_rmsd')], brmsd: ['Binder refolds alone', (d) => -d.m.binder_rmsd, () => cap('binder_rmsd')],
+  dsasa: ['Buried area', (d) => d.m.dsasa, () => true], sc: ['Shape complementarity', (d) => d.m.sc, () => cap('sc')], dg: ['Interface ΔG', (d) => -d.m.dg, () => cap('dg')], hb: ['H-bonds', (d) => d.m.n_hbonds, () => true],
+  unsat: ['Few buried unsat. polars', (d) => -d.m.n_unsat, () => true], unsatd: ['Few unsat. polars', (d) => -unsatD(d), () => true], patch: ['Small hydrophobic patch', (d) => -d.m.hphob_patch, () => true], loops: ['Few loops at interface', (d) => -d.m.loop_frac, () => true],
+  hot: ['Hotspots touched', HF, () => true], epi: ['Contacts on the epitope', (d) => d.m.epi_prec, () => true], foot: [PF.t('features.footprint', {}, 'Known-complex footprint covered'), (d) => d.m.epi_rec, () => cap('footprints')],
+  partner: [PF.t('features.partner', {}, 'Clear of the other subunit'), (d) => -Math.min(d.m.olig_n3, 60), () => cap('olig')], rest: [PF.t('features.rest', {}, 'Clear of the rest of the protein'), (d) => -Math.min(d.m.rest_n3, 60), () => cap('rest_ctx')],
+  cut: [PF.t('features.cut', {}, 'Contacts away from cut ends'), (d) => -d.m.cut_n, () => cap('rest_ctx')], flag: [PF.t('features.flag_region', {}, 'Few contacts in the flagged region'), (d) => -d.m.stalk_n, () => cap('flag_region')],
+  n_agree: ['Predictors agree', (d) => d.m.n_agree, () => cap('n_agree')], seed_spread: ['Stable across seeds', (d) => -d.m.seed_spread, () => cap('seed_spread')], liab: ['Few sequence liabilities', (d) => -(d.liabBad * 2 + d.liabWarn), () => true],
+  esm: [PF.t('features.monomer', {}, 'Monomer pLDDT'), (d) => d.m.esm_plddt, () => cap('esm_plddt')], helix: ['Helical fold', (d) => d.m.helix_frac, () => true], mem: ['Off the membrane side', (d) => -(d.m.mem_excess > 0 ? 1 : 0), () => cap('membrane')],
+};
+// the default feature list follows the capability flags (no ipSAE for BindCraft data); a profile can spell the list out (docs/viewer_board.md, section 3)
+const FEAT_DEFAULT = [['ipsae', 0.5], ['min_ipae', 0.35], ['iptm_b', 0.4], ['ipae_norm', 0.3], ['plddt', 0.2], ['ciplddt', 0.2], ['complex_rmsd', 0.45], ['brmsd', 0.35], ['dsasa', 0.3], ['sc', 0.2], ['dg', 0.25], ['hb', 0.15], ['unsat', 0.15], ['patch', 0.15], ['loops', 0.05], ['hot', 0.3], ['epi', 0.1], ['partner', 0.3], ['rest', 0.3], ['cut', 0.1], ['n_agree', 0.15], ['seed_spread', 0.15], ['liab', 0.1], ['mem', 0.1]];
+const FEATS = (Array.isArray(PF.get('board.features', null)) ? PF.get('board.features') : FEAT_DEFAULT).filter((e) => FEAT_REG[e[0]] && FEAT_REG[e[0]][2]()).map((e) => [e[2] || FEAT_REG[e[0]][0], FEAT_REG[e[0]][1], e[1]]);
+const NF = FEATS.length;
+const fin = FEATS.map((f) => D.map((d) => f[1](d)).filter((v) => Number.isFinite(v)));
+const mu = fin.map((v) => v.reduce((a, b) => a + b, 0) / (v.length || 1)), sd = fin.map((v, i) => Math.sqrt(v.reduce((a, b) => a + Math.pow(b - mu[i], 2), 0) / (v.length || 1)) || 1);
+D.forEach((d) => { d.x = FEATS.map((f, i) => { const v = f[1](d); return Number.isFinite(v) ? (v - mu[i]) / sd[i] : 0; }); });
+const W0 = FEATS.map((f) => f[2]); const sig = (z) => 1 / (1 + Math.exp(-z));
+const model = { w: W0.slice(), b: -0.2, n: 0, hits: [] };
+const allItems = () => (st.unit === 'fam' ? FAMS : D), items = () => allItems().filter((it) => inView(repOf(it)));
+const repOf = (it) => (it.rep || it); const idOf = (it) => it.id;
+const featX = (it) => repOf(it).x;
+function predictAll() { allItems().forEach((it) => { let z = model.b; const x = featX(it); for (let i = 0; i < NF; i++) z += model.w[i] * x[i]; it.p = sig(z); }); }
+function train() {
+  const dc = dec(), lab = allItems().filter((it) => dc[idOf(it)] === 'keep' || dc[idOf(it)] === 'reject'); model.n = lab.length;
+  if (st.learn) {
+    let w = W0.slice(), b = -0.2; const lam = 0.5 / Math.max(1, Math.sqrt(lab.length)), lr = 0.25;
+    for (let it = 0; it < 160 && lab.length; it++) { const g = new Array(NF).fill(0); let gb = 0; for (const f of lab) { const x = featX(f); let z = b; for (let i = 0; i < NF; i++) z += w[i] * x[i]; const e = sig(z) - (dc[idOf(f)] === 'keep' ? 1 : 0); for (let i = 0; i < NF; i++) g[i] += (e * x[i]) / lab.length; gb += e / lab.length; } for (let i = 0; i < NF; i++) w[i] -= lr * (g[i] + lam * (w[i] - W0[i])); b -= lr * gb; }
+    model.w = w; model.b = b;
+  }
+  predictAll();
+}
+function setUnit(u) { st.unit = u; model.w = W0.slice(); model.b = -0.2; model.hits = []; train(); }
+train();
+// what the simulated reviewer likes when there are no lab results: the hotspots, a confident interface, a consistent pose, few polars, no sticky patch, clear of the other chains
+const tasteKeep = (it) => {
+  const d = repOf(it), m = d.m, P = C.PRESET, S = C.S;
+  const conf = cap('ipsae') ? m.ipsae >= 0.5 : (!has(m.iptm_b) || m.iptm_b >= 0.5) && (!has(m.ipae_norm) || m.ipae_norm <= 0.35);
+  const pose = !has(m.complex_rmsd) || m.complex_rmsd <= 3, unsat = S.unsatDensity ? unsatD(d) <= S.unsatDensityMax : m.n_unsat <= 2;
+  const clear = (!cap('olig') || !has(m.olig_n3) || m.olig_n3 < S.partner.fail_n3) && (!cap('rest_ctx') || !has(m.rest_n3) || m.rest_n3 < S.rest.fail_n3);
+  return d.hot.length >= Math.min(3, C.hotOf(d)) && conf && pose && unsat && m.hphob_patch <= 620 && clear;
+};
+const hiddenKeep = OUT ? (it) => !!repOf(it).outcome.binds : tasteKeep;
+const famKeepBest = (f) => f.designs.slice().sort((a, b) => b.q - a.q)[0];
+
+/* ---------------- metric registry: compare rows, table columns, tile line ---------------- */
+const MET = {
+  ipsae: ['ipSAE', (d) => d.m.ipsae, 2, 1, () => cap('ipsae')], min_ipae: ['Min iPAE (Å)', (d) => d.m.min_ipae, 1, -1, () => cap('min_ipae')],
+  iptm: [cap('iptm_b') ? 'i_pTM' : 'ipTM', (d) => d.m.iptm, 2, 1, () => true], iptm_b: ['i_pTM', (d) => d.m.iptm_b, 2, 1, () => cap('iptm_b')],
+  ipae: ['i_pAE (Å)', (d) => (has(d.m.ipae_mean) ? d.m.ipae_mean : has(d.m.ipae_norm) ? d.m.ipae_norm * 31 : NaN), 1, -1, () => cap('ipae_norm')],
+  plddt: ['Binder pLDDT', (d) => d.m.plddt, 2, 1, () => true], ciplddt: ['Interface pLDDT', (d) => d.m.ciplddt, 2, 1, () => cap('ciplddt')],
+  complex_rmsd: ['Complex RMSD (Å)', (d) => d.m.complex_rmsd, 1, -1, () => cap('complex_rmsd')], brmsd: ['Refold RMSD (Å)', (d) => d.m.binder_rmsd, 1, -1, () => cap('binder_rmsd')],
+  hs_rmsd: ['Hotspot RMSD (Å)', (d) => d.m.hotspot_rmsd, 1, -1, () => cap('hotspot_rmsd')],
+  dsasa: ['Buried area (Å²)', (d) => d.m.dsasa, 0, 1, () => true], dg: ['ΔG (REU)', (d) => d.m.dg, 0, -1, () => cap('dg')], sc: ['Shape compl.', (d) => d.m.sc, 2, 1, () => cap('sc')], hb: ['H-bonds', (d) => d.m.n_hbonds, 0, 1, () => true],
+  unsat: [PF.get('kind') === 'run' ? 'Buried unsat. polars (recomputed)' : 'Buried unsat. polars', (d) => d.m.n_unsat, 0, -1, () => true], unsatd: ['Unsat. per 1000 Å²', (d) => unsatD(d), 1, -1, () => true], patch: ['Hydrophobic patch (Å²)', (d) => d.m.hphob_patch, 0, -1, () => true],
+  hot: ['Hotspots touched', (d) => d.hot.length, 0, 1, () => true],
+  gap: [PF.t('board.row.partner_gap', {}, 'Subunit gap (Å)'), (d) => d.m.olig_min, 1, 1, () => cap('olig')], rest_gap: ['Rest-of-protein gap (Å)', (d) => d.m.rest_min, 1, 1, () => cap('rest_ctx')],
+  flag: [PF.t('board.row.flag_region', {}, 'Flagged-region contacts'), (d) => d.m.stalk_n, 0, -1, () => cap('flag_region')], len: ['Length (aa)', (d) => d.len, 0, 0, () => true],
+};
+const metList = (path, dflt) => { const l = Array.isArray(PF.get(path, null)) ? PF.get(path) : dflt; return l.map((e) => (typeof e === 'string' ? [e] : e)).filter((e) => MET[e[0]] && MET[e[0]][4]()); };
+const COMPARE = metList('board.compare', ['iptm_b', 'ipsae', 'min_ipae', 'ipae', 'plddt', 'ciplddt', 'complex_rmsd', 'brmsd', 'hs_rmsd', 'dsasa', 'dg', 'sc', 'hb', 'unsat', 'patch', 'hot', 'gap', 'rest_gap', 'flag', 'len']).map((e) => [e[1] || MET[e[0]][0], MET[e[0]][1], MET[e[0]][2], MET[e[0]][3]]);
+const SIBF = {
+  iptm: ['i_pTM', (x) => f2(x.m.iptm)], iptm_b: ['i_pTM', (x) => f2(x.m.iptm_b)], ipsae: ['ipSAE', (x) => f2(x.m.ipsae)], plddt: ['pLDDT', (x) => f2(x.m.plddt)], dg: ['ΔG', (x) => (has(x.m.dg) ? Math.round(x.m.dg) : '–')],
+  sc: ['SC', (x) => f2(x.m.sc)], unsat: ['Unsat', (x) => (has(x.m.n_unsat) ? x.m.n_unsat : '–')].concat(PF.get('kind') === 'run' ? ['Buried unsatisfied polars, counted from the structure here (the inspector also shows BindCraft\'s own mean count)'] : []), hs_rmsd: ['HS Å', (x) => (has(x.m.hotspot_rmsd) ? x.m.hotspot_rmsd.toFixed(1) : '–'), 'Hotspot RMSD (Å)'], liab: ['Liab', (x) => x.liabBad + x.liabWarn],
+  tag: ['Tag', (x) => tagCell(x), 'The end to tag for the tag size chosen in the toolbar (N, C, N·C for either, – for neither), from the geometry of the predicted complex'],
+  lab: ['Lab', (x) => (st.reveal ? (x.outcome.binds ? '<b style="color:var(--good-ink)">✓</b>' : '<b style="color:var(--bad-ink)">✕</b>') : '<span class="muted">·</span>')],
+};
+const SIBNEED = { iptm_b: () => cap('iptm_b'), ipsae: () => cap('ipsae'), dg: () => cap('dg'), sc: () => cap('sc'), hs_rmsd: () => cap('hotspot_rmsd'), lab: () => OUT };
+const SIBCOLS = (Array.isArray(PF.get('board.sib_cols', null)) ? PF.get('board.sib_cols') : [[cap('iptm_b') ? 'iptm_b' : 'iptm'], ['ipsae'], ['plddt'], ['dg'], ['sc'], ['unsat'], ['hs_rmsd'], ['lab']]).map((e) => (typeof e === 'string' ? [e] : e)).filter((e) => SIBF[e[0]] && (!SIBNEED[e[0]] || SIBNEED[e[0]]()));
+const TILEF = { plddt: (d) => 'pLDDT ' + f2(d.m.plddt), dg: (d) => 'ΔG ' + (has(d.m.dg) ? Math.round(d.m.dg) : '–'), sc: (d) => 'SC ' + f2(d.m.sc), unsat: (d) => 'unsat (calc.) ' + (has(d.m.n_unsat) ? d.m.n_unsat : '–'), hs_rmsd: (d) => 'HS ' + (has(d.m.hotspot_rmsd) ? d.m.hotspot_rmsd.toFixed(1) + ' Å' : '–'), ipsae: (d) => 'ipSAE ' + f2(d.m.ipsae), iptm: (d) => 'ipTM ' + f2(d.m.iptm) };
+const TILEMETS = (Array.isArray(PF.get('board.tile_metrics', null)) ? PF.get('board.tile_metrics') : cap('iptm_b') ? ['plddt', 'dg', 'sc', 'unsat', 'hs_rmsd'] : []).filter((k) => TILEF[k] && (k !== 'dg' || cap('dg')) && (k !== 'sc' || cap('sc')) && (k !== 'hs_rmsd' || cap('hotspot_rmsd')));
+const hlLabel = (d) => headLabel + ' <b>' + f2(headVal(d)) + '</b>';
+
+/* ---------------- lab results (only with caps.outcomes) ---------------- */
+const fmtKd = (kd) => (kd == null ? '' : kd < 1e-9 ? (kd * 1e12).toFixed(0) + ' pM' : kd < 1e-6 ? (kd * 1e9).toFixed(kd < 1e-8 ? 1 : 0) + ' nM' : (kd * 1e6).toFixed(1) + ' µM');
+const labPill = (d) => { const o = d.outcome; return '<span class="st ' + (o.binds ? 'pass' : 'fail') + '">' + icon(o.binds ? 'i-check' : 'i-x') + (o.binds ? 'binds' + (o.kd != null ? ' · ' + fmtKd(o.kd) : '') : 'no binding') + '</span>'; };
+const labTile = (d) => '<span class="st ' + (d.outcome.binds ? 'pass' : 'fail') + '" title="' + (d.outcome.binds ? 'binds in the lab' + (d.outcome.kd != null ? ', KD ' + fmtKd(d.outcome.kd) : '') : 'no binding detected in the lab') + '">' + (d.outcome.binds ? '✓ binds' : '✕ none') + '</span>';
+/* weighted rank statistics: a sample keeps every binder but only a fraction of the other designs, so each design carries the inverse of its sampling probability */
+const wOf = (d) => d.wt || 1;
+function wauc(score, ds) {
+  let num = 0, wp = 0, wn = 0; const pos = [], neg = []; ds.forEach((d, i) => (d.outcome.binds ? pos : neg).push(i)); pos.forEach((i) => (wp += wOf(ds[i]))); neg.forEach((j) => (wn += wOf(ds[j])));
+  pos.forEach((i) => neg.forEach((j) => { num += wOf(ds[i]) * wOf(ds[j]) * (score[i] > score[j] ? 1 : score[i] === score[j] ? 0.5 : 0); })); return num / (wp * wn);
+}
+let LABCACHE = null;
+function labStats() {
+  if (LABCACHE) return LABCACHE;
+  const tot = D.reduce((a, d) => a + wOf(d), 0), pos = D.reduce((a, d) => a + (d.outcome.binds ? wOf(d) : 0), 0);
+  const groups = ['pass', 'review', 'fail'].map((v) => { const g = D.filter((d) => d.verdict === v), w = g.reduce((a, d) => a + wOf(d), 0), wb = g.reduce((a, d) => a + (d.outcome.binds ? wOf(d) : 0), 0); return { v: v, n: g.length, b: g.filter((d) => d.outcome.binds).length, rate: w ? wb / w : 0 }; });
+  const finite = (f) => D.map((d) => { const v = f(d); return Number.isFinite(v) ? v : 0; });
+  const lab = D.map((d) => (d.outcome.binds ? 1 : 0)), fold = D.map((d, i) => i % 5);
+  // 5-fold cross-validation of the same regularised logistic regression the reviewer model uses, trained on lab outcomes
+  const oof = new Array(D.length).fill(0), byCls = [[], []]; D.forEach((d, i) => byCls[lab[i]].push(i)); byCls.forEach((arr) => arr.forEach((i, r) => (fold[i] = r % 5)));
+  for (let k = 0; k < 5; k++) {
+    const tr = D.map((d, i) => i).filter((i) => fold[i] !== k); let w = W0.slice(), b = -0.2; const lam = 0.5 / Math.max(1, Math.sqrt(tr.length)), lr = 0.25;
+    for (let it = 0; it < 160; it++) { const g = new Array(NF).fill(0); let gb = 0; tr.forEach((i) => { const x = D[i].x; let z = b; for (let j = 0; j < NF; j++) z += w[j] * x[j]; const e = sig(z) - lab[i]; for (let j = 0; j < NF; j++) g[j] += (e * x[j]) / tr.length; gb += e / tr.length; }); for (let j = 0; j < NF; j++) w[j] -= lr * (g[j] + lam * (w[j] - W0[j])); b -= lr * gb; }
+    D.forEach((d, i) => { if (fold[i] === k) { let z = b; for (let j = 0; j < NF; j++) z += w[j] * d.x[j]; oof[i] = z; } });
+  }
+  const auc = [];
+  if (cap('ipsae')) auc.push(['ipSAE alone', wauc(finite((d) => d.m.ipsae), D)]);
+  auc.push(['ipTM alone', wauc(finite((d) => d.m.iptm), D)]); if (cap('ciplddt')) auc.push(['Interface pLDDT alone', wauc(finite((d) => d.m.ciplddt), D)]);
+  auc.push(['Hand-weighted quality score', wauc(D.map((d) => d.q), D)], ['Reviewer model trained on lab results (5-fold CV)', wauc(oof, D)]);
+  return (LABCACHE = { base: pos / tot, groups: groups, auc: auc });
+}
+function drawLab() {
+  const el = $('#labDyn'); if (!el) return;
+  if (!st.reveal) { el.innerHTML = '<div class="advice early">' + icon('i-info') + '<div><b>Lab results are hidden.</b> Review some designs first, then press <b>Show lab results</b> (top right) to see how the checks and the ranking did against what the lab measured.</div></div><div class="muted" style="font-size:11px;line-height:1.4">Behind the switch: the share of designs that bound for each verdict, and how well each score ranked binders above non-binders.</div>'; return; }
+  const S = labStats(), mx = 0.4, nm = { pass: 'PASS', review: 'REVIEW', fail: 'NO PASS' }, col = { pass: 'var(--good)', review: 'var(--warn)', fail: 'var(--ink-3)' };
+  el.innerHTML = '<div class="labh">Share that bound, by verdict</div>' + S.groups.map((g) => '<div class="labbar" title="' + g.b + ' of ' + g.n + ' designs in the sample bound"><span>' + nm[g.v] + '</span><span class="bar"><i style="width:' + Math.min(100, (100 * g.rate) / mx) + '%;background:' + col[g.v] + '"></i><u style="left:' + (100 * S.base) / mx + '%" title="all designs: ' + (100 * S.base).toFixed(1) + '%"></u></span><span class="n"><b>' + (100 * g.rate).toFixed(0) + '%</b><span>' + g.b + ' of ' + g.n + '</span></span></div>').join('') +
+    '<div class="muted" style="font-size:11px;line-height:1.4">' + PF.t('board.lab.weighted_note', { n_boltz: RUN.n_boltz !== undefined ? RUN.n_boltz : RUN.n_total !== undefined ? RUN.n_total : D.length, base: (100 * S.base).toFixed(1) }, 'Weighted back to the full set (tick = all designs, {base}%). Counts are from the sample.') + '</div>' +
+    '<div class="labh" style="margin-top:4px">How well each score ranks binders above non-binders (AUROC)</div>' + S.auc.map((a, i) => '<div class="labbar"' + (i === S.auc.length - 1 ? ' style="font-weight:600"' : '') + ' title="' + a[0] + ': ' + a[1].toFixed(2) + ' (0.50 is chance, 1.00 perfect)"><span style="grid-column:1 / span 2;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + a[0] + '</span><span class="n"><b>' + a[1].toFixed(2) + '</b></span></div>').join('') +
+    '<div class="muted" style="font-size:11px;line-height:1.4">' + PF.t('board.lab.conclusion', {}, 'Every single score is a weak guide here, and the checks help more than any one of them. The trained model is scored on designs it has not seen.') + '</div>';
+}
+
+/* ---------------- summary panels: funnel, diversity, need-more-designs. One run in view: the full panels. Several: per-run blocks side by side, never pooled. ---------------- */
+const TRS_MIN = (id) => minUpto(id);
+function funnelRows(id) {
+  const R = RB(id), fams = famsOfRun[id], ds = D.filter((d) => runIdOf(d) === id), rows = [];
+  if (Array.isArray(R.funnel) && R.funnel.length) R.funnel.forEach((x) => rows.push({ key: x.key, label: x.label, n: x.n == null ? null : x.n, status: x.status || 'observed', note: x.note || '' }));
+  else if (R.n_total != null) {
+    rows.push({ label: PF.t('board.funnel.total.label', {}, 'Designs submitted'), n: R.n_total, note: PF.t('board.funnel.total.note', {}, 'Every design in the collection') }, { label: PF.t('board.funnel.model.label', {}, 'With a structure model'), n: R.n_boltz, note: PF.t('board.funnel.model.note', {}, 'Designs that have a structure model in the dataset') },
+      { label: PF.t('board.funnel.sample.label', {}, 'In this sample'), n: R.n_sample, note: PF.t('board.funnel.sample.note', {}, 'The designs loaded into this view') });
+  } else {
+    [['Trajectories attempted', R.n_traj, 'Counted from Trajectory/Relaxed, LowConfidence and Clashing'], ['Passed trajectory filters', R.n_traj_pass, 'Trajectory/Relaxed and trajectory_stats.csv'], ['Sequences that passed AF2', R.n_scored, 'Rows in mpnn_design_stats.csv'], ['Accepted by BindCraft', R.n_accepted, 'Accepted/ and final_design_stats.csv']]
+      .forEach((r, i) => rows.push({ label: r[0], n: r[1] == null ? null : r[1], note: r[2], pct: i > 0 && i < 4 && R.n_traj ? (100 * r[1] / R.n_traj).toFixed(1) + '%' : '' }));
+  }
+  if (FAM) { if (!rows.some((r) => r.key === 'accepted_backbones')) rows.push({ label: 'Families with an accepted sequence', n: fams.length, note: 'Accepted sequences grouped by backbone' }); rows.push({ label: 'Families with a PASS or REVIEW', n: fams.filter((f) => f.verdict !== 'fail').length, note: 'After the checks in this tool' }); }
+  else { const nPass = ds.filter((d) => d.verdict === 'pass').length, nPR = ds.filter((d) => d.verdict !== 'fail').length, pc = (n) => (R.n_sample ? Math.round((100 * n) / R.n_sample) + '%' : ''); rows.push({ label: 'PASS or REVIEW', n: nPR, note: 'After the checks in this tool', pct: pc(nPR) }, { label: 'PASS', n: nPass, note: 'After the checks in this tool', pct: pc(nPass) }); }
+  return rows;
+}
+const cellN = (r, short) => (r.n == null ? '<span class="u">unknown</span>' : r.status === 'derived' ? '<b>~' + fmtN(r.n) + '</b><span>' + (short ? 'est.' : 'estimate') + '</span>' : '<b>' + fmtN(r.n) + '</b>' + (r.pct ? '<span>' + r.pct + '</span>' : ''));
+const runSettingsLine = (id) => { const s = (RB(id).settings) || {}, bits = []; if (s.hotspots && s.hotspots.length) bits.push('hotspots ' + s.hotspots.map(hotName).join(' ')); if (s.length_range) bits.push(s.length_range[0] + '–' + s.length_range[1] + ' aa'); return '<b>' + esc(id) + '</b>' + (bits.length ? ' · ' + bits.join(' · ') : ''); };
+function drawFunnel() {
+  const ids = scopeIds();
+  if (ids.length > 1) {
+    const cols = ids.map((id) => funnelRows(id)), rows0 = cols[0];
+    $('#runSub').textContent = ids.length + ' runs side by side · never pooled';
+    $('#funnel').innerHTML = '<div class="fr3" style="grid-template-columns:minmax(0,1fr)' + ' 86px'.repeat(ids.length) + '"><span></span>' + ids.map((id) => '<span class="h" title="' + esc(runLabel(id)) + '">' + esc(id) + '</span>').join('') +
+      rows0.map((r, i) => '<span class="l" title="' + esc(r.note) + '">' + esc(r.label) + '</span>' + cols.map((c) => { const x = (r.key && c.find((y) => y.key === r.key)) || c[i] || {}; return '<span class="n"' + (x.status === 'derived' ? ' title="estimate: derived from the counters, not observed"' : '') + '>' + (x.n === undefined ? '' : cellN(x, true)) + '</span>'; }).join('')).join('') + '</div>' +
+      '<div class="muted" style="font-size:11px;line-height:1.4">The runs differ in hotspots, length range and sometimes the target construct, so every count is its own. Pick a run in the header for the log-scale funnel and the filters that failed most. "unknown" means the run folder does not say; it is never drawn as 0.</div>';
+    return;
+  }
+  const id = ids[0], R = RB(id), rows = funnelRows(id), base = Math.max(2, ...rows.map((r) => (r.n > 0 && r.status !== 'derived' ? r.n : 0)), ...rows.map((r) => (r.n > 0 ? r.n : 0)));
+  const lg = (n) => Math.log10(Math.max(1, n)) / Math.log10(base), ds = D.filter((d) => runIdOf(d) === id);
+  $('#runSub').textContent = (R.source || 'BindCraft') + ' · ' + (R.name || R.label || '') + ' · log scale';
+  const counters = Array.isArray(R.failure), fails = counters ? (R.failure || []).slice(0, 4).map((f) => '<span class="chip" title="BindCraft filter: ' + esc(f[0]) + '">' + esc(f[1]) + ' <b style="color:var(--ink)">' + fmtN(f[2]) + '</b></span>')
+    : C.CHECKS.map((c) => [c.label, ds.filter((d) => d.checks[c.key] === 'fail').length, c.tip]).filter((x) => x[1]).sort((a, b) => b[1] - a[1]).slice(0, 4).map((f) => '<span class="chip" title="' + esc(f[2]) + '">' + esc(f[0]) + ' <b style="color:var(--ink)">' + fmtN(f[1]) + '</b></span>');
+  $('#funnel').innerHTML = rows.map((r) => '<div class="fr2" title="' + esc(r.note) + '"><span>' + esc(r.label) + '</span><span class="bar"><i style="width:' + (r.n == null ? 0 : Math.max(2, 100 * lg(r.n))).toFixed(1) + '%"></i></span><span class="n">' + cellN(r) + '</span></div>').join('') +
+    (OUT && st.reveal && RUN.n_binders_total != null ? '<div class="fr2" title="' + PF.t('board.funnel.lab.note', {}, 'Designs with a confirmed binding result in the lab') + '"><span>' + PF.t('board.funnel.lab.label', {}, 'Bound in the lab') + '</span><span class="bar"><i style="width:' + Math.max(2, 100 * lg(RUN.n_binders_total)).toFixed(1) + '%;background:var(--good)"></i></span><span class="n"><b>' + fmtN(RUN.n_binders_total) + '</b><span>of ' + fmtN(RUN.n_total) + '</span></span></div>' : '') +
+    '<div class="reasons2"><span>' + (counters ? 'Filters failed most:' : 'Checks failed most:') + '</span>' + fails.join('') + '</div><div class="muted" style="font-size:11px;line-height:1.4">' + (counters ? 'A sequence can fail several filters and failure_csv counts each one, so these overlap.' : PF.t('board.funnel.note', {}, 'A design can fail several checks, so these overlap.')) + '</div>';
+}
+const BASIS_NAME = { fold: 'backbone clusters', both: 'design clusters', site: 'binding-site clusters' };
+const hasTheta = () => !!$('#thetaR');
+function kvHtml(id, A, cl) { const sizes = cl.map((c) => c.size); return '<div class="kv"><div title="Effective number of clusters (Hill number of order 1)"><div class="k">Effective</div><div class="v">' + A.hill1.toFixed(1) + '</div></div><div title="Clusters seen only once"><div class="k">Singletons</div><div class="v">' + sizes.filter((s) => s === 1).length + '</div></div><div title="Share of families in the largest cluster"><div class="k">Largest</div><div class="v">' + Math.round(A.dom * 100) + '%</div></div><div title="Distinct binding modes among the families"><div class="k">Modes</div><div class="v">' + new Set(famsOfRun[id].map((f) => f.mode)).size + '</div></div></div>'; }
+/* ---------------- paratope card: what the designs of a scaffolded run bind with, in place of fold diversity ----------------
+   Reads runs[].paratope (accepted designs), paratope_rejected and diversity_paratope (PARATOPE-CONTRACT.md). A block that is absent or partial
+   shows what it has and says what is missing; a number that is not there is never drawn as 0. */
+const pct1 = (v) => (has(v) ? v.toFixed(1) + '%' : null), pct0 = (v) => (has(v) ? Math.round(v) + '%' : null);
+const capFirst = (t) => String(t).charAt(0).toUpperCase() + String(t).slice(1);
+const offFilter = (id) => (RB(id).filters || []).find((f) => /off_paratope/i.test(f.stem || '') && f.mandatory) || null;
+const frOrder = (n) => { const m = /^FR(\d)(-?face)?/i.exec(n); return m ? +m[1] * 2 + (m[2] ? 1 : 0) : 100; };
+// the parts of one bar: designed segments one by one, framework as one stretch with the FR2 face apart from it; null when the block has no shares
+function paraParts(blk, loops) {
+  if (!blk || !PT.isObj(blk.share)) return null;
+  const sh = blk.share, out = [], keys = Object.keys(sh).filter((k) => has(sh[k]));
+  loops.concat(keys.filter((k) => PT.isLoop(k) && loops.indexOf(k) < 0)).forEach((k) => { if (has(sh[k]) && sh[k] > 0) out.push({ name: k, v: sh[k], c: PT.colour(k) }); });
+  const fw = keys.filter((k) => PT.isFramework(k) && !/face/i.test(k)).sort((a, b) => frOrder(a) - frOrder(b)), face = keys.filter((k) => /face/i.test(k));
+  const fwv = fw.reduce((a, k) => a + sh[k], 0);
+  if (fwv > 0) out.push({ name: 'framework', v: fwv, c: PT.FRC, parts: fw.map((k) => PT.label(k) + ' ' + sh[k].toFixed(1)).join(' · ') });
+  face.forEach((k) => { if (sh[k] > 0) out.push({ name: k, v: sh[k], c: PT.FACEC }); });
+  if (!fw.length && !face.length && has(blk.framework_share) && blk.framework_share > 0) out.push({ name: 'framework', v: blk.framework_share, c: PT.FRC });
+  return out.length ? out : null;
+}
+// widths are normalised, so rounding in the shares cannot overflow the bar
+function paraBar(label, parts, title, none) {
+  const tot = parts ? parts.reduce((a, p) => a + p.v, 0) : 0;
+  return '<span title="' + esc(title || '') + '">' + label + '</span>' + (tot > 0
+    ? '<div class="pbar" title="' + esc(title || '') + '">' + parts.map((p) => '<i style="flex:' + (100 * p.v / tot).toFixed(2) + ' 1 0;background:' + p.c + '" title="' + esc(PT.label(p.name)) + ' ' + p.v.toFixed(1) + '%' + (p.parts ? ' (' + esc(p.parts) + ')' : '') + '"></i>').join('') + '</div>'
+    : '<div class="pbar none">' + esc(none || 'not in this bundle') + '</div>');
+}
+function lenStrip(values, colour, seg) {
+  const vs = values.filter(has).slice().sort((a, b) => a - b); if (!vs.length) return '';
+  const lo = vs[0], hi = vs[vs.length - 1], x0 = 14, x1 = 286, X = (v) => (hi === lo ? 150 : x0 + ((v - lo) / (hi - lo)) * (x1 - x0)), cnt = {}, uniq = Array.from(new Set(vs));
+  const maxK = Math.max(...uniq.map((v) => vs.filter((x) => x === v).length)), ay = 7 + maxK * 7.5, H = ay + 16;
+  const dots = vs.map((v) => { const k = (cnt[v] = (cnt[v] || 0) + 1); return '<circle cx="' + X(v).toFixed(1) + '" cy="' + (ay - 5 - (k - 1) * 7.5).toFixed(1) + '" r="3.2" fill="' + colour + '"><title>' + esc(seg) + ' ' + v + ' residues</title></circle>'; }).join('');
+  return '<svg viewBox="0 0 300 ' + H.toFixed(0) + '" role="img" aria-label="' + esc(seg) + ' lengths: ' + esc(uniq.join(', ')) + '"><line x1="6" x2="294" y1="' + ay + '" y2="' + ay + '" stroke="var(--line-strong)"/>' + dots + uniq.map((v) => '<text x="' + X(v).toFixed(1) + '" y="' + (ay + 11) + '" text-anchor="middle">' + v + '</text>').join('') + '</svg>';
+}
+function paraHtml(id, compact) {
+  const R = RB(id), isO = PT.isObj, pt = isO(R.paratope) ? R.paratope : null, rj = isO(R.paratope_rejected) ? R.paratope_rejected : null, dv = isO(R.diversity_paratope) ? R.diversity_paratope : null;
+  const nFam = famsOfRun[id].length, loops = PT.segmentNames(pt || rj), out = [], right = [];
+  if (!compact) out.push('<div class="muted" style="font-size:11px;line-height:1.35">' + runSettingsLine(id) + (pt && pt.modality ? ' · ' + esc(pt.modality) + ' scaffold' + (pt.scaffold ? ' ' + esc(pt.scaffold) : '') : '') + ' · ' + nFam + ' ' + (nFam === 1 ? 'family' : 'families') + '</div>');
+  // 1. why fold is not shown: one clause, so that the card does not read as a missing feature
+  const fold = dv && isO(dv.fold) ? dv.fold : null;
+  if (!fold || fold.status === 'off') out.push('<div class="pnote">' + icon('i-info') + '<div><b>Fold diversity is not shown.</b> ' + esc(capFirst(fold && typeof fold.why === 'string' && fold.why ? fold.why : 'every design is built on the same scaffold, so fold similarity would measure the scaffold')) + '.</div></div>');
+  // 2. where the interface residues are: accepted and rejected designs as two bars, so that the contrast is in the chart itself
+  const pa = paraParts(pt, loops), pr = paraParts(rj, loops), fwA = PT.frameworkShare(pt), fwR = PT.frameworkShare(rj);
+  if (pt || rj) {
+    const nR = rj && has(rj.aligned) ? rj.aligned : null;
+    out.push('<div class="pstack" role="group" aria-label="Share of interface residues by region, accepted and rejected designs">' + paraBar('accepted', pa, pt ? pt.note || 'Share of interface residues, accepted designs' : '', pt ? 'no region shares in this block' : 'not in this bundle') +
+      paraBar('rejected', pr, rj ? (rj.note || 'Share of interface residues, rejected designs') + (nR !== null ? ' (' + fmtN(nR) + ' designs placed on the scaffold)' : '') : '', rj ? 'no region shares in this block' : 'not analysed') + '</div>');
+    const legNames = [], seen = {};
+    loops.forEach((k) => { if (!seen[k]) { seen[k] = 1; legNames.push(k); } });
+    (pa || []).concat(pr || []).filter((p) => PT.isLoop(p.name)).forEach((p) => { if (!seen[p.name]) { seen[p.name] = 1; legNames.push(p.name); } });
+    const leg = legNames.map((k) => { const v = PT.shareOf(pt, k); return '<span title="' + (v === null ? 'not listed in this block' : esc(k) + ': share of interface residues, accepted designs') + '"><i style="background:' + PT.colour(k) + '"></i>' + esc(k) + ' <b>' + (v === null ? '–' : pct1(v)) + '</b></span>'; });
+    const fparts = pt && isO(pt.share) ? Object.keys(pt.share).filter((k) => PT.isFramework(k) && has(pt.share[k])).sort((a, b) => frOrder(a) - frOrder(b)).map((k) => PT.label(k) + ' ' + pt.share[k].toFixed(1)).join(' · ') : '';
+    if (pt) leg.push('<span title="' + esc('Framework, accepted designs' + (fparts ? ': ' + fparts : '')) + '"><i style="background:' + PT.FRC + '"></i>framework <b>' + (fwA === null ? '–' : pct1(fwA)) + '</b>' + (fwR !== null ? ' <span class="muted">(' + pct1(fwR) + ' in rejected)</span>' : '') + '</span>');
+    out.push('<div class="pleg">' + leg.join('') + '</div>');
+    // which loops, accepted against rejected
+    if (loops.length >= 2) {
+      const aa = PT.allLoopsShare(pt, loops), ar = PT.allLoopsShare(rj, loops), nm = loops.slice(0, -1).join(', ') + ' and ' + loops[loops.length - 1];
+      const tt = aa && aa.n !== null ? 'Accepted: ' + aa.n + ' of ' + aa.of + ' designs' + (ar && ar.n !== null ? '. Rejected: ' + ar.n + ' of ' + ar.of : '') : '';
+      out.push('<div class="pcon" title="' + esc(tt) + '">' + (aa ? 'All of ' + esc(nm) + ' touch the target in <b>' + pct0(aa.pct) + '</b> of accepted designs' + (ar ? ' and <b>' + pct0(ar.pct) + '</b> of rejected ones.' : '. <span class="muted">Rejected designs are not analysed here.</span>') : '<span class="muted">How many designs use every loop is not given in this block.</span>') + '</div>');
+    }
+    // 3. the contrast, in words
+    if (fwA !== null && fwR !== null) {
+      const f = offFilter(id), why = fwA < fwR ? (f ? ' The campaign\'s mandatory off-paratope filter (' + esc(f.stem) + ' ' + esc(String(f.op).replace('<=', '≤').replace('>=', '≥')) + ' ' + esc(f.threshold) + ') removes designs that bind through framework; the gap is that filter at work.' : ' Accepted designs passed this campaign\'s filters and rejected ones did not, so the gap is selection.') : '';
+      out.push('<div class="pcon">Framework is <b>' + pct1(fwA) + '</b> of the interface in accepted designs and <b>' + pct1(fwR) + '</b> in rejected ones.' + why + '</div>');
+    } else if (fwA !== null) out.push('<div class="pcon">Framework is <b>' + pct1(fwA) + '</b> of the interface in accepted designs. <span class="muted">Rejected designs are not analysed in this bundle, so there is nothing to compare it with.</span></div>');
+    else out.push('<div class="pcon muted">The framework share is not given in this block.</div>');
+    // the framework positions that still make contact
+    if (!compact && pt) {
+      const fp = Array.isArray(pt.framework_positions) ? pt.framework_positions : null;
+      if (fp && fp.length) out.push('<div><div class="muted" style="font-size:11px;margin-bottom:3px">Framework positions that still make contact in accepted designs: the scaffold\'s residue and position, then the number of designs</div><div class="pchips">' + fp.slice(0, 7).map((x) => '<span class="chip" title="' + esc(PT.label(x.region)) + ': the scaffold has ' + esc(x.aa || '?') + ' at position ' + esc(x.scaffold) + (has(x.n) ? '; ' + x.n + (x.n === 1 ? ' design touches' : ' designs touch') + ' it' : '') + '"><b>' + esc(x.aa || '') + esc(x.scaffold) + '</b> ' + esc(PT.label(x.region)) + (has(x.n) ? ' · ' + x.n : '') + '</span>').join('') + (fp.length > 7 ? '<span class="chip">+' + (fp.length - 7) + ' more</span>' : '') + '</div></div>');
+      else if (!fp) out.push('<div class="muted" style="font-size:11px">Which framework positions make contact is not listed in this block.</div>');
+    }
+  } else out.push('<div class="pcon muted">The region shares of this run are not in this bundle' + (dv && isO(dv.paratope) && typeof dv.paratope.why === 'string' && dv.paratope.why ? ': ' + esc(dv.paratope.why) : '') + '. Only the axes below are shown.</div>');
+  // 4. where the variation is
+  if (!compact) {
+    if (dv) {
+      const rows = [], pp = isO(dv.paratope) ? dv.paratope : null, ll = isO(dv.loop_length) ? dv.loop_length : null, ep = isO(dv.epitope) ? dv.epitope : null;
+      const miss = (o, what) => '<span class="u">' + what + ' not measured' + (o && typeof o.why === 'string' && o.why ? ': ' + esc(o.why) : '') + '</span>';
+      if (pp) rows.push('<span class="h">Paratope</span><span>' + (pp.status === 'observed' && has(pp.profiles) ? '<b>' + pp.profiles + '</b> region-use ' + (pp.profiles === 1 ? 'profile' : 'profiles') + (has(pp.n) ? ' across ' + pp.n + ' accepted designs' : '') + (pp.profiles === 1 ? ': all use the same regions of the scaffold' : ': they do not all use the same regions') : miss(pp, 'Paratope profile')) + '</span>');
+      if (ll) {
+        const vals = Array.isArray(ll.values) ? ll.values.filter(has) : [], seg = ll.segment || 'Loop', cr = Array.isArray(ll.class_ranges) ? ll.class_ranges.filter((r) => Array.isArray(r) && r.length === 2) : [], cf = Array.isArray(ll.class_families) ? ll.class_families : [];
+        const rng = (r) => (r[0] === r[1] ? String(r[0]) : r[0] + '–' + r[1]);
+        rows.push('<span class="h">' + esc(ll.segment ? seg + ' length' : 'Loop length') + '</span><span>' + (ll.status === 'observed' && vals.length ? (has(ll.classes) ? '<b>' + ll.classes + '</b> length ' + (ll.classes === 1 ? 'class' : 'classes') + (cr.length ? ': ' : ' · ') : '') + (cr.length ? cr.map((r, i) => rng(r) + ' residues' + (has(cf[i]) ? ' (' + cf[i] + ' ' + (cf[i] === 1 ? 'family' : 'families') + ')' : '')).join(' · ') : rng([Math.min(...vals), Math.max(...vals)]) + ' residues') + lenStrip(vals, PT.colour(seg), seg) + '<span class="muted" style="font-size:10.5px">' + (vals.length === nFam ? 'one dot per family' : 'one dot per value') + '</span>' : ll.status === 'off' ? '<span class="u">Not shown' + (typeof ll.why === 'string' && ll.why ? ': ' + esc(ll.why) : '') + '</span>' : miss(ll, seg + ' length')) + '</span>');
+      }
+      if (ep) {
+        const jr = Array.isArray(ep.pairwise_jaccard) ? ep.pairwise_jaccard.filter(has) : [], sh = Array.isArray(ep.shared_by_all) ? ep.shared_by_all : null, nf = has(ep.n_families) ? ep.n_families : nFam;
+        rows.push('<span class="h">Epitope</span><span>' + (ep.status === 'observed' && jr.length ? '<b>' + Math.min(...jr).toFixed(2) + (Math.max(...jr) !== Math.min(...jr) ? '–' + Math.max(...jr).toFixed(2) : '') + '</b> overlap between the epitopes of ' + nf + ' families (Jaccard)' + (sh ? (sh.length ? '. ' + sh.length + ' target residues are hit by all of them: <span class="res">' + sh.map((r) => esc(hotName(r))).join(' ') + '</span>' : '. No target residue is hit by all of them') : '') : miss(ep, 'Epitope overlap')) + '</span>');
+      }
+      if (rows.length) right.push('<div><div class="secth" style="padding:0 0 4px">What varies between designs</div><div class="pax">' + rows.join('') + '</div></div>');
+      else right.push('<div class="muted" style="font-size:11.5px">No diversity axes are given for this run.</div>');
+      if (dv.low_confidence === true || (dv.low_confidence === undefined && nFam < 30)) right.push('<div class="muted" style="font-size:11px;line-height:1.4">' + (typeof dv.note === 'string' && dv.note ? 'Low confidence. ' + esc(dv.note) : 'Low confidence: ' + nFam + ' ' + (nFam === 1 ? 'family is' : 'families are') + ' too few to call a trend, and estimates need about 30.') + '</div>');
+    } else right.push('<div class="muted" style="font-size:11.5px">What varies between designs (paratope profile, loop length, epitope overlap) is not given for this run.</div>');
+  }
+  // 5. limits, and what is missing
+  const foot = pt || rj ? ['Regions follow this campaign\'s own edit spec, not IMGT or Kabat numbering. Interface residues are BindCraft\'s own list, so the contact criterion is BindCraft\'s and is not recomputed here. All of this is prediction.'] : [];
+  if (pt && (/scFv|Fab/i.test(pt.modality || '') || (Array.isArray(pt.chains) && pt.chains.length > 1))) foot.push('This block covers one chain only: the analysis currently reads chain B as the binder.');
+  if (pt && Array.isArray(pt.notes)) pt.notes.filter((t) => typeof t === 'string').forEach((t) => foot.push(t));
+  if (pt && has(pt.no_interface) && pt.no_interface > 0) foot.push(pt.no_interface + ' accepted ' + (pt.no_interface === 1 ? 'design has' : 'designs have') + ' no interface residues listed and count for nothing above.');
+  const unal = pt && has(pt.unaligned) ? pt.unaligned : 0;
+  if (unal > 0) foot.push(unal + ' of ' + (has(pt.aligned) ? pt.aligned : '?') + ' designs could not be placed on the scaffold and are not counted.');
+  const gone = []; if (!pt) gone.push('shares for accepted designs'); if (!rj) gone.push('the rejected-design comparison'); if (!dv) gone.push('the diversity axes');
+  if (gone.length) foot.push('Not in this bundle: ' + gone.join(', ') + '.');
+  const fo = '<div class="pfoot">' + foot.map((t) => '<p>' + esc(t) + '</p>').join('') + '</div>';
+  return right.length ? '<div class="pcols"><div class="pcol">' + out.join('') + '</div><div class="pcol">' + right.join('') + '</div></div>' + fo : out.join('') + fo;
+}
+let DIVT0 = null;
+function paraChrome(onlyScaf, ids) {
+  const pb = $('#paraBox'), sd = $('#divStd'); if (!pb || !sd) return;
+  if (!DIVT0) DIVT0 = [$('#divH').textContent, $('#divSub').textContent];
+  pb.style.display = onlyScaf ? 'grid' : 'none'; sd.style.display = onlyScaf ? 'none' : 'grid'; $('.sumrow').classList.toggle('scaf', onlyScaf);
+  $('#divH').textContent = onlyScaf ? 'What the designs bind with' : DIVT0[0]; $('#divSub').textContent = onlyScaf ? (ids.length > 1 ? 'one block per run · never pooled' : 'paratope of a scaffolded run') : DIVT0[1];
+}
+function drawDiv() {
+  const ids = scopeIds(), nm = BASIS_NAME[st.basis], onlyScaf = ids.length > 0 && ids.every((id) => SCAF[id]);
+  paraChrome(onlyScaf, ids);
+  if (onlyScaf) {                                                                   // every run in view is scaffolded: the paratope card takes the place of the fold-diversity card
+    $('#paraBox').innerHTML = ids.length === 1 ? paraHtml(ids[0], false) : ids.map((id) => '<div class="rblk"><div class="rh">' + runSettingsLine(id) + '</div>' + paraHtml(id, true) + '</div>').join('');
+    return;
+  }
+  if (hasTheta()) $('#thetaO').textContent = '≥ ' + (1 - st.theta).toFixed(2) + ' alike';
+  if (ids.length > 1) {
+    $('#divDyn').innerHTML = ids.map((id) => { if (SCAF[id]) return '<div class="rblk"><div class="rh">' + runSettingsLine(id) + '</div>' + paraHtml(id, true) + '</div>'; const adv = ADV[id], cl = CL[id] || [], A = adv && (adv.ACT || adv.A); return '<div class="rblk"><div class="rh">' + runSettingsLine(id) + '</div>' + (A ? '<div class="big2"><b>' + cl.length + '</b><span>' + nm + ' from ' + famsOfRun[id].length + (FAM ? ' backbone families' : ' designs') + '</span></div>' + kvHtml(id, A, cl) : '<div class="muted">No accepted ' + (FAM ? 'families' : 'designs') + ' in this run.</div>') + '</div>'; }).join('');
+    return;
+  }
+  const id = ids[0], fams = famsOfRun[id], cl = CL[id] || [], adv = ADV[id]; if (!adv) { $('#divDyn').innerHTML = '<div class="muted">No accepted ' + (FAM ? 'families' : 'designs') + ' in this run.</div>'; return; }
+  const A = adv.ACT || adv.A, sizes = cl.map((c) => c.size);
+  $('#divDyn').innerHTML = '<div class="rh" data-new>' + runSettingsLine(id) + '</div><div class="big2"><b>' + cl.length + '</b><span>' + nm + ' from ' + fams.length + (FAM ? ' backbone families' : ' designs') + '</span></div>' +
+    '<canvas class="sumcv" id="cvBars" aria-label="Cluster sizes"></canvas>' + kvHtml(id, A, cl);
+  const cv = $('#cvBars'), W = cv.clientWidth || 360, H = 92, dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const mx = Math.max(...sizes), bw = Math.min(26, (W - 8) / sizes.length - 2); g.font = '10px "IBM Plex Mono", monospace'; g.textBaseline = 'alphabetic';
+  sizes.forEach((s, i) => { const h = Math.max(3, (s / mx) * (H - 26)), x = 4 + i * (bw + 2); g.fillStyle = s === 1 ? C.css('--ink-3') : C.css('--accent'); g.globalAlpha = s === 1 ? 0.55 : 1; g.beginPath(); g.roundRect ? g.roundRect(x, H - 14 - h, bw, h, 3) : g.rect(x, H - 14 - h, bw, h); g.fill(); g.globalAlpha = 1; if (bw >= 14) { g.fillStyle = C.css('--ink-2'); g.textAlign = 'center'; g.fillText(s, x + bw / 2, H - 16 - h); } });
+  g.fillStyle = C.css('--ink-3'); g.textAlign = 'left'; g.fillText((FAM ? 'cluster size (families), largest first · grey = seen once' : 'cluster size (designs), largest first · grey = seen once'), 4, H - 2);
+}
+const LEVEL_META = { early: ['i-info', 'Too early to judge. '], keep: ['i-trend', 'Still discovering. '], maybe: ['i-info', 'Diminishing returns. '], enough: ['i-check', 'Saturated for this setup. '] };
+function drawYieldMulti(ids) {
+  $('#cvYield').hidden = true; $('#replayLab').hidden = true;
+  $('#yieldDyn').innerHTML = ids.map((id) => { const adv = ADV[id], N = trajN(id); if (!adv) return '<div class="rblk"><div class="rh">' + runSettingsLine(id) + '</div><div class="muted">No accepted families in this run.</div></div>'; const A = adv.A, meta = LEVEL_META[A.level];
+    return '<div class="rblk"><div class="rh"><b>' + esc(id) + '</b> · ' + A.nF + ' families' + (N ? ' · ' + fmtN(N) + ' ' + trajUnit(id) : '') + '</div><div class="advice ' + A.level + '">' + icon(meta[0]) + '<div><b>' + meta[1] + '</b>About <b>' + Math.round(A.pNewFamily * 100) + '%</b> chance that the next passing family is a new cluster; at least ' + Math.round(A.chao1) + ' clusters in total (Chao1)' + (A.lowConf ? '. <span class="muted">Low confidence: coverage estimates need about 30 families.</span>' : '.') + '</div></div></div>'; }).join('') +
+    '<div class="muted" style="font-size:11px;line-height:1.4">One estimate per run, each with its own settings: runs with different hotspots, lengths or targets ask different questions, so they are never added together. Pick a run in the header for its accumulation curve and the replay.</div>';
+}
+function scafYieldNote() {
+  const el = $('#yieldDyn'), ids = scopeIds().filter((id) => SCAF[id]); if (!el || !ids.length) return;
+  el.insertAdjacentHTML('beforeend', '<div class="muted" style="font-size:11px;line-height:1.4">' + (scopeIds().length > 1 ? 'For ' + ids.map(esc).join(', ') + ', clusters' : 'Clusters') + ' here are binding sites only: every design in a scaffolded run shares one fold, so fold is not counted.</div>');
+}
+function drawYield() { drawYield0(); scafYieldNote(); }
+function drawYield0() {
+  if (OUT) return drawLab();
+  if (!$('#yieldDyn')) return;
+  const ids = scopeIds(); if (ids.length > 1) return drawYieldMulti(ids);
+  const id = ids[0], adv = ADV[id]; $('#cvYield').hidden = false;
+  if (!adv) { $('#yieldDyn').innerHTML = '<div class="muted">No accepted families in this run.</div>'; $('#cvYield').hidden = true; $('#replayLab').hidden = true; return; }
+  const A = adv.A, N = adv.N, pct = (x) => Math.round(x * 100) + '%', cl = CL[id] || [];
+  if (!N) {
+    $('#cvYield').hidden = true; $('#replayLab').hidden = true; const meta = LEVEL_META[A.level];
+    $('#yieldDyn').innerHTML = '<div class="advice ' + A.level + '">' + icon(meta[0]) + '<div><b>' + meta[1] + '</b>About <b>' + pct(A.pNewFamily) + '</b> chance that the next passing family is a new cluster. At least ' + Math.round(A.chao1) + ' clusters in total (Chao1 lower bound), coverage ' + A.coverage.toFixed(2) + ' (Chao–Jost).' + (A.lowConf ? ' <span class="muted">Low confidence: coverage estimates need about 30 families.</span>' : '') + '</div></div><div class="muted" style="font-size:11px;line-height:1.4">This run has no generation order, so there is no forecast per trajectory.</div>';
+    return;
+  }
+  $('#replayLab').hidden = false;
+  const U = trajUnit(id), M = stepM(N), cut = adv.cut, rep = cut < N, full = adv.ACT || A, pts = A.pts;
+  const y1 = (A.yieldP * 100).toFixed(1) + '%', ci = (A.yieldCI[0] * 100).toFixed(1) + '–' + (A.yieldCI[1] * 100).toFixed(1) + '%';
+  const more = (t) => A.fit.at(cut + t) - A.S, mM = more(M), famMore = Math.min(A.nF, M * A.yieldP);
+  const meta = LEVEL_META[A.level];
+  const text = {
+    early: A.nF + ' passing families so far (' + y1 + ' of ' + U + ', 80% range ' + ci + '). Diversity estimates need at least 10 and are reliable from about 30: roughly <b>' + fmtN(Math.round(A.trajToFamilies(30))) + '</b> more ' + U + ' at this yield.',
+    keep: 'About <b>' + pct(A.pNewFamily) + '</b> chance that the next passing family is a new cluster. ' + fmtN(M) + ' more ' + U + ' (about ' + Math.round(famMore) + ' families) should add roughly <b>' + mM.toFixed(1) + '</b> clusters.',
+    maybe: 'About <b>' + pct(A.pNewFamily) + '</b> chance that the next passing family is new. ' + fmtN(M) + ' more ' + U + ' would add about <b>' + mM.toFixed(1) + '</b> clusters. Consider changing hotspots or lengths for new ideas.',
+    enough: 'Only about <b>' + pct(A.pNewFamily) + '</b> of the next passing families are expected to be new. ' + fmtN(M) + ' more ' + U + ' with these settings add about <b>' + mM.toFixed(1) + '</b> clusters. Test these now, or change the hotspots, lengths or target region.' }[A.level];
+  const low = A.lowConf && A.level !== 'early' ? ' <span class="muted">Low confidence: coverage estimates need about 30 families (' + fmtN(Math.round(A.trajToFamilies(30))) + ' more ' + U + ' at this yield).</span>' : '';
+  const exp = A.fit.at(N) - A.S;
+  const rb = rep ? '<div class="replay"><b>Replay.</b> After ' + fmtN(cut) + ' of ' + fmtN(N) + ' ' + U + ' the tool would have said <b>' + meta[1].trim().replace(/\.$/, '') + '</b> and expected about +' + exp.toFixed(1) + ' clusters by trajectory ' + fmtN(N) + '. The run actually found <b>+' + (cl.length - A.S) + '</b>.</div>' : '';
+  $('#replayO').textContent = rep ? 'after ' + fmtN(cut) : 'full run';
+  $('#yieldDyn').innerHTML = rb + '<div class="advice ' + A.level + '">' + icon(meta[0]) + '<div><b>' + meta[1] + '</b>' + text + low + '</div></div><div class="muted" style="font-size:11px;line-height:1.4">Coverage ' + A.coverage.toFixed(2) + ' (Chao–Jost) · at least ' + Math.round(A.chao1) + ' clusters in total (Chao1 lower bound) · yield ' + y1 + ' of ' + U + ' (80% range ' + ci + '). Depends on the setting on the left. If you change hotspots, lengths or filters, treat it as a new run: estimates do not carry over.</div>';
+  const cv = $('#cvYield'), W = cv.clientWidth || 380, H = 112, dpr = Math.min(2, devicePixelRatio || 1); cv.width = W * dpr; cv.height = H * dpr; const g = cv.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const xmax = N * 2, ymax = Math.max(A.chao1, full.chao1, cl.length) * 1.12, X = (t) => 30 + (t / xmax) * (W - 40), Y = (v) => H - 20 - (v / ymax) * (H - 30);
+  g.strokeStyle = C.css('--line'); g.lineWidth = 1; g.beginPath(); g.moveTo(30, Y(0)); g.lineTo(W - 10, Y(0)); g.stroke();
+  g.fillStyle = C.css('--ink-3'); g.font = '10px "IBM Plex Mono", monospace'; g.textAlign = 'right'; [0, Math.round(ymax / 2), Math.round(ymax)].forEach((v) => g.fillText(v, 26, Y(v) + 3)); g.textAlign = 'center'; [0, N, xmax].forEach((t, i) => g.fillText(i === 2 ? '' : (t >= 1000 ? (t / 1000).toFixed(1) + 'k' : t), X(t), H - 8));
+  g.fillStyle = M3.rgbs(M3.hex2rgb(C.css('--ink-3')), 0.10); g.fillRect(X(cut), Y(ymax), W - 10 - X(cut), Y(0) - Y(ymax)); g.fillStyle = C.css('--ink-3'); g.textAlign = 'left'; g.fillText(rep ? 'forecast' : 'if you keep going', X(cut) + 4, Y(0) - 5);
+  g.strokeStyle = C.css('--line-strong'); g.setLineDash([2, 3]); g.lineWidth = 1; g.beginPath(); g.moveTo(30, Y(A.chao1)); g.lineTo(W - 10, Y(A.chao1)); g.stroke(); g.setLineDash([]); g.fillStyle = C.css('--ink-3'); g.textAlign = 'left'; g.fillText('at least ' + Math.round(A.chao1), 34, Y(A.chao1) - 3);
+  if (rep) { g.strokeStyle = C.css('--accent'); g.globalAlpha = 0.4; g.lineWidth = 2; g.beginPath(); g.moveTo(X(cut), Y(A.S)); full.pts.filter((p) => p.t > cut).forEach((p, i, arr) => { g.lineTo(X(p.t), Y(i ? arr[i - 1].clusters : A.S)); g.lineTo(X(p.t), Y(p.clusters)); }); g.lineTo(X(N), Y(cl.length)); g.stroke(); g.globalAlpha = 1; }
+  g.setLineDash([4, 3]); g.strokeStyle = C.css('--ink-2'); g.lineWidth = 1.4; g.beginPath(); g.moveTo(X(cut), Y(A.S)); for (let t = cut; t <= Math.min(xmax, 2 * cut) + 1e-6; t += cut / 30) g.lineTo(X(t), Y(A.fit.at(t))); g.stroke(); g.setLineDash([]);
+  g.strokeStyle = C.css('--accent'); g.lineWidth = 2; g.beginPath(); pts.forEach((p, i) => { i ? (g.lineTo(X(p.t), Y(pts[i - 1].clusters)), g.lineTo(X(p.t), Y(p.clusters))) : g.moveTo(X(0), Y(0)); }); g.lineTo(X(cut), Y(A.S)); g.stroke();
+  pts.forEach((p) => { if (p.newCluster) { g.fillStyle = C.css('--accent'); g.beginPath(); g.arc(X(p.t), Y(p.clusters), 3, 0, 6.2832); g.fill(); g.strokeStyle = C.css('--surface'); g.lineWidth = 1.2; g.stroke(); } });
+}
+function syncReplay() {
+  const r = $('#replayR'); if (!r) return; const ids = scopeIds(), id = ids[0], N = ids.length === 1 ? trajN(id) : null;
+  if (!N) { $('#replayLab').hidden = true; return; }
+  r.min = Math.min(minUpto(id), Math.max(1, N - 1)); r.max = N; r.value = st.upto || N; $('#replayLab').hidden = false;
+}
+function initSummary() {
+  const bb = FAM ? ['Backbone', 'Backbone fold only', 'Backbone and epitope together', 'What makes two families the same cluster', 'How alike two families must be to count as one cluster'] : ['Fold', 'Binder fold only (TM-align)', 'Fold and binding site together', 'What makes two designs the same cluster', 'How alike two designs must be to count as one cluster'];
+  const noteTxt = PF.t('board.div.note', {}, 'Fold similarity is the TM-score between two binder backbones from TM-align (about 0.5 means the same fold, 0.8 the same backbone). Binding site is the overlap of contacted target residues. Estimates are made per run: runs with different hotspots, lengths or constructs are never pooled.');
+  $('#div').innerHTML = '<div id="divDyn" style="display:grid;gap:8px"></div><div class="grp3"><span>Count by</span><div class="seg" id="basisSeg" role="group" aria-label="' + bb[3] + '"><button data-v="fold" title="' + bb[1] + '">' + bb[0] + '</button><button data-v="both" title="' + bb[2] + '">Both</button><button data-v="site" title="Contacted target residues only">Binding site</button></div></div>' +
+    '<label class="sl" for="thetaR"><span>Same cluster if</span><input type="range" id="thetaR" min="0.30" max="0.70" step="0.01" value="' + (1 - st.theta).toFixed(2) + '" aria-label="' + bb[4] + '"><output id="thetaO"></output></label>' +
+    '<div class="muted" style="font-size:11px;line-height:1.4">' + noteTxt + '</div>';
+  setSeg('#basisSeg', st.basis);
+  { const box = $('#div'), std = document.createElement('div'), pb = document.createElement('div'); std.id = 'divStd'; std.style.cssText = 'display:grid;gap:8px;min-width:0'; pb.id = 'paraBox'; pb.className = 'pbox'; pb.style.display = 'none';
+    while (box.firstChild) std.appendChild(box.firstChild); box.appendChild(pb); box.appendChild(std); }     // the standard diversity controls stay in #divStd; #paraBox is used only when every run in view is scaffolded
+  const showYield = FAM && cap('has_traj');
+  if (OUT) $('#yield').innerHTML = '<div id="labDyn" style="display:grid;gap:8px"></div>';
+  else if (showYield) $('#yield').innerHTML = '<canvas class="sumcv" id="cvYield" style="height:112px" aria-label="Distinct clusters found as trajectories accumulate"></canvas><label class="sl" id="replayLab" for="replayR"><span>Replay</span><input type="range" id="replayR" min="0" max="1" step="1" value="1" aria-label="Replay the run up to this many trajectories"><output id="replayO"></output></label><div id="yieldDyn" style="display:grid;gap:8px"></div>';
+  else $('#yield').innerHTML = '<div class="muted" style="font-size:12px;line-height:1.45">This data has no generation order, so how many new clusters more designs would bring cannot be estimated. The diversity count on the left still holds for what is here.</div>';
+  $('#thetaR').oninput = (e) => { st.theta = 1 - +e.target.value; recluster(); drawDiv(); drawYield(); buildGrid(); };
+  $$('#basisSeg button').forEach((b) => (b.onclick = () => { st.basis = b.dataset.v; st.theta = 1 - basisValue(st.basis); $('#thetaR').value = (1 - st.theta).toFixed(2); setSeg('#basisSeg', st.basis); recluster(); drawDiv(); drawYield(); buildGrid(); }));
+  if ($('#replayR')) { syncReplay(); $('#replayR').oninput = (e) => { const ids = scopeIds(), id = ids[0], N = trajN(id), v = +e.target.value; st.upto = v >= N ? null : v; computeAdv(id); drawYield(); }; }
+}
+
+/* ---------------- checks: one row per check with the reason in words (the same words feed the 'why' line and the tile hover) ---------------- */
+function ctxInfo(d) {
+  const m = d.m, S = C.S, T_ = (k, tok, dflt) => PF.t('board.check.context.' + k, tok, dflt), parts = [];
+  const clear = cap('olig') && has(m.olig_n3) ? T_('pass', { olig_min: m.olig_min.toFixed(0) }, 'clear of the other subunit ({olig_min} Å)') : 'no partner data';
+  const partner = () => {
+    if (!(cap('olig') && has(m.olig_n3))) return null;
+    if (m.olig_n3 >= S.partner.fail_n3) return T_('fail', { n3: m.olig_n3 }, 'overlaps the other subunit ({n3} atoms within 3 Å)');
+    if (m.olig_n3 > 0 || m.olig_min < S.partner.warn_min) return T_('warn', { olig_min: m.olig_min.toFixed(1) }, 'touches the other subunit (closest {olig_min} Å)');
+    if (S.flagWarn !== null && m.stalk_n >= S.flagWarn) return T_('flag', { n: m.stalk_n }, '{n} contacted residues in the flagged region');
+    if (cap('rest_ctx') && m.olig_n >= S.partner.warn_buried) return T_('buried', { n: m.olig_n }, 'contacts {n} residues that are buried at the interface with the other subunit');
+    return null;
+  };
+  if (!cap('rest_ctx')) return partner() || clear;                           // the single message of the dataset configuration
+  const p = partner(); if (p) parts.push(p);
+  if (has(m.rest_n3)) { if (m.rest_n3 >= S.rest.fail_n3) parts.push(T_('rest', { n3: m.rest_n3 }, 'overlaps the rest of the protein ({n3} atoms within 3 Å)')); else if (m.rest_n3 > 0 || m.rest_min < S.rest.warn_min) parts.push(T_('rest.warn', { rest_min: f1(m.rest_min) }, 'comes close to the rest of the protein (closest {rest_min} Å)')); }
+  if (has(m.cut_n) && m.cut_n >= S.cut.warn_n) parts.push(T_('cut', { n: m.cut_n }, '{n} contacted residues next to a cut end of the target'));
+  if (has(m.cov_n) && m.cov_n >= S.cover.warn_n) parts.push(T_('cover', { n: m.cov_n }, '{n} contacted residues are buried by the rest of the protein'));
+  return parts.length ? parts.join(' · ') : clear;
+}
+const f1 = (v) => (has(v) ? v.toFixed(1) : '–');
+function checkRows(d) {
+  const m = d.m, P = C.PRESET, S = C.S, fl = d.liab.filter((l) => l.s !== 'info'), ud = unsatD(d), ipae = has(m.ipae_mean) ? m.ipae_mean : has(m.ipae_norm) ? m.ipae_norm * 31 : NaN;
+  const cons = has(m.complex_rmsd) ? (m.complex_rmsd <= P.complex_rmsd ? PF.t('board.check.consistency.ok', { rmsd: m.complex_rmsd.toFixed(1) }, 'within {rmsd} Å of the design') : PF.t('board.check.consistency.far', { rmsd: m.complex_rmsd.toFixed(1), note: m.ipsae >= 0.6 ? ', although confident' : '' }, '{rmsd} Å from the design{note}'))
+    : has(m.binder_rmsd) ? PF.t(m.binder_rmsd <= P.binder_rmsd ? 'board.check.consistency.ok' : 'board.check.consistency.far', { rmsd: m.binder_rmsd.toFixed(1), note: '' }, 'binder alone is {rmsd} Å from its complex shape') : PF.t('board.check.consistency.none', {}, 'no binder-alone model');
+  const phys = [S.scCheck && has(m.sc) && m.sc < P.sc ? 'shape compl. ' + m.sc.toFixed(2) : '', S.unsatDensity ? (ud > S.unsatDensityMax ? m.n_unsat + ' unsatisfied polars (' + ud.toFixed(1) + ' per 1000 Å²)' : '') : (m.n_unsat > P.n_unsat ? m.n_unsat + ' buried unsatisfied polars' : ''), has(m.dg) && cap('dg') && m.dg > P.dg ? 'weak ΔG ' + Math.round(m.dg) : '', m.hphob_patch > P.hphob_patch ? m.hphob_patch + ' Å² sticky patch' : ''].filter(Boolean).join(' · ')
+    || (S.unsatDensity ? m.n_hbonds + ' H-bonds · ' + m.n_unsat + ' unsat. · ' + Math.round(m.dsasa).toLocaleString() + ' Å² buried' : 'SC ' + f2(m.sc) + ' · ' + m.n_hbonds + ' H-bonds · ' + m.n_unsat + ' unsat.');
+  const rows = [['fold', 'Fold', PF.t('board.check.fold', { plddt: m.plddt.toFixed(2), ptm: f2(m.ptm) }, 'pLDDT {plddt} · pTM {ptm}')],
+    ['interface', 'Interface', PF.t('board.check.interface', { ipsae: f2(m.ipsae), min_ipae: f1(m.min_ipae), iptm: f2(m.iptm), ipae: f1(ipae) }, cap('ipsae') ? 'ipSAE {ipsae} · ipTM {iptm}' : 'i_pTM {iptm} · i_pAE {ipae} Å')],
+    ['consistency', PF.t('board.check.consistency.label', {}, 'Pose'), cons], ['physics', 'Chemistry', phys],
+    ['epitope', 'Epitope', PF.t('board.check.epitope', { hot: d.hot.length, hot_of: C.hotOf(d), epi_rec_pct: has(m.epi_rec) ? Math.round(100 * m.epi_rec) : '–' }, '{hot} of {hot_of} hotspots touched')],
+    ['sequence', 'Sequence', fl.length ? fl.map((l) => esc(l.k) + (l.p ? ' at ' + l.p : '')).slice(0, 2).join(' · ') : 'no liabilities flagged']];
+  if (d.checks.context !== undefined) { const adv = C.contextAdvisoryNote(d.checks.context); rows.push(['context', 'Context', ctxInfo(d) + (adv ? ' <span class="adv" title="' + esc(C.contextBasis()) + '">· ' + esc(adv) + '</span>' : '')]); }
+  else if (C.contextOff()) rows.push(['context', 'Context', C.contextOff().short]);     // never an empty row: a design that was not tested must not look like one that came back clear
+  return rows;
+}
+const hardKeys = () => new Set(C.CHECKS.filter((c) => c.hard).map((c) => c.key));
+function whyList(d) {                                                      // the reasons of a verdict, worst first: [{key, label, text, sev}]
+  const rows = checkRows(d), hard = hardKeys(), out = [];
+  rows.forEach((r) => { const s = d.checks[r[0]]; if (s !== undefined && s !== 'pass') out.push({ key: r[0], label: r[1], text: r[2], sev: s, hard: hard.has(r[0]) }); });
+  if (!d.hot.length && C.hotOf(d) > 0) out.push({ key: 'offsite', label: 'Off-site', text: 'touches none of the ' + C.hotOf(d) + ' hotspots of ' + (d.run || 'its run'), sev: 'fail', hard: false });
+  return out.sort((a, b) => (a.sev === b.sev ? 0 : a.sev === 'fail' ? -1 : 1) || (b.hard ? 1 : 0) - (a.hard ? 1 : 0));
+}
+function whyHtml(d) {
+  const w = whyList(d), v = C.VERDICT[d.verdict], li = (x) => '<li><b>' + esc(x.label) + '</b> ' + x.text + '</li>', off = d.checks.context === undefined && C.contextOff();
+  // BindCraft accepted these designs; the verdict is this page's own screen against different criteria, not a ruling on BindCraft's
+  const rel = isAcc(d) && d.verdict !== 'pass' ? '<div class="muted" style="margin-top:4px">BindCraft accepted this design. ' + v.label + ' is Binderscope\'s own screen, made with checks BindCraft does not run.</div>' : '';
+  // Context fired but cannot decide: a reader who sees REVIEW instead of NO PASS finds the reason here, in the words of the build, not in a tooltip
+  const advLine = C.contextAdvisoryNote(d.checks.context) ? '<div class="muted" style="margin-top:4px"><b>Context is advisory here.</b> It is listed above as a reason and does not decide the verdict' + (C.contextBasis() ? ': ' + esc(C.contextBasis()) : '') + '.</div>' : '';
+  const notRun = off ? '<div class="muted" style="margin-top:4px"><b>Context was not checked.</b> ' + esc(off.long) + '</div>' : '';
+  if (d.verdict === 'pass') return (w.length ? '<b>' + v.label + '</b> with ' + w.length + ' note' + (w.length > 1 ? 's' : '') + '<ul>' + w.map(li).join('') + '</ul>' : '<b>' + v.label + '</b>: no check that was run failed or warned.') + advLine + notRun;
+  return '<b>' + v.label + '</b> because<ul>' + w.map(li).join('') + '</ul>' + advLine + rel + notRun;
+}
+/* Specificity (information only, never part of the verdict): identity of the contacted target residues in other species and in
+   family members, from the homolog blob. The blob is loaded after the page when the manifest lists it, so a bundle without it works unchanged. */
+let SPEC = null;
+function specRow(d) {
+  if (!SPEC || !d.tc || !d.tc.length) return '';
+  const S = SPEC, st_ = S.stats(d.tc); if (!st_.n) return '';
+  const pc = (x) => Math.round(100 * x) + '%', bits = [];
+  S.orth.filter((o) => o && o.map && !o.optional && S.show.includes(o.key)).slice(0, 3).forEach((o) => { if (st_.fr[o.key] !== undefined) bits.push(esc(o.label) + ' ' + pc(st_.fr[o.key])); });
+  const fp = st_.par.find((x) => x.key === S.focusKey) || st_.par[0]; if (fp) bits.push(esc(fp.label) + ' ' + pc(fp.ov.id / st_.n));
+  const rest = st_.par.filter((x) => x !== fp).sort((a, b) => b.ov.id - a.ov.id)[0]; if (rest) bits.push('other family members up to ' + pc(rest.ov.id / st_.n) + ' (' + esc(rest.label) + ')');
+  if (!bits.length) return '';
+  return '<div class="ck spec" data-spec data-new title="Share of the ' + st_.n + ' contacted target residues that are identical in the other protein. A proxy for cross-reactivity, not a measurement; it does not change the verdict."><svg class="ic"><use href="#i-info"/></svg><span class="n">Specificity</span><span class="d">identical at the contacted residues: ' + bits.join(' · ') + '</span></div>';
+}
+function loadSpecificity() {
+  if (!cap('species_panel')) return;
+  const ready = () => { const H = BS.blob('homolog'); if (!(H && H.resis && H.orth && H.resis.length)) return false; SPEC = C.Spec(H); return true; };
+  if (ready()) return;
+  try {
+    const mf = BS.blob('manifest'), files = mf && mf.bundle && mf.bundle.data; if (!files || !files.homolog) return;
+    const sc = document.createElement('script'); sc.src = 'data/homolog.js'; sc.onload = () => { if (ready()) showFocus(); }; document.head.appendChild(sc);
+  } catch (e) { /* the row is optional */ }
+}
+function whyTip(d) { const w = whyList(d); if (!w.length) return d.checks.context === undefined && C.contextOff() ? '<div class="v">' + C.VERDICT[d.verdict].label + '</div><div class="k">Context ' + esc(C.contextOff().short) + '</div>' : ''; return '<div class="v">' + C.VERDICT[d.verdict].label + '</div>' + w.map((x) => '<div><span class="v">' + esc(x.label) + '</span> <span class="k">' + x.text + '</span></div>').join(''); }
+
+/* ---------------- tag and fusion (docs/termini.md): the end to tag per family, for the tag size in force ---------------- */
+const TM = C.term, TAGGED = D.some((d) => TM.has(d)), TAGVOID = D.some((d) => TM.voided(d));
+st.tsize = TM.size.get();
+const tagWhat = (key) => { const t = TM.DEFAULT_TAGS.find((x) => x.key === key), rb = RUNS && RUNS.length && RUNS[0].term; const u = rb && rb.tags && rb.tags.find((x) => x.key === key); return (u || t || { what: key }).what; };
+const PKCLS = { C: 'c1', N: 'c2', both: 'cb', none: 'cn' };
+function tagPill(it) {
+  const d = repOf(it); if (TM.voided(d)) return '<span class="tm-pk cb" title="' + esc(d.term.why || '') + '">no free ends</span>'; if (!TM.has(d)) return '';
+  const fp = it.designs ? TM.famPick(it.rep, it.designs, st.tsize) : { pick: TM.pick(d, st.tsize), split: false }; if (!fp || !fp.pick) return '';
+  const txt = fp.pick === 'none' ? 'no tag site' : fp.pick === 'both' ? 'tag N or C' : 'tag ' + fp.pick + '-term';
+  return '<span class="tm-pk ' + PKCLS[fp.pick] + '" title="' + esc('For ' + TM.LABEL[st.tsize] + ' (' + tagWhat(st.tsize) + '): ' + TM.PICK_WORD[fp.pick] + (fp.split ? '. ' + fp.same + ' of its ' + fp.n + ' sequences agree; the rest pick another end.' : '') + ' A prediction.') + '">' + txt + (fp.split ? ' *' : '') + '</span>';
+}
+const tagCell = (x) => { if (TM.voided(x)) return '<span class="muted" title="' + esc(x.term.why || '') + '">–</span>'; const p = TM.pick(x, st.tsize); return p ? '<span class="tm-pk ' + PKCLS[p] + '" title="' + esc(TM.PICK_WORD[p]) + '">' + (p === 'both' ? 'N·C' : p === 'none' ? '–' : p) + '</span>' : '<span class="muted">·</span>'; };
+function setTagSize(k) { st.tsize = k; TM.size.set(k); setSeg('#tagSeg', k); drawTags(); decorate(); showFocus(); drawOrder(); }
+const BAR = { C: 'var(--good)', both: 'var(--ink-3)', N: 'var(--info-ink)', none: 'var(--bad)' };
+function tagRunHtml(id) {
+  const rb = RB(id).term || null, fams = famsOfRun[id], key = st.tsize, tags = rb && rb.tags && rb.tags.length ? rb.tags : TM.DEFAULT_TAGS, f = rb && rb.format;
+  const head = '<div class="tmh"><b>' + esc(runLabel(id)) + '</b>' + (f ? '<span class="chip">' + esc(f.kind) + (f.known ? '' : ' (assumed)') + '</span>' : '') + '</div>';
+  if (f && f.applies === false) return '<div class="tmrun">' + head + '<div class="tmnote">' + esc(f.why) + '</div></div>';
+  const judged = fams.filter((x) => TM.has(x.rep));
+  if (!judged.length) return '<div class="tmrun">' + head + '<div class="tmnote dim">No family of this run was judged for its ends.</div></div>';
+  const count = (k) => { const c = { C: 0, both: 0, N: 0, none: 0 }; let split = 0; judged.forEach((x) => { const fp = TM.famPick(x.rep, x.designs, k); if (fp) { c[fp.pick]++; if (fp.split) split++; } }); return { c: c, split: split }; };
+  const rows = tags.map((t) => { const r = count(t.key), c = r.c, n = judged.length;
+    return '<div class="tmr' + (t.key === key ? ' on' : '') + '" data-k="' + esc(t.key) + '" role="button" tabindex="0" title="' + esc(t.what + ': a sphere of about ' + t.r + ' Å radius') + '"><span class="l">' + esc(t.what) + '</span><span class="bar" aria-hidden="true">' + ['C', 'both', 'N', 'none'].map((k) => (c[k] ? '<i style="width:' + (100 * c[k] / n).toFixed(1) + '%;background:' + BAR[k] + '"></i>' : '')).join('') + '</span>' +
+      '<span class="n"><b>' + c.C + '</b> C · <b>' + c.both + '</b> either · <b>' + c.N + '</b> N · <b>' + c.none + '</b> neither</span></div>'; }).join('');
+  const cur = count(key), notes = [], cv = f && f.convention;
+  if (cv) { const cnt = (k) => judged.filter((x) => { const fp = TM.famPick(x.rep, x.designs, k); return fp && fp.pick === cv; }).length, a = cnt('his6'), s = cnt('strep'); notes.push('<b>' + esc(f.kind) + ' convention.</b> ' + esc(f.convention_why) + ' From the geometry alone, <b>' + a + ' of ' + judged.length + ' families</b> come out at the ' + cv + '-terminus for a His6 and <b>' + s + ' of ' + judged.length + '</b> for a Twin-Strep' + (a === judged.length && s === judged.length ? ', as the convention says.' : '; the others pick another end.')); }
+  const df = TM.designedForRun(rb); if (df) notes.push(esc(df.t));
+  if (f && f.known === false) notes.push('The run did not record its modality, so it is read as a de novo binder.');
+  (f && f.notes || []).forEach((t) => notes.push(esc(t)));
+  if (cur.split) notes.push('* In <b>' + cur.split + '</b> of ' + judged.length + ' families the sequences do not all agree for ' + esc(tagWhat(key)) + '; a family is judged by what most of its sequences say (C, N, either, neither in that order when they are tied). Open it to see each sequence.');
+  notes.push(rb && rb.env === false ? 'Checked against each design’s own target only: no reference structure was given, so the other subunits and the rest of the protein were not part of it.' : 'Checked against the target and, from the placed pose, what lies outside the construct.');
+  notes.push(esc(TM.CAVEAT));
+  return '<div class="tmrun">' + head + rows + notes.map((t, i) => '<div class="tmnote' + (i >= notes.length - 2 ? ' dim' : '') + '">' + t + '</div>').join('') + '</div>';
+}
+function drawTags() {
+  const row = $('#tagRow'); if (!row) return; const ids = scopeIds();
+  row.hidden = !(TAGGED || TAGVOID); if (row.hidden) return;
+  $('#tagSub').textContent = 'which end of each family can carry a tag or a fusion · counts are of families · a prediction';
+  $('#tagSum').innerHTML = '<div class="tmruns">' + ids.map(tagRunHtml).join('') + '</div>';
+  $$('#tagSum .tmr').forEach((el) => { el.onclick = () => setTagSize(el.dataset.k); el.onkeydown = (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setTagSize(el.dataset.k); } }; });
+}
+/* ---------------- across runs: which families of different runs bind the same site. Reads campaign.diversity.pooled and nothing else.
+   Descriptive on purpose: the pooled block says estimates_valid false for runs with different settings, and even where it is true the coverage and the forecast belong to the per-run cards. ---------------- */
+const POOL = RAW.diversity && RAW.diversity.pooled && typeof RAW.diversity.pooled === 'object' ? RAW.diversity.pooled : null;
+const XR_ROWS = 10;                                                           // rows listed per basis; every cluster that spans runs is always listed
+function poolClusters(basis) {
+  const c = POOL && POOL.clusters && POOL.clusters[basis];
+  return (Array.isArray(c) ? c : []).filter((x) => x && typeof x === 'object' && x.by_run && typeof x.by_run === 'object' && !Array.isArray(x.by_run)).map((x) => {
+    const runs = Object.keys(x.by_run).filter((r) => x.by_run[r] > 0).sort((a, b) => x.by_run[b] - x.by_run[a] || (a < b ? -1 : 1)), sum = runs.reduce((n, r) => n + x.by_run[r], 0);
+    return { id: x.id, runs: runs, by: x.by_run, n: sum, fams: Array.isArray(x.fams) ? x.fams : [], multi: runs.length > 1 };
+  }).filter((x) => x.n > 0);
+}
+const xrComp = (c) => c.runs.map((r) => '<b>' + c.by[r] + '</b> from ' + esc(r)).join(', ');
+function xrRow(c, lab, maxN, scafRuns) {
+  const ids = c.fams.slice(0, 12).map(String).join(', ') + (c.fams.length > 12 ? ', …' : ''), scaf = !c.multi && scafRuns && c.runs.length === 1 && scafRuns.indexOf(c.runs[0]) >= 0;
+  return '<div class="xrr' + (c.multi ? ' multi' : '') + '"' + (ids ? ' title="' + esc('Families: ' + ids) + '"' : '') + '><span class="l">' + esc(lab + ' ' + c.id) + '</span><span class="bar" aria-hidden="true"><i style="width:' + (100 * c.n / maxN).toFixed(1) + '%"></i></span>' +
+    '<span class="n"><b>' + c.n + '</b> ' + (c.n === 1 ? 'family' : 'families') + '</span><span class="c">' + xrComp(c) + (c.multi ? '<span class="chip on">' + c.runs.length + ' runs</span>' : scaf ? '<span class="chip">one scaffold</span>' : '') + '</span></div>';
+}
+// one basis: the headline (how many groups, how many span runs), the groups of two or more families, and a line for the single-family groups
+function xrBasis(basis, noun, lab, big, scafRuns) {
+  const cl = poolClusters(basis); if (!cl.length) return '';
+  const nFam = cl.reduce((n, c) => n + c.n, 0), nMulti = cl.filter((c) => c.multi).length, groups = cl.filter((c) => c.n > 1), singles = cl.filter((c) => c.n === 1);
+  let shown = groups; if (groups.length > XR_ROWS) { const rest = groups.filter((c) => !c.multi); let room = Math.max(0, XR_ROWS - nMulti); const keep = new Set(groups.filter((c) => c.multi).concat(rest.slice(0, room))); shown = groups.filter((c) => keep.has(c)); }
+  const maxN = Math.max.apply(null, cl.map((c) => c.n)), by = {}; singles.forEach((c) => c.runs.forEach((r) => (by[r] = (by[r] || 0) + 1)));
+  const head = '<div class="big2"><b>' + cl.length + '</b><span>' + noun + ' for ' + nFam + ' families · ' + (big ? (nMulti ? nMulti + (nMulti === 1 ? ' holds' : ' hold') + ' families from more than one run' : 'none holds families from more than one run') : (nMulti ? nMulti + ' with more than one run' : 'none with more than one run')) + '</span></div>';
+  const rows = shown.map((c) => xrRow(c, lab, maxN, scafRuns)).join('');
+  const more = groups.length - shown.length, bits = [];
+  if (more > 0) bits.push(more + ' smaller ' + (more === 1 ? 'group' : 'groups') + ' from one run, not listed');
+  if (singles.length) bits.push(singles.length + ' single-family ' + (singles.length === 1 ? 'group' : 'groups') + ' (' + Object.keys(by).sort().map((r) => esc(r) + ' ' + by[r]).join(', ') + ')');
+  return head + rows + (bits.length ? '<div class="xrn">Plus ' + bits.join(' and ') + '.</div>' : '');
+}
+const xrFlag = (f) => { const sev = f.severity === 'warn' ? 'warn' : f.severity === 'bad' || f.severity === 'error' ? 'bad' : 'info', word = sev === 'warn' ? 'Warning: ' : sev === 'bad' ? 'Problem: ' : 'Note: ';
+  return '<div class="xrf ' + sev + '">' + icon(sev === 'info' ? 'i-info' : 'i-alert') + '<div><span class="sr">' + word + '</span>' + esc(f.text) + '</div></div>'; };
+function poolHtml() {
+  if (!POOL) return '';
+  const flags = (Array.isArray(POOL.flags) ? POOL.flags : []).filter((f) => f && typeof f === 'object' && typeof f.text === 'string' && f.text.trim());
+  const sf = flags.find((f) => f.code === 'fold_scaffolded'), scafRuns = sf && sf.data && Array.isArray(sf.data.runs) ? sf.data.runs.map(String) : null;
+  const site = xrBasis('site', 'binding-site groups', 'Site', true, null), fold = xrBasis('fold', 'fold groups', 'Fold', false, scafRuns);
+  if (!site && !fold) return '';
+  const rank = (f) => (f.severity === 'warn' ? 0 : f.severity === 'bad' || f.severity === 'error' ? 0 : 1), rest = flags.filter((f) => !(fold && f === sf)).sort((a, b) => rank(a) - rank(b));
+  const left = '<div class="xrcol">' + (site ? '<div class="xrt"><b>Which families bind the same site?</b> Families in one group touch much the same target residues. A group that holds families from more than one run is where the runs agree on a site.</div>' + site : '<div class="xrt muted">No binding-site grouping in this bundle.</div>') + '</div>';
+  const right = fold ? '<div class="xrcol"><div class="rblk"><div class="rh"><b>Same fold</b> · backbone shape alone, a weaker claim than the site</div>' + fold + (sf && fold ? xrFlag(sf) : '') + '</div></div>' : '';
+  return '<div class="xrcols">' + left + right + '</div>' + (rest.length ? '<div class="xrflags">' + rest.map(xrFlag).join('') + '</div>' : '') +
+    '<div class="pnote">' + icon('i-info') + '<div><b>This view is descriptive.</b> It shows which families bind the same place, not how complete the search is. Coverage and forecasts are made per run, in the cards above, and are never pooled across runs.</div></div>';
+}
+function drawPool() {
+  const row = $('#poolRow'); if (!row) return; let html = '';
+  try { html = MULTI && !BS.runFilter.selected() ? poolHtml() : ''; } catch (e) { html = ''; }   // a pooled block that cannot be read hides the card; it never stops the page
+  row.hidden = !html; $('#poolSum').innerHTML = html;
+}
+function initTags() {
+  const g = $('#tagGrp'); if (!g || !TAGGED) return; g.hidden = false;
+  const tags = (RUNS && RUNS.find((r) => r.term && r.term.tags) || {}).term; const list = tags && tags.tags ? tags.tags : TM.DEFAULT_TAGS;
+  $('#tagSeg').innerHTML = list.map((t) => '<button data-v="' + esc(t.key) + '" aria-pressed="' + (t.key === st.tsize) + '" title="' + esc(t.what + ': a sphere of about ' + t.r + ' Å radius') + '">' + esc(TM.LABEL[t.key] || t.key) + '</button>').join('');
+  $$('#tagSeg button').forEach((b) => (b.onclick = () => setTagSize(b.dataset.v)));
+  if (!SIBCOLS.some((c) => c[0] === 'tag')) SIBCOLS.push(['tag']);
+}
+function tagFocusHtml(f, d) {
+  if (TM.voided(d)) return '<div class="secth">Tag and fusion</div><div class="tmnote" style="padding:0 12px 8px">' + esc(d.term.why || 'No free ends.') + '</div>';
+  if (!TM.has(d)) return ''; const key = st.tsize, T = d.term, hd = TM.headline(d, key), fe = TM.famEnds(f.designs, key);
+  const line = (w) => { const e = T[w], g = TM.grade(e, key), nm = w === 'n' ? 'N-terminus' : 'C-terminus', E = w.toUpperCase(), fam = f.designs.length > 1 ? ' · ' + (fe[E].free + fe[E].linker) + ' of ' + fe.n + ' sequences fit' : '';
+    return '<div class="tmrow"><span class="h">' + nm + '</span><span class="tm-g ' + TM.status(g) + '"><svg class="ic"><use href="#' + TM.gradeIcon(g) + '"/></svg>' + esc(TM.gradeWords(g)) + '</span><span class="m">' + (has(e.d) ? e.d.toFixed(1) + ' Å from the target' : '') + (e.side ? ', ' + esc(TM.SIDE[e.side]) : '') + esc(fam) + '</span></div>'; };
+  return '<div class="secth">Tag and fusion<span class="grow"></span><span class="nt">' + esc(TM.LABEL[key]) + ' · ' + esc(tagWhat(key)) + '</span></div>' + line('n') + line('c') +
+    '<div class="tmnote" style="padding:4px 12px 8px"><b>' + hd.title + '.</b> ' + hd.detail + (canOpen(d) ? ' <a href="' + esc(BS.link.design(d.id, d.run)) + '" style="color:var(--accent)">Evidence in the Inspector</a>.' : '') + '</div>';
+}
+function tagPlanCsv() { return TM.csv(orderList()); }
+function tagNote(R) {
+  if (!TAGGED) return ''; const ds = R.rows.map((x) => C.byId[x.id]).filter((d) => d && TM.has(d)); if (!ds.length) return '';
+  const by = new Map(); ds.forEach((d) => { const k = runIdOf(d) + ':' + d.bb; if (!by.has(k)) by.set(k, new Set()); by.get(k).add(TM.pick(d, st.tsize)); });
+  const c = { C: 0, N: 0, both: 0, none: 0, mixed: 0 }; by.forEach((set) => { if (set.size > 1) c.mixed++; else c[Array.from(set)[0]]++; });
+  const bits = [['C', 'C-terminal'], ['N', 'N-terminal'], ['both', 'either end'], ['none', 'no tag site'], ['mixed', 'sequences differ']].filter((x) => c[x[0]]).map((x) => c[x[0]] + ' ' + x[1]);
+  return '. Tag for ' + esc(TM.LABEL[st.tsize]) + ' (families in the list): ' + bits.join(', ');
+}
+/* ---------------- grid ---------------- */
+const tilesEl = $('#tiles'); const tileEls = {}; let io = null, vis = [];
+function perResPl(d) { if (d._pl) return d._pl; if (d.pl) return (d._pl = Float32Array.from(d.pl)); const n = d.caF.length / 3, a = new Float32Array(n); let h = 0; for (const ch of d.id) h = (h * 31 + ch.charCodeAt(0)) % 997; for (let i = 0; i < n; i++) { const edge = Math.min(i, n - 1 - i) < 4 ? 14 - 3 * Math.min(i, n - 1 - i) : 0; const dip = 18 * Math.pow(Math.max(0, Math.sin(i * 0.41 + h)), 6); a[i] = Math.max(40, Math.min(98, d.m.plddt * 100 + 4 * Math.sin(i * 0.9 + h) - edge - dip)); } return (d._pl = a); }
+const FIXED_VIEW = (function () { const n = T.sites.A1.normal; let cx = 0, cy = 0, cz = 0; for (let i = 0; i < T.n; i++) { cx += T.caF[i * 3]; cy += T.caF[i * 3 + 1]; cz += T.caF[i * 3 + 2]; } cx /= T.n; cy /= T.n; cz /= T.n; let v = [1, 0.3, 0.2]; for (let it = 0; it < 30; it++) { const o = [0, 0, 0]; for (let i = 0; i < T.n; i++) { let x = T.caF[i * 3] - cx, y = T.caF[i * 3 + 1] - cy, z = T.caF[i * 3 + 2] - cz; const d = x * n[0] + y * n[1] + z * n[2]; x -= d * n[0]; y -= d * n[1]; z -= d * n[2]; const t = x * v[0] + y * v[1] + z * v[2]; o[0] += x * t; o[1] += y * t; o[2] += z * t; } const l = Math.hypot(o[0], o[1], o[2]) || 1; v = [o[0] / l, o[1] / l, o[2] / l]; } const x = [v[1] * n[2] - v[2] * n[1], v[2] * n[0] - v[0] * n[2], v[0] * n[1] - v[1] * n[0]]; return { R: M3.orthonormalize([x[0], x[1], x[2], v[0], v[1], v[2], n[0], n[1], n[2]]), c: [cx, cy, cz] }; })();
+function drawTile(it, cv, w, h) {
+  const d = repOf(it), dpr = Math.min(2, devicePixelRatio || 1); if (cv.width !== Math.round(w * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr); }
+  const view = d.view, c = d.vc; const bsm = SM.b(d), bs = new Set(d.bc); let bCol = null;
+  if (st.col === 'conf') { const pl = perResPl(d); bCol = (i) => C.plddtCol(pl[Math.min(pl.length - 1, Math.round(i / 2))]); } else if (st.col === 'foot') { const hot = M3.hex2rgb(C.css('--hotspot')), base = M3.lighten(M3.hex2rgb(C.css('--binder')), 0.25); bCol = (i) => (bs.has(Math.min(d.len - 1, Math.round(i / 2))) ? hot : base); }
+  M3.drawThumb(cv.getContext('2d'), w, h, { dpr, target: SM.t, binder: bsm, view, c, tColor: M3.hex2rgb(C.css('--target')), bColor: M3.hex2rgb(C.css('--binder')), bCol, contacts: d.tcIdx.map((i) => i * 2), hot: d.hotIdx.map((i) => i * 2), ghost: has(d.m.complex_rmsd) && d.m.complex_rmsd > 2.5 ? M3.smooth(d.refoldF, 2) : null, gColor: M3.hex2rgb(C.css('--hotspot')), pad: 8, tWidth: 3.0, bWidth: 3.2 });
+}
+function sibStrip(f) { return f.designs.slice().sort((a, b) => a.s - b.s).map((d) => '<i class="' + d.verdict + (d === f.rep ? ' rep' : '') + ((picksOf(f).has(d.id)) ? ' pick' : '') + '" title="mpnn' + d.s + ' · ' + C.VERDICT[d.verdict].label + ' · ' + headLabel + ' ' + f2(headVal(d)) + '"></i>').join(''); }
+/* the figure on a tile ('p 98%', also the bar under it) is the reviewer model's chance that you keep that family or design: a hover card on the figure and a line in the help */
+function pExplain() { return 'the reviewer model\'s chance that you keep this ' + (FAM ? 'family or sequence' : 'design') + ', drawn as the bar under the tile. It starts from a quality prior, learns from your keeps and rejects (it is frozen while learning is off) and is what the Learned sort ranks by.'; }
+const pTip = (it) => '<div class="pnote"><span class="v">p ' + Math.round(it.p * 100) + '%</span> <span class="k">' + pExplain() + '</span></div>';
+function makeTile(it) {
+  const el = document.createElement('div'); el.className = 'tile'; el.tabIndex = -1; el.dataset.id = it.id; el.setAttribute('role', 'option'); const d = repOf(it), v = C.VERDICT[d.verdict], isF = !!it.designs;
+  const off = !d.hot.length && C.hotOf(d) > 0;
+  el.innerHTML = '<div class="cw"><canvas></canvas><div class="tl"><span class="pill">' + shapeSvg(d.mode, 10) + d.mode + '</span>' + (isF ? '<span class="pill" title="Design cluster' + (MULTI ? ' of ' + esc(runIdOf(d)) : '') + '">C' + it.cluster + '</span>' : '') + (has(d.m.complex_rmsd) && d.m.complex_rmsd > 2.5 && d.m.ipsae >= 0.6 ? '<span class="pill" title="Confident, but the re-score places the binder elsewhere" style="color:var(--hotspot-ink)">' + icon('i-pose') + 'pose</span>' : '') +
+    (MULTI ? '<span class="pill run" data-new title="' + esc(runLabel(runIdOf(d))) + '">' + esc(runIdOf(d)) + '</span>' : '') + (off ? '<span class="pill off" data-new>off-site</span>' : '') + '</div><div class="tr"></div><div class="bl"><span class="st ' + v.cls + '">' + icon(v.icon) + v.label + '</span></div><div class="br tagp"></div></div>' +
+    '<div class="ft"><div class="r1"><span class="id" title="' + esc(it.id) + '">' + esc(tileLab(it)) + '</span><span class="m">' + d.len + ' aa</span></div>' + (isF && (FAM || it.n > 1) ? '<div class="sibs" aria-label="Sequence verdicts"></div>' : '') + '<div class="r1"><span class="m">' + hlLabel(d) + ' · ' + d.hot.length + '/' + C.hotOf(d) + '</span><span class="m plab"></span></div>' + (TILEMETS.length ? '<div class="mets" data-new' + (TILEMETS.indexOf('unsat') >= 0 ? ' title="unsat (calc.): buried unsatisfied polar atoms counted from the structure here. The inspector also shows BindCraft\'s own count, the mean of its models, which is a different measure and can differ."' : '') + '>' + TILEMETS.map((k) => TILEF[k](d)).join(' · ') + '</div>' : '') + '<span class="pbar"><i></i></span></div>';
+  el.onclick = () => { setFocus(it.id); el.focus({ preventScroll: true }); }; el.ondblclick = () => openInspector(it.id);
+  el.addEventListener('mousemove', (e) => { if (e.target.closest && e.target.closest('.plab, .pbar')) { tip.show(pTip(it), e.clientX, e.clientY); return; } const h = whyTip(repOf(it)); if (h) tip.show(h, e.clientX, e.clientY); else tip.hide(); }); el.addEventListener('mouseleave', () => tip.hide());
+  el._it = it; el._dirty = true; tileEls[(st.unit + ':') + it.id] = el; return el;
+}
+const matchQ = (it) => { const q = st.q; if (!q) return true; const f = it.designs ? it : FB[it.fam]; return it.id.toLowerCase().includes(q) || (f && f.designs.some((d) => d.id.toLowerCase().includes(q))) || (it.designs ? false : String(it.fam).toLowerCase().includes(q)); };
+const gnum = (it) => { const f = it.designs ? it : FB[it.fam]; return RUNIDS.indexOf(runIdOf(f.rep)) * 10000 + f.cluster; };
+const gkey = (it) => (st.group === 'mode' ? repOf(it).mode : gnum(it));
+function order() {
+  let L = items().slice(); const dc = dec();
+  if (st.sort === 'learned') L.sort((a, b) => ((dc[a.id] ? 0 : 1) - (dc[b.id] ? 0 : 1)) || b.p - a.p);
+  else if (st.sort === 'q') L.sort((a, b) => (b.score || repOf(b).q) - (a.score || repOf(a).q));
+  else if (st.sort === 'traj') L.sort((a, b) => repOf(a).traj - repOf(b).traj);
+  else L.sort((a, b) => { const ka = gkey(a), kb = gkey(b); return (ka === kb ? 0 : ka < kb ? -1 : 1) || repOf(b).q - repOf(a).q; });
+  return L.filter((it) => (!st.undecided || !dc[it.id]) && (!st.hideRej || dc[it.id] !== 'reject') && matchQ(it));
+}
+function groupHead(k, it, n) {
+  const noun = !FAM ? 'design' : st.unit === 'fam' ? 'family' : 'sequence';
+  const f = it.designs ? it : FB[it.fam], title = st.group === 'mode' ? shapeSvg(k, 12) + k + ' · ' + RAW.modes[k].name : (MULTI ? esc(runIdOf(f.rep)) + ' · ' : '') + 'Cluster C' + f.cluster;
+  return title + '<span class="c">' + BS.plural(n, noun) + '</span><span class="ln"></span>';
+}
+function buildGrid() {
+  vis = order(); const frag = document.createDocumentFragment(); let prev = null;
+  vis.forEach((it) => {
+    if (st.sort === 'group') { const k = gkey(it); if (k !== prev) { prev = k; const gh = document.createElement('div'); gh.className = 'gh'; const n = vis.filter((x) => gkey(x) === k).length; gh.innerHTML = groupHead(k, it, n); frag.appendChild(gh); } }
+    const key = st.unit + ':' + it.id; frag.appendChild(tileEls[key] || makeTile(it));
+  });
+  if (!vis.length) { const e = document.createElement('div'); e.className = 'muted'; e.style.cssText = 'grid-column:1/-1;padding:18px 6px;font-size:12.5px'; e.textContent = st.q ? 'Nothing matches "' + st.q + '".' : 'Nothing to show with these filters.'; e.setAttribute('data-new', ''); frag.appendChild(e); }
+  tilesEl.replaceChildren(frag); decorate(); observe(); drawSide();
+}
+function decorate() {
+  const dc = dec();
+  tilesEl.querySelectorAll('.tile').forEach((el) => {
+    const it = el._it, id = it.id, s = dc[id]; el.classList.toggle('keep', s === 'keep'); el.classList.toggle('maybe', s === 'maybe'); el.classList.toggle('reject', s === 'reject'); el.classList.toggle('focus', id === st.focus);
+    let tr = ''; if (s) tr = '<span class="pill dec ' + s + '" title="' + s + '">' + icon(s === 'keep' ? 'i-check' : s === 'maybe' ? 'i-help' : 'i-x') + '</span>'; else if (model.n >= 4 && Math.abs(it.p - 0.5) < 0.14 && st.learn) tr = '<span class="pill q" title="The reviewer model is unsure">' + icon('i-help') + 'unsure</span>';
+    if (st.cmp.has(id)) tr += '<span class="pill" style="color:var(--accent)">' + icon('i-cols') + '</span>'; $('.tr', el).innerHTML = tr;
+    if (OUT) { const dd = repOf(it), vv = C.VERDICT[dd.verdict]; $('.bl', el).innerHTML = '<span class="st ' + vv.cls + '">' + icon(vv.icon) + vv.label + '</span>' + (st.reveal ? labTile(dd) : ''); }
+    { const bp = $('.tagp', el); if (bp) bp.innerHTML = tagPill(it); }
+    $('.pbar i', el).style.width = (it.p * 100).toFixed(0) + '%'; $('.plab', el).textContent = 'p ' + Math.round(it.p * 100) + '%'; const sb = $('.sibs', el); if (sb) sb.innerHTML = sibStrip(it);
+  });
+}
+function observe() { if (io) io.disconnect(); io = new IntersectionObserver((es) => es.forEach((e) => { const el = e.target; if (e.isIntersecting && el._dirty) { const cv = $('canvas', el); drawTile(el._it, cv, cv.clientWidth || st.tile, cv.clientHeight || st.tile * 0.65); el._dirty = false; } }), { root: $('#sheet'), rootMargin: '300px' }); tilesEl.querySelectorAll('.tile').forEach((el) => io.observe(el)); }
+function redrawAll() { Object.values(tileEls).forEach((el) => (el._dirty = true)); observe(); }
+
+/* ---------------- focus panel ---------------- */
+const V = new M3.Viewer($('#cvF'), { bg: () => C.css('--viewer-bg') }); let focusKey = null;
+const focusItem = () => items().find((it) => it.id === st.focus) || vis[0] || items()[0] || allItems()[0];
+function curFam() { const it = focusItem(); return it.designs ? it : FB[it.fam]; }
+function curSeq() { const f = curFam(); const it = focusItem(); if (st.sib) { if (f.designs.some((d) => d.id === st.sib)) return C.byId[st.sib]; const r = f.rej.find((d) => d.id === st.sib); if (r) return r; } return it.designs ? it.rep : it; }
+const canOpen = (d) => d.inspect !== null;
+const HS = {}; const hotSetOf = (d) => { const id = runIdOf(d); if (!RUNS) return T.hotSet; if (!HS[id]) { const b = RB(id), l = (b.target && b.target.hotspots) || (b.settings && b.settings.hotspots); HS[id] = l && l.length ? new Set(l) : T.hotSet; } return HS[id]; };
+function openInspector(id) { const d = C.byId[id] || (FB[id] && FB[id].rep) || curSeq(); const t = (st.sib && C.byId[st.sib] && focusItem() && focusItem().id === id) ? C.byId[st.sib] : d; if (t && canOpen(t)) location.href = BS.link.design(t.id, t.run); }
+function sibTable(f, d, best, pk) {
+  const head = '<thead><tr><th>' + (FAM ? 'Seq' : 'Design') + '</th><th>Verdict</th>' + SIBCOLS.map((c) => { const def = SIBF[c[0]], t = (c[0] === 'iptm' || c[0] === 'iptm_b') ? PF.t('board.sib.iptm_title', {}, 'BindCraft Average_i_pTM') : def[2]; return '<th' + (t ? ' title="' + esc(t) + '"' : '') + '>' + esc(c[1] || def[0]) + '</th>'; }).join('') + '<th>Order</th></tr></thead>';
+  const cells = (x) => SIBCOLS.map((c) => '<td>' + SIBF[c[0]][1](x) + '</td>').join('');
+  const body = f.designs.slice().sort((a, b) => a.s - b.s).map((x) => { const vv = C.VERDICT[x.verdict], isBest = x === best && (FAM || f.designs.length > 1);
+    return '<tr data-id="' + x.id + '" class="' + (x === d ? 'cur' : '') + (isBest ? ' best' : '') + '"><td class="mono"' + (FAM ? '' : ' title="' + esc(x.name.length > 60 ? x.name.slice(0, 60) + '…' : x.name) + '"') + '>' + (FAM ? 'mpnn' + x.s + (x === best ? ' ★' : '') : x.id) + '</td><td><span class="st ' + vv.cls + '">' + icon(vv.icon) + vv.label + '</span></td>' + cells(x) + '<td><input type="checkbox" class="pk" data-id="' + x.id + '" ' + (pk.has(x.id) ? 'checked' : '') + ' aria-label="Put ' + x.id + ' on the order list"></td></tr>'; }).join('');
+  const rej = f.rej.map((x) => { const why = (x.fail || []).map((q) => q.stem).filter((s, i, a) => a.indexOf(s) === i); return '<tr data-id="' + x.id + '" data-new class="rejrow' + (x === d ? ' cur' : '') + '" title="Rejected by BindCraft' + (why.length ? ': ' + esc(why.join(', ')) : '') + '"><td class="mono">mpnn' + x.s + '</td><td><span class="tag mu">rejected</span></td>' + cells(x) + '<td></td></tr>'; }).join('');
+  return head + '<tbody>' + body + rej + '</tbody>';
+}
+function showFocus() {
+  const it = focusItem(); if (!it) return; st.focus = it.id; const f = curFam(), d = curSeq(), v = C.VERDICT[d.verdict];
+  $('#fId').textContent = !FAM ? d.id : f.id; $('#fId').title = !FAM ? d.name.slice(0, 80) : f.id; $('#fVerdict').innerHTML = '<span class="st ' + v.cls + '">' + icon(v.icon) + v.label + '</span>'; $('#fMode').innerHTML = '<span class="chip">' + shapeSvg(f.mode, 10) + f.mode + ' · C' + f.cluster + '</span>';
+  const ob = $('#btnOpen'); ob.hidden = !canOpen(d); ob.href = canOpen(d) ? BS.link.design(d.id, d.run) : '#'; ob.title = 'Open ' + d.id + ' in the inspector (Enter)';
+  $('#whyV').innerHTML = whyHtml(d);
+  V.tubes.clear(); V.setTube('t', { xyz: SM.t, color: M3.hex2rgb(C.css('--target')), width: 1.55, alpha: 0.95 });
+  f.designs.forEach((x, i) => { if (x !== d) V.setTube('s' + i, { xyz: SM.b(x), color: M3.hex2rgb(C.css('--binder')), width: 0.8, alpha: 0.28, outline: false }); }); V.setTube('b', { xyz: SM.b(d), color: M3.hex2rgb(C.css('--binder')), width: 2.0 });
+  const pose = has(d.m.complex_rmsd) && d.m.complex_rmsd > 2.5; if (pose) V.setTube('g', { xyz: M3.smooth(d.refoldF, 2), color: M3.hex2rgb(C.css('--hotspot')), width: 1.3, dash: [5, 4], alpha: 0.95, outline: false });
+  const halo = C.isDark() ? 'rgba(13,16,22,.85)' : 'rgba(255,255,255,.9)';
+  V.markers = d.tc.map((r) => { const i = T.idx[r]; const hot = hotSetOf(d).has(r); return { p: [T.caF[i * 3], T.caF[i * 3 + 1], T.caF[i * 3 + 2]], r: hot ? 6 : 3, shape: hot ? 'ring' : 'dot', color: M3.hex2rgb(C.css('--hotspot')), halo, label: hot ? T.resn[i] + r : '', text: C.isDark() ? '#f59a6c' : '#b8430f', fog: false }; });
+  const all = new Float32Array(T.caF.length + d.caF.length); all.set(T.caF); all.set(d.caF, T.caF.length);
+  if (focusKey !== f.id) { V._layout(); V.fitRot(all, d.view.slice(), 0.88); focusKey = f.id; } V.render();
+  $('#fvL').innerHTML = pose ? '<span style="color:var(--hotspot-ink)">' + PF.t('board.focus.dashed', { rmsd: d.m.complex_rmsd.toFixed(1) }, 'dashed = re-score · {rmsd} Å away') + '</span>' : PF.t('board.focus.default', {}, 'predicted complex');
+  const dc = dec(); ['K', 'M', 'X'].forEach((k) => { const b = $('#d' + k), nm = { K: 'keep', M: 'maybe', X: 'reject' }[k]; b.classList.toggle('on', dc[st.focus] === nm); b.setAttribute('aria-pressed', String(dc[st.focus] === nm)); });
+  drawDecNote();
+  $('#btnCmp span').textContent = st.cmp.has(st.focus) ? 'In compare (' + st.cmp.size + ')' : 'Compare' + (st.cmp.size ? ' (' + st.cmp.size + ')' : '');
+  // sibling table
+  const best = f.designs.reduce((a, x) => (x.q > a.q ? x : a), f.designs[0]); const pk = picksOf(f);
+  { const dcF = decAll().fam[f.id], nIn = FAM ? famInList(f) : 0, onList = !FAM ? '' : nIn ? nIn + ' of ' + f.n + ' on the order list' + (dcF === 'keep' && !pk.size ? ' (its best; none ticked)' : '') : pk.size ? pk.size + ' ticked, not on the list: ' + (dcF === 'maybe' ? 'a maybe adds nothing' : 'keep the family to add ' + (pk.size === 1 ? 'it' : 'them')) : 'none on the order list';
+    $('#sibNote').textContent = f.nPass + ' of ' + f.n + (PF.get('kind') === 'run' ? ' with a PASS or REVIEW verdict' : ' not NO PASS') + (onList ? ' · ' + onList : ''); }
+  $('#tagFocus').innerHTML = tagFocusHtml(f, d);
+  $('#sibT').innerHTML = sibTable(f, d, best, pk);
+  $$('#sibT tbody tr').forEach((tr) => (tr.onclick = (e) => { if (e.target.closest('input')) return; st.sib = tr.dataset.id; showFocus(); }));
+  $$('#sibT .pk').forEach((c) => (c.onchange = () => { const s = pickMem.get(f.id) || new Set(); pickMem.set(f.id, s); c.checked ? s.add(c.dataset.id) : s.delete(c.dataset.id); const cur = decAll().fam[f.id]; if (st.unit === 'fam' && (cur === 'keep' || cur === 'maybe')) addEv(f, cur); showFocus(); decorate(); drawOrder(); }));
+  $('#checks').innerHTML = checkRows(d).map((r) => '<div class="ck ' + (d.checks[r[0]] || 'off') + '"><svg class="ic"><use href="#' + C.CHECK_ICON[d.checks[r[0]] || 'off'] + '"/></svg><span class="n">' + esc(r[1]) + '</span><span class="d">' + r[2] + '</span></div>').join('') + specRow(d);
+  renderReasons();
+}
+function renderReasons() { const cur = reasonsOf(st.unit + ':' + st.focus), s = dec()[st.focus]; $('#reasons').innerHTML = '<span class="muted" style="font-size:11px;width:100%">' + (s === 'reject' ? 'Why reject?' : s === 'keep' ? 'Why keep? (optional)' : 'Tag a reason after deciding') + '</span>' + REASONS.map((r, i) => '<button class="chip btnlike' + (cur.has(r[0]) ? ' on' : '') + '" data-r="' + esc(r[0]) + '"><kbd>' + (i + 1) + '</kbd> ' + esc(r[1]) + '</button>').join(''); $$('#reasons .chip').forEach((b) => (b.onclick = () => toggleReason(b.dataset.r))); }
+function toggleReason(r) {
+  let it = allItems().find((x) => x.id === st.focus), cur = dec()[st.focus], late = false;
+  if (!cur) {   // the focus moves on after a decision: a reason key tags the item decided last
+    const h = hist[hist.length - 1], pu = h && h.unit === uName(st.unit) ? allItems().find((x) => x.id === h.design) : null;
+    if (!pu || !dec()[pu.id]) return; it = pu; cur = dec()[pu.id]; late = true;
+  }
+  if (!it) return; const k = st.unit + ':' + it.id, s = new Set(reasonsOf(k)); s.has(r) ? s.delete(r) : s.add(r); reasonMem.set(k, s);
+  addEv(it, cur); renderReasons();
+  if (late) { const lab = (REASONS.find((x) => x[0] === r) || [r, r])[1]; note((s.has(r) ? 'Tagged "' : 'Untagged "') + lab + '" on ' + it.id + ' (the item you decided last).'); }
+}
+
+/* ---------------- decisions / side panels ---------------- */
+function setFocus(id, scroll) { st.focus = id; st.sib = null; decorate(); showFocus(); const el = tileEls[st.unit + ':' + id]; if (scroll && el) el.scrollIntoView({ block: 'nearest' }); }
+function decide(kind, silent) {
+  const it = focusItem(); if (!it) return; const dc = dec(), prev = dc[it.id]; let ev;
+  if (prev === kind) ev = addEv(it, 'clear');
+  else {
+    const agree = st.learn && model.n >= 3 && (kind === 'keep' || kind === 'reject') ? (it.p > 0.5) === (kind === 'keep') : null; if (agree !== null) model.hits.push(agree ? 1 : 0);
+    if (st.unit === 'fam' && kind === 'keep' && !picksOf(it).size) pickMem.set(it.id, new Set([famKeepBest(it).id])); if (st.unit === 'fam' && kind === 'reject') pickMem.delete(it.id);
+    ev = addEv(it, kind);
+  }
+  hist.push(ev); train(); afterChange(true, silent);
+}
+function undoClearAll(batch) {   // 'Clear decisions' leaves one history entry holding its clear events: U appends the restoring event for each (the log stays append-only)
+  const log = store.list(); let n = 0;
+  batch.forEach((h) => {
+    const i = log.findIndex((x) => x.id === h.id); let prev = null;
+    for (let j = i - 1; j >= 0 && !prev; j--) { const x = log[j]; if (x.reviewer === h.reviewer && x.unit === h.unit && x.design === h.design) prev = x; }
+    if (!prev || prev.decision === 'clear') return;
+    store.add({ unit: h.unit, design: h.design, run: h.run, reviewer: h.reviewer, supersedes: h.id, learning: st.learn, decision: prev.decision, sequences: prev.sequences, reasons: prev.reasons, note: prev.note === undefined ? null : prev.note }); n++;
+  });
+  evCache = null; seedMemories(); train(); buildGrid(); showFocus(); note('Restored ' + BS.plural(n, 'decision') + ' that Clear decisions had cleared.', 'good');
+}
+function undo() {
+  const h = hist.pop(); if (!h) return;
+  if (h.batch) return undoClearAll(h.batch);
+  const log = store.list(); let prev = null;
+  for (let i = log.length - 1; i >= 0 && !prev; i--) if (log[i].id === h.id) for (let j = i - 1; j >= 0; j--) { const x = log[j]; if (x.reviewer === h.reviewer && x.unit === h.unit && x.design === h.design) { prev = x; break; } }
+  const base = { unit: h.unit, design: h.design, run: h.run, reviewer: h.reviewer, supersedes: h.id, learning: st.learn };
+  if (prev && prev.decision !== 'clear') { if (h.unit === 'family' && prev.sequences && prev.sequences.length) pickMem.set(h.design, new Set(prev.sequences)); reasonMem.set(uUi(h.unit) + ':' + h.design, new Set(prev.reasons || [])); store.add(Object.assign(base, { decision: prev.decision, sequences: prev.sequences, reasons: prev.reasons })); }
+  else store.add(Object.assign(base, { decision: 'clear' }));
+  const ui = uUi(h.unit); if (ui !== st.unit) { st.unit = ui; setSeg('#unitSeg', st.unit); }
+  train(); st.focus = h.design; afterChange(false);
+}
+function afterChange(advance, silent) {
+  const cur = st.focus; if (advance && !silent) { const L = order(), i = L.findIndex((x) => x.id === cur); const nx = L.slice(i + 1).find((x) => !dec()[x.id]) || L.find((x) => !dec()[x.id]); if (nx && dec()[cur]) st.focus = nx.id; }
+  const y = $('#sheet').scrollTop; buildGrid(); $('#sheet').scrollTop = y; st.sib = null; showFocus(); const el = tileEls[st.unit + ':' + st.focus]; if (el && !silent) el.scrollIntoView({ block: 'nearest' });
+}
+function auc(sc, lab) { const idx = sc.map((v, i) => i).sort((a, b) => sc[a] - sc[b]); let rs = 0, np = 0; idx.forEach((i, r) => { if (lab[i]) { rs += r + 1; np++; } }); const nn = lab.length - np; return np && nn ? (rs - (np * (np + 1)) / 2) / (np * nn) : NaN; }
+const SIM = PF.get('board.simulate', PF.get('kind') !== 'run') !== false;
+function drawSide() {
+  const dc = dec(), vi = items(), n = vi.length, cnt = (v) => vi.filter((it) => dc[it.id] === v).length, k = cnt('keep'), m = cnt('maybe'), r = cnt('reject');
+  $('#progbar').innerHTML = '<i style="width:' + (100 * k / n) + '%;background:var(--good)"></i><i style="width:' + (100 * m / n) + '%;background:var(--warn)"></i><i style="width:' + (100 * r / n) + '%;background:var(--ink-3)"></i>';
+  $('#counts').innerHTML = '<span><b>' + (k + m + r) + '</b> / ' + n + ' ' + unitNoun() + ' reviewed</span><span style="color:var(--good-ink)">' + icon('i-check') + '<b>' + k + '</b> keep</span><span style="color:var(--warn-ink)">' + icon('i-help') + '<b>' + m + '</b> maybe</span><span class="ink2">' + icon('i-x') + '<b>' + r + '</b> reject</span>';
+  $('#nUsed').textContent = model.n; const acc = model.hits.slice(-20); $('#mAcc').textContent = !st.learn ? 'learning is off' : acc.length ? 'agreed with your last ' + acc.length + ': ' + Math.round((100 * acc.reduce((a, b) => a + b, 0)) / acc.length) + '%' : 'keeps and rejects train it';
+  $('#learnL').textContent = st.learn ? 'Learning on' : 'Learning off'; $('#pModel').classList.toggle('paused', !st.learn);
+  const und = vi.filter((it) => !dc[it.id]), undAll = allItems().filter((it) => !dc[it.id]);
+  if (!SIM) { $('#prec').textContent = und.length; $('#precNote').textContent = 'of ' + n + ' ' + unitNoun() + ' in view'; }
+  else if (st.demoUsed) { const lab = undAll.map(hiddenKeep), aL = auc(undAll.map((x) => x.p), lab), aQ = auc(undAll.map((x) => x.score || repOf(x).q), lab); $('#prec').textContent = Number.isFinite(aL) ? aL.toFixed(2) : '–'; $('#precNote').textContent = Number.isFinite(aQ) ? 'quality alone: ' + aQ.toFixed(2) + ' · 1.00 perfect, 0.50 chance' : ''; } else { $('#prec').textContent = '–'; $('#precNote').textContent = (OUT ? 'run the lab-result simulation to measure' : 'run the simulated reviewer to measure'); }
+  const o2 = FEATS.map((f, i) => ({ l: f[0], w: model.w[i] })).sort((a, b) => Math.abs(b.w) - Math.abs(a.w)).slice(0, 8), mx = Math.max(0.6, ...o2.map((o) => Math.abs(o.w)));
+  $('#weights').innerHTML = o2.map((o) => '<div class="wrow"><span>' + esc(o.l) + '</span><span class="bar" title="weight ' + o.w.toFixed(2) + '">' + (o.w >= 0 ? '<i class="pos" style="width:' + (50 * o.w / mx) + '%"></i>' : '<i class="neg" style="width:' + (50 * -o.w / mx) + '%"></i>') + '</span><output>' + (o.w >= 0 ? '+' : '−') + Math.abs(o.w).toFixed(2) + '</output></div>').join('') + '<div style="padding:6px 12px 0;font-size:11px;color:var(--ink-3);line-height:1.4">' + (st.learn ? 'Weights start from a quality prior and move with your keeps and rejects. Blue = you prefer more of this, red = less.' : 'Learning is off: weights are frozen at ' + (model.n ? 'their last values' : 'the quality prior') + ' and your decisions are only recorded.') + '</div>';
+  const q = und.slice().sort((a, b) => b.p - a.p).slice(0, 4), u = und.filter((x) => Math.abs(x.p - 0.5) < 0.14).sort((a, b) => Math.abs(a.p - 0.5) - Math.abs(b.p - 0.5)).slice(0, 3);
+  const row = (it) => { const d = repOf(it), el = document.createElement('div'); el.className = 'qrow'; const cv = document.createElement('canvas'); el.appendChild(cv); const mid = document.createElement('div'); mid.innerHTML = '<div class="a">' + esc(tileLab(it)) + '</div><div class="b">' + d.mode + ' · ' + d.hot.length + '/' + C.hotOf(d) + ' hotspots · ' + headLabel + ' ' + f2(headVal(d)) + '</div>'; el.appendChild(mid); const p = document.createElement('div'); p.className = 'mono'; p.style.fontSize = '12px'; p.textContent = Math.round(it.p * 100) + '%'; el.appendChild(p); el.onclick = () => setFocus(it.id, true); const dpr = Math.min(2, devicePixelRatio || 1); cv.width = 64 * dpr; cv.height = 44 * dpr; M3.drawThumb(cv.getContext('2d'), 64, 44, { dpr, target: SM.t, binder: SM.b(d), view: d.view, c: d.vc, tColor: M3.hex2rgb(C.css('--target')), bColor: M3.hex2rgb(C.css('--binder')), pad: 3, tWidth: 2.4, bWidth: 3.2 }); return el; };
+  const qe = $('#queue'); qe.innerHTML = ''; q.forEach((it) => qe.appendChild(row(it))); $('#qNote').textContent = st.learn ? 'highest expected keep' : 'by quality prior (learning off)'; const ue = $('#uncertain'); ue.innerHTML = ''; if (!u.length || !st.learn) ue.innerHTML = '<div style="padding:4px 12px;font-size:11.5px;color:var(--ink-3)">' + (!st.learn ? 'Not shown while learning is off.' : model.n < 4 ? 'Appears after a few decisions.' : 'Nothing is borderline right now.') + '</div>'; else u.forEach((it) => ue.appendChild(row(it)));
+  drawOrder();
+}
+/* The order list is defined once, in bs.js (BS.order): the kept families' chosen sequences (the best one when none is chosen), the sequences kept one by one, and the rescued near-misses, each listed once.
+   The panel, the header chip and the files all read it, so they cannot disagree. */
+const orderRes = () => BS.order.resolve(store);
+/* how many sequences of a family are in the order list, whichever way they got there */
+const famInList = (f) => { const ids = new Set(orderRes().rows.map((r) => r.id)); return f.designs.filter((d) => ids.has(d.id)).length; };
+function orderList() { return orderRes().rows.map((r) => C.byId[r.id]).filter(Boolean); }
+const orderCsv = () => BS.order.csv(orderRes()), orderFasta = () => BS.order.fasta(orderRes());
+function drawOrder() {
+  const R = BS.order.render($('#olBox'), { store, compact: true, ids: { csv: 'btnCsv', fasta: 'btnFastaFile', copy: 'btnFasta', save: 'btnSave' },
+    empty: !FAM ? 'Keep a design (K) to add it to the order list.' : 'Keep a family (K) and its best sequence is added. Tick more in the Order column of its sequence table to add others.',
+    more: 'To add more, tick the Order boxes in the sequence table above.',
+    note: (r) => (sandbox ? 'The simulated reviewer is on: this list includes its calls and is not saved. The count in the header is your own. Clear decisions goes back to yours. ' : '') + ((() => { const ds = r.rows.map((x) => C.byId[x.id]).filter((d) => d && FB[d.fam]); if (!ds.length) return ''; const cl = new Set(ds.map((d) => runIdOf(d) + ':' + FB[d.fam].cluster)), modes = new Set(ds.map((d) => d.mode));
+      return BS.plural(cl.size, 'design cluster') + ' · ' + BS.plural(modes.size, 'binding mode') + tagNote(r) + (!FAM ? '. Spread the order list across clusters and modes rather than taking the top of one.' : '. Hits cluster by backbone, so one or two sequences per family is usually enough.'); })()),
+    extra: [].concat(cap('reviews') ? [{ id: 'btnLoad', label: 'Load review file', icon: 'up', onclick: () => loadReview() }] : [], TAGGED ? [{ id: 'btnTagPlan', label: 'Tag plan CSV', icon: 'down', ghost: true, onclick: () => { BS.download('tag-plan.csv', tagPlanCsv(), 'text/csv'); note('Wrote tag-plan.csv: one row per design in the order list, with the end to tag for each tag size and the evidence behind it. A prediction from one conformation.'); } }] : [], [{ id: 'btnShare2', label: 'Share review', ghost: true, onclick: () => openShare() }]) });
+  $('#slN').textContent = BS.plural(R.nRows, FAM ? 'sequence' : 'design');
+}
+/* the sentence under K, M and X: what keeping this item puts in the order list */
+function drawDecNote() {
+  const el = $('#decNote'); if (!el) return; const cur = dec()[st.focus];
+  if (!FAM) { el.innerHTML = cur === 'keep' ? 'In the order list.' : 'Keep adds this design to the order list.'; return; }
+  if (st.unit === 'seq') { el.innerHTML = cur === 'keep' ? 'This sequence is in the order list.' : 'Keep adds this sequence to the order list on its own; its family is not kept.'; return; }
+  const f = curFam(), pk = picksOf(f), best = famKeepBest(f), n = famInList(f);
+  if (cur === 'keep') el.innerHTML = 'In the order list: <b>' + n + ' of ' + f.n + '</b> ' + BS.pl(f.n, 'sequence') + ' of this family' + (pk.size ? '' : ' (its best)') + '. Tick more in the table below to add others.';
+  else el.innerHTML = 'Keep adds ' + (pk.size ? '<b>' + BS.plural(pk.size, 'ticked sequence') + '</b>' : 'its best sequence (<b>mpnn' + best.s + '</b>)') + ' to the order list, not every sequence of the family.' + (cur === 'maybe' ? ' A maybe adds nothing.' : '') + (n ? ' ' + n + ' of its ' + BS.pl(f.n, 'sequence') + (n === 1 ? ' is' : ' are') + ' already in the list, kept on ' + (n === 1 ? 'its' : 'their') + ' own.' : '');
+}
+function move(dx, dy) { const els = Array.from(tilesEl.querySelectorAll('.tile')); if (!els.length) return; let i = els.findIndex((e) => e.dataset.id === st.focus); if (i < 0) i = 0; const r0 = els[i].getBoundingClientRect(); let best = null, bd = 1e9; if (dx) best = els[Math.max(0, Math.min(els.length - 1, i + dx))]; else for (const e of els) { const r = e.getBoundingClientRect(), dyy = (r.top - r0.top) * dy; if (dyy > 4) { const d2 = dyy * 4 + Math.abs(r.left - r0.left); if (d2 < bd) { bd = d2; best = e; } } } if (best) { setFocus(best.dataset.id, true); best.focus({ preventScroll: true }); } }
+function note(text, cls) { const n = $('#notice'); n.textContent = text; n.className = 'notice' + (cls ? ' ' + cls : ''); n.hidden = !text; clearTimeout(note.t); if (text && cls !== 'bad') note.t = setTimeout(() => { n.hidden = true; }, 9000); }
+
+/* ---------------- compare ---------------- */
+const VC = new M3.Viewer($('#cvC'), { bg: () => C.css('--viewer-bg') });
+function openCompare() {
+  const ids = Array.from(st.cmp); if (!ids.length) { st.cmp.add(st.focus); ids.push(st.focus); }
+  if (ids.length < 2) { const others = items().filter((it) => !ids.includes(it.id) && !dec()[it.id] && repOf(it).verdict !== 'fail').sort((a, b) => b.p - a.p).slice(0, 2); others.forEach((it) => { st.cmp.add(it.id); ids.push(it.id); }); }
+  const its = ids.slice(0, 5).map((i) => allItems().find((x) => x.id === i)).filter(Boolean), ds = its.map(repOf), cols = ['--m1', '--m2', '--m3', '--m4', '--m5'].map((c) => C.rgb(c));
+  VC.tubes.clear(); VC.setTube('t', { xyz: SM.t, color: M3.hex2rgb(C.css('--target')), width: 1.6, alpha: 0.95 }); ds.forEach((d, i) => VC.setTube('d' + i, { xyz: SM.b(d), color: cols[i], width: 1.9, alpha: 0.95 }));
+  VC.markers = T.hotspots.map((r) => { const i = T.idx[r]; return { p: [T.caF[i * 3], T.caF[i * 3 + 1], T.caF[i * 3 + 2]], r: 6, color: M3.hex2rgb(C.css('--hotspot')), label: T.resn[i] + r, halo: C.isDark() ? 'rgba(13,16,22,.85)' : 'rgba(255,255,255,.9)', text: C.isDark() ? '#f59a6c' : '#b8430f', fog: false }; });
+  $('#mCmp').classList.add('on'); VC._layout(); const all = new Float32Array(T.caF.length + ds.reduce((a, d) => a + d.caF.length, 0)); all.set(T.caF); let o = T.caF.length; ds.forEach((d) => { all.set(d.caF, o); o += d.caF.length; }); VC.fitRot(all, FIXED_VIEW.R.slice(), 0.9); $('#cmpSub').textContent = ds.length + ' ' + (!FAM ? 'designs' : st.unit === 'fam' ? 'families (best sequence each)' : 'sequences') + ' on one target';
+  $('#cmpBody').innerHTML = '<table class="tbl cmp"><thead><tr><th>Metric</th>' + its.map((it, i) => '<th><span class="dot" style="color:var(' + ['--m1', '--m2', '--m3', '--m4', '--m5'][i] + ')"></span> ' + esc(tileLab(it)) + '</th>').join('') + '</tr></thead><tbody>' + COMPARE.map((r) => { const vals = ds.map((d) => r[1](d)), best = r[3] === 0 ? null : r[3] > 0 ? Math.max(...vals) : Math.min(...vals); return '<tr><td>' + esc(r[0]) + '</td>' + vals.map((v) => '<td class="num' + (best !== null && v === best && ds.length > 1 ? ' best' : '') + '">' + (Number.isFinite(v) ? v.toFixed(r[2]) : '–') + '</td>').join('') + '</tr>'; }).join('') +
+    (MULTI ? '<tr data-new><td>Run</td>' + ds.map((d) => '<td>' + esc(runIdOf(d)) + '</td>').join('') + '</tr>' : '') + '<tr><td>Verdict</td>' + ds.map((d) => '<td><span class="st ' + C.VERDICT[d.verdict].cls + '">' + icon(C.VERDICT[d.verdict].icon) + C.VERDICT[d.verdict].label + '</span></td>').join('') + '</tr>' + (OUT && st.reveal ? '<tr><td>Lab result</td>' + ds.map((d) => '<td>' + labPill(d) + '</td>').join('') + '</tr>' : '') + '</tbody></table><div style="padding:8px 12px;font-size:11.5px;color:var(--ink-3);line-height:1.4">Underlined = best in row. Binders are superposed on one target. Compare across backbones to see real differences in pose.</div>';
+}
+
+/* ---------------- demo reviewer (a sandbox copy of the log: nothing it does is saved) ---------------- */
+const HOME = store;
+function startDemo() {
+  if (st.demo) return;
+  if (!sandbox) { const saved = store; store = BS.createDecisions({ persist: false }); store.setReviewer(saved.reviewer()); store.importJSONL(saved.exportJSONL()); bindStore(store); evCache = null; sandbox = true; hist = []; }
+  st.demo = { n: 0 }; st.demoUsed = true; $('#banner').classList.add('on'); $('#btnDemo').disabled = true; st.sort = 'learned'; setSeg('#sortSeg', 'learned'); st.hideRej = true; $('#fHideRej').checked = true; st.learn = true; $('#learnT').checked = true; buildGrid();
+  const step = () => { if (!st.demo) return; if (st.demo.n >= (st.unit === 'fam' && FAM ? 18 : 30)) return stopDemo(); const cand = items().filter((it) => !dec()[it.id]).sort((a, b) => b.p - a.p)[st.demo.n % 3 === 2 ? 3 : 0]; if (!cand) return stopDemo(); st.focus = cand.id; const rnd = (cand.id.charCodeAt(cand.id.length - 2) * 7 + st.demo.n * 13) % 100, keep = hiddenKeep(cand) ? rnd > 8 : rnd < 6; decide(keep ? 'keep' : 'reject', true); st.demo.n++; $('#bannerTxt').textContent = (OUT ? 'Simulated reviewer with the lab results: ' + st.demo.n + ' decisions. It keeps designs that bound (with a little noise) and rejects the rest, and the ranking learns from those calls.' : PF.t('board.demo.banner', { n: st.demo.n }, 'Simulated reviewer: {n} decisions. It keeps on-epitope families with few buried polars, no sticky patch and a clear interface with the other chains.')); const el = tileEls[st.unit + ':' + st.focus]; if (el) el.scrollIntoView({ block: 'nearest' }); st.demo.t = setTimeout(step, 260); };
+  st.demo.t = setTimeout(step, 400);
+}
+function stopDemo() { if (!st.demo) return; clearTimeout(st.demo.t); st.demo = null; $('#banner').classList.remove('on'); $('#btnDemo').disabled = false; drawSide(); }
+function resetDecisions() {
+  stopDemo(); hideReset(); let cleared;
+  if (sandbox) { store.clearAll(); cleared = HOME.clearAll(); store = HOME; sandbox = false; } else cleared = store.clearAll();
+  evCache = null; hist = cleared.length ? [{ batch: cleared }] : []; pickMem.clear(); reasonMem.clear(); model.hits = []; model.w = W0.slice(); model.b = -0.2; model.n = 0; predictAll(); buildGrid(); showFocus();
+  if (cleared.length) note('Cleared ' + BS.plural(cleared.length, 'decision') + '. Press U to undo, or load a saved review file to bring them back.', 'good');
+}
+/* Clear decisions asks first, in a bar under the toolbar (a browser dialog would block the test harness): the clears are appended to the log, so a saved review file keeps the whole history, and U undoes them */
+function hideReset() { const b = $('#resetBar'); if (b) b.hidden = true; }
+function askReset() {
+  const real = HOME.current().size, sim = sandbox ? Math.max(0, store.current().size - real) : 0;
+  if (!real && !sim) { note('There are no decisions to clear.'); return; }
+  $('#resetMsg').textContent = 'Clear ' + BS.plural(real, 'decision') + (sim ? ' and the simulated reviewer\'s calls' : '') + '? Nothing is deleted: each one gets a clear event, so a saved review file keeps the whole history, and loading it again brings the decisions back. Press U right after to undo.';
+  $('#resetBar').hidden = false; $('#btnResetNo').focus();
+}
+$('#btnStop').onclick = stopDemo; $('#btnDemo').onclick = startDemo; $('#btnReset').onclick = askReset; $('#btnResetYes').onclick = () => { resetDecisions(); $('#btnReset').focus(); }; $('#btnResetNo').onclick = () => { hideReset(); $('#btnReset').focus(); };
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#resetBar').hidden) hideReset(); });
+
+/* ---------------- import dialog (read from profile.import and the manifest) + review file dialog ---------------- */
+function impTokens() {
+  const R = RUN, k = T.construct, first = Array.isArray(k) ? k[0] : k && k.first !== undefined ? k.first : PF.get('target.construct.first'), last = Array.isArray(k) ? k[1] : k && k.last !== undefined ? k.last : PF.get('target.construct.last');
+  const t = { n_accepted: R.n_accepted !== undefined ? R.n_accepted : D.length, cols: R.cols, n_scored: R.n_scored, n_traj_pass: R.n_traj_pass, n_traj: R.n_traj, n_low: R.n_traj != null && R.n_traj_pass != null ? R.n_traj - R.n_traj_pass : undefined, n_families: FAMS.length, run_source: R.source || 'BindCraft', run_name: R.name || '', run_credit: R.credit || '',
+    n_total: R.n_total, n_boltz: R.n_boltz, n_sample: R.n_sample, first, last, len: T.length || PF.get('target.length'), n_runs: RUNIDS.length, n_designs: D.length, n_rejected: REJ.length };
+  Object.keys(t).forEach((k2) => { if (t[k2] === undefined || t[k2] === null || (typeof t[k2] === 'number' && !Number.isFinite(t[k2]))) delete t[k2]; }); return t;
+}
+function manifestTree() {
+  const man = BS.blob('manifest'); if (!man || !Array.isArray(man.sources) || !man.sources.length) return [];
+  const base = (p) => String(p).split('/').filter(Boolean).pop(), NAME = { 'final_design_stats.csv': 'accepted designs with every score', 'mpnn_design_stats.csv': 'every sequence that was scored, accepted or not', 'trajectory_stats.csv': 'trajectories that were scored, in generation order', 'failure_csv.csv': 'how often each filter rejected a sequence' }, ROLE = { csv: 'table of designs or trajectories', settings: 'run settings', xlsx: 'spreadsheet copy of the final designs', accepted_structure: 'accepted structures (relaxed models)', rejected_structure: 'rejected structures kept for near-miss rescue' };
+  return man.sources.map((s) => [(s.run ? s.run + ' · ' : '') + base(s.path) + (s.count ? ' (' + s.count + ' PDB)' : ''), NAME[base(s.path)] || ROLE[s.role] || s.role, 'ok']);
+}
+function importModal() {
+  const I = BS.profile.import || {}, tok = impTokens(), R = (s) => BS.render(s, tok), tree = (f) => '<div><span class="' + f[2] + '">' + (f[2] === 'ok' ? '✓' : f[2] === 'miss' ? '!' : '·') + '</span> ' + esc(R(f[0])) + ' <span class="mu">' + esc(R(f[1])) + '</span></div>';
+  const files = (I.files && I.files.length ? I.files : manifestTree()).concat(I.files_extra || []);
+  const chip = (a, b) => '<span><span class="chip mono">' + esc(a) + '</span><br><span class="muted" style="font-size:10.5px">' + esc(b) + '</span></span>';
+  const card = (c, first) => '<div class="card"' + (first ? ' style="margin-top:12px"' : '') + '><h3>' + R(c.title) + '</h3><p>' + R(c.html) + '</p>' + (c.chips && c.chips.length ? '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:flex-end">' + c.chips.map((x) => chip(x[0], x[1])).join('') + '</div>' : '') +
+    ((c.actions && c.actions.length) || c.tag ? '<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">' + (c.actions || []).map((a, i) => '<button class="btn sm' + (i === 0 ? ' primary' : '') + '">' + esc(a) + '</button>').join('') + (c.tag ? '<span class="tag mu">' + esc(c.tag) + '</span>' : '') + '</div>' : '') + '</div>';
+  const cards = Array.isArray(I.cards) ? I.cards : [], left = cards.filter((c) => c.column === 'left'), right = cards.filter((c) => c.column !== 'left');
+  $('#importBody').innerHTML = '<div class="cols2"><div>' + (files.length ? '<div class="tree">' + files.map(tree).join('') + '</div>' : '') + left.map((c) => card(c, true)).join('') + '</div><div style="display:grid;gap:10px;align-content:start">' + right.map((c) => card(c, false)).join('') + '</div></div>';
+}
+function refreshShare() {
+  const nEv = store.list().length, me = store.reviewer(), revs = store.reviewers();
+  $('#rvInfo').textContent = nEv + ' event' + (nEv === 1 ? '' : 's') + ' in the log' + (sandbox ? ' (demo copy: not saved)' : '') + '. The file is named after the reviewer (' + store.filename() + ') and is plain text, one event per line.';
+  const rn = $('#revName'); if (document.activeElement !== rn) rn.value = me;
+  const sel = $('#revPick'); sel.hidden = revs.length < 2; sel.innerHTML = revs.map((r) => '<option' + (r === me ? ' selected' : '') + '>' + esc(r) + '</option>').join('');
+  $('#rvStore').textContent = BS.storage.persistent === false ? 'This browser does not allow storage for this page: decisions live in memory only. Save the review file before you close it.' : 'Decisions are saved in this browser as you make them (keyed to this bundle). Clearing the site data removes them; the review file does not depend on it.';
+}
+function reloadFromStore() { evCache = null; seedMemories(); hist = []; model.hits = []; model.w = W0.slice(); model.b = -0.2; train(); buildGrid(); showFocus(); refreshShare(); }
+function saveReview() { const fn = store.saveFile(); note('Saved ' + fn + ' (' + store.list().filter((e) => e.reviewer === store.reviewer()).length + ' events of ' + store.reviewer() + '). Put it in the bundle\'s reviews/ folder to keep it with the bundle.', 'good'); refreshShare(); }
+async function loadReview() {
+  try {
+    const r = await store.pickFile(); if (!r) return;
+    const mine = store.list().filter((e) => e.reviewer === store.reviewer()).length; if (!mine && r.reviewers.length === 1) store.setReviewer(r.reviewers[0]);
+    reloadFromStore();
+    const others = r.reviewers.filter((x) => x !== store.reviewer());
+    note('Loaded ' + r.added + ' new event' + (r.added === 1 ? '' : 's') + (r.reviewers.length ? ' from ' + r.reviewers.join(', ') : '') + (r.duplicates ? '; ' + r.duplicates + ' already there' : '') + (r.restored ? '; brought back ' + BS.plural(r.restored, 'decision') + ' that were cleared here' : '') + (r.invalid.length ? '; ' + r.invalid.length + ' line' + (r.invalid.length === 1 ? '' : 's') + ' skipped as invalid (first: line ' + r.invalid[0].line + ', ' + r.invalid[0].error + ')' : '') + (r.foreign ? '; ' + r.foreign + ' from another bundle' : '') + '.' + (others.length ? ' You are viewing ' + store.reviewer() + '; switch reviewer in Share to look at ' + others.join(', ') + '.' : ''), r.invalid.length ? 'bad' : 'good');
+  } catch (e) { note('Could not read that file: ' + e.message, 'bad'); }
+}
+function helpHtml() {
+  const kb = (s) => s.split(' ').map((k) => '<kbd class="kbd">' + k + '</kbd>').join(' '), tb = (title, rows) => '<h4>' + title + '</h4><table class="helpt"><tbody>' + rows.map((r) => '<tr><td>' + kb(r[0]) + '</td><td>' + r[1] + '</td></tr>').join('') + '</tbody></table>';
+  return tb('Move', [['← ↑ ↓ →', 'move between tiles'], ['Enter', 'open the focused ' + (FAM ? 'sequence' : 'design') + ' in the inspector (double-click a tile does the same)'], ['/', 'find a ' + (FAM ? 'family or sequence' : 'design') + ' by id'], ['Esc', 'close a dialog, or clear the search']]) +
+    tb('Decide', [['K', 'keep (press again to clear)'], ['M', 'maybe'], ['X', 'reject'], ['1 – ' + Math.min(7, REASONS.length), 'tag a reason on a decided item: ' + REASONS.slice(0, 7).map((r, i) => (i + 1) + ' ' + esc(r[1])).join(' · ')], ['U', 'undo the last decision']]) +
+    tb('Review', [['L', 'learning on or off (decisions are recorded either way)'], ['C', 'add to or remove from compare, then press Compare'], ...(FAM ? [['[ ]', 'step through the sequences of the focused family (the Order checkboxes in its table choose which ones go on the order list)']] : []), ['?', 'this list']]) +
+    '<h4>Marks on a tile</h4><table class="helpt"><tbody><tr><td><span class="mono">p 98%</span></td><td>' + pExplain() + '</td></tr></tbody></table>' +
+    '<div class="muted" style="font-size:11.5px;margin-top:10px;line-height:1.45">Shortcuts do not fire while you type in a field. In the 3D view, drag to rotate and use the wheel to zoom.</div>';
+}
+function toggleHelp() { const m = $('#mHelp'); if (!m.classList.contains('on')) $$('.modal.on').forEach((x) => x.classList.remove('on')); m.classList.toggle('on'); }
+$$('[data-close]').forEach((b) => (b.onclick = () => b.closest('.modal').classList.remove('on')));
+$$('.modal').forEach((m) => m.addEventListener('click', (e) => { if (e.target === m) m.classList.remove('on'); })); $$('.modal').forEach((m) => BS.dialog.watch(m));
+$('#btnImport').onclick = () => { importModal(); $('#mImport').classList.add('on'); }; const openShare = () => { refreshShare(); $('#mShare').classList.add('on'); }; $('#btnShare').onclick = openShare;
+$('#btnSaveReview').onclick = saveReview; $('#btnLoadReview').onclick = loadReview;
+$('#revName').onchange = (e) => { const v = e.target.value.trim(); if (v && v !== store.reviewer()) { store.setReviewer(v); reloadFromStore(); } };
+$('#revPick').onchange = (e) => { store.setReviewer(e.target.value); reloadFromStore(); };
+$('#helpBody').innerHTML = helpHtml();
+
+/* ---------------- wiring ---------------- */
+function setSeg(sel, v) { $$(sel + ' button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v))); }
+$$('#unitSeg button').forEach((b) => (b.onclick = () => { if (st.unit === b.dataset.v) return; stopDemo(); setUnit(b.dataset.v); setSeg('#unitSeg', st.unit); st.focus = null; st.sib = null; buildGrid(); st.focus = (vis[0] || items()[0]).id; decorate(); showFocus(); }));
+$$('#sortSeg button').forEach((b) => (b.onclick = () => { st.sort = b.dataset.v; setSeg('#sortSeg', st.sort); buildGrid(); })); $$('#grpSeg button').forEach((b) => (b.onclick = () => { st.group = b.dataset.v; setSeg('#grpSeg', st.group); if (st.sort !== 'group') { st.sort = 'group'; setSeg('#sortSeg', 'group'); } buildGrid(); }));
+$$('#colSeg button').forEach((b) => (b.onclick = () => { st.col = b.dataset.v; setSeg('#colSeg', st.col); redrawAll(); }));
+$('#fUndec').onchange = (e) => { st.undecided = e.target.checked; buildGrid(); }; $('#fHideRej').onchange = (e) => { st.hideRej = e.target.checked; buildGrid(); };
+const setLearn = (on) => { st.learn = on; store.setLearning(on); $('#learnT').checked = on; if (on) train(); decorate(); drawSide(); };
+$('#learnT').onchange = (e) => setLearn(e.target.checked);
+$('#dK').onclick = () => decide('keep'); $('#dM').onclick = () => decide('maybe'); $('#dX').onclick = () => decide('reject');
+$('#btnCmp').onclick = () => { if (st.cmp.has(st.focus)) openCompare(); else { st.cmp.add(st.focus); decorate(); showFocus(); } };
+$('#btnOpen').onclick = (e) => { e.preventDefault(); openInspector(focusItem().id); };
+const qs = $('#qSearch');
+qs.oninput = () => { st.q = qs.value.trim().toLowerCase(); buildGrid(); const first = vis[0]; if (!first) return; st.focus = first.id; const f = first.designs ? first : FB[first.fam], hit = st.q ? f.designs.concat(f.rej).find((d) => d.id.toLowerCase() === st.q) : null; st.sib = hit ? hit.id : null; decorate(); showFocus(); };
+qs.onkeydown = (e) => { if (e.key === 'Escape') { qs.value = ''; qs.oninput(); qs.blur(); e.stopPropagation(); } else if (e.key === 'Enter') { e.preventDefault(); qs.blur(); } };
+document.addEventListener('keydown', (e) => {
+  if (e.metaKey || e.ctrlKey || e.altKey) return; const k = e.key, anyModal = $$('.modal.on').length;
+  if (k === 'Escape') { $$('.modal.on').forEach((m) => m.classList.remove('on')); return; }
+  if (e.target.matches('input[type="text"], input[type="search"], input[type="range"], select, textarea')) return;
+  if (k === '?') { toggleHelp(); e.preventDefault(); return; }
+  if (anyModal) return;
+  if (k === 'ArrowRight') move(1, 0); else if (k === 'ArrowLeft') move(-1, 0); else if (k === 'ArrowDown') move(0, 1); else if (k === 'ArrowUp') move(0, -1);
+  else if (k === 'k' || k === 'K') decide('keep'); else if (k === 'm' || k === 'M') decide('maybe'); else if (k === 'x' || k === 'X') decide('reject'); else if (k === 'u' || k === 'U') undo();
+  else if (k === 'l' || k === 'L') setLearn(!st.learn);
+  else if (k === 'c' || k === 'C') { st.cmp.has(st.focus) ? st.cmp.delete(st.focus) : st.cmp.add(st.focus); decorate(); showFocus(); }
+  else if (k === '[' || k === ']') { if (!FAM) return; const f = curFam(), ds = f.designs.slice().sort((a, b) => a.s - b.s), i = ds.findIndex((d) => d.id === curSeq().id), j = (i + (k === ']' ? 1 : -1) + ds.length) % ds.length; st.sib = ds[j].id; showFocus(); }
+  else if (/^[1-7]$/.test(k)) { if (REASONS[+k - 1]) toggleReason(REASONS[+k - 1][0]); else return; }
+  else if (k === '/') { qs.focus(); qs.select(); e.preventDefault(); return; }
+  else if (k === 'Enter') { if (e.target.closest('button, a, input, select, textarea')) return; openInspector(focusItem().id); return; }
+  else return; if (k.startsWith('Arrow')) e.preventDefault();
+});
+
+/* ---------------- header, panels, runs ---------------- */
+function updateCrumbs() {
+  const ids = scopeIds(), fams = ids.reduce((n, id) => n + famsOfRun[id].length, 0), nd = ids.reduce((n, id) => n + D.filter((d) => runIdOf(d) === id).length, 0);
+  const tok = { run_source: RUN.source || 'BindCraft', run_name: RUN.name || '', n_runs: RUNIDS.length, n_sample: RUN.n_sample !== undefined ? RUN.n_sample : nd, n_families: fams, n_designs: nd };
+  $('#crumbRun').textContent = PF.t('crumb.board.run', tok, '{@target.short} · {run_source} run'); $('#crumbSub').textContent = PF.t('crumb.board.sub', tok, '· {n_families} families');
+  let ex = $('#crumbScope'); if (MULTI && BS.runFilter.selected()) { if (!ex) { ex = document.createElement('span'); ex.id = 'crumbScope'; ex.className = 'muted'; ex.setAttribute('data-new', ''); $('#crumbSub').after(ex); } ex.textContent = '· showing ' + ids.join(', '); } else if (ex) ex.remove();
+}
+function initProfile() {
+  if (SIBCOLS.length >= 6) { $('#sibT').classList.add('dense'); $('.main').style.setProperty('--rail', '450px'); }   // many columns: a wider rail and tighter cells
+  $('#learnT').checked = st.learn;
+  const app0 = $('.app'), cr = BS.profile.credit; if (app0 && cr && cr.html) { const f0 = document.createElement('div'); f0.className = 'credit'; f0.innerHTML = cr.html; app0.appendChild(f0); }
+  if (!FAM) { const ug = $('#unitSeg'); if (ug) ug.closest('.grp').hidden = true; $$('.hintbar span').forEach((x) => { if (/pick sequence/.test(x.textContent)) x.hidden = true; }); }
+  if (!cap('has_traj')) { const tb = $('#sortSeg button[data-v="traj"]'); if (tb) tb.hidden = true; }
+  {   // the import dialog only shows how a run is read, it imports nothing: the button and the title say so (the text keys board.import.label and board.import.title keep another wording, e.g. the mockups')
+    const ib = $('#btnImport'), h2 = $('#mImport h2'), ttl = (BS.profile.import && BS.profile.import.title) || h2.textContent;
+    if (PF.has('board.import.label')) ib.lastChild.textContent = PF.t('board.import.label'); else { ib.lastChild.textContent = 'How to import a run'; const u = $('use', ib); if (u) u.setAttribute('href', '#i-info'); }
+    if (PF.has('board.import.title')) h2.textContent = PF.t('board.import.title'); else { h2.textContent = String(ttl).replace(/^Import\b/, 'How to import'); $('#mImport').setAttribute('aria-label', h2.textContent); }
+  }
+  if (FAM) { const hs = $('.hintbar [data-hint="sibs"]'); if (hs && hs.lastChild) hs.lastChild.textContent = ' ' + PF.t('board.hint.sibs', null, 'step through sequences'); }   // [ ] only steps through the sequences of the focused family
+  const dm = $('#btnDemo'); if (!SIM) dm.hidden = true; else if (OUT && dm.lastChild) dm.lastChild.textContent = 'Simulate with lab results';
+  const k = $$('.stat2 .k')[0]; if (k) k.textContent = !SIM ? 'Still to review' : OUT ? 'Ranking vs lab outcome' : 'Ranking vs simulated taste';
+  if (!FAM) { const sh = $$('#pFocus .secth')[0]; if (sh) sh.firstChild.textContent = 'This design'; }
+  const hp = $$('.sumrow .panel-h h2'), sub = (i) => hp[i].parentNode.querySelector('.sub');
+  if (PF.get('kind') === 'dataset') hp[0].textContent = 'Dataset funnel';
+  if (!FAM) { hp[1].textContent = 'Design diversity'; sub(1).textContent = 'designs grouped by fold and binding site'; }
+  if (OUT) { hp[2].textContent = 'Do the checks predict the lab?'; sub(2).textContent = 'shown after you press Show lab results'; } else if (FAM && cap('has_traj') && trajUnit(RUNIDS[0]) !== 'trajectories') sub(2).textContent = 'new design clusters per passed trajectory';
+  if (OUT) {
+    const hdr = $('.hdr'), b = document.createElement('button'); b.className = 'btn sm'; b.id = 'btnReveal'; b.setAttribute('aria-pressed', 'false'); b.textContent = 'Show lab results'; hdr.insertBefore(b, $('#btnImport'));
+    b.onclick = () => { st.reveal = !st.reveal; b.setAttribute('aria-pressed', String(st.reveal)); b.textContent = st.reveal ? 'Hide lab results' : 'Show lab results'; decorate(); showFocus(); drawFunnel(); drawLab(); drawSide(); };
+  }
+}
+function onRunChange() {
+  st.upto = null; st.sib = null; RUNIDS.forEach(computeAdv); syncReplay(); buildGrid();
+  if (!items().some((it) => it.id === st.focus)) st.focus = (vis[0] || items()[0] || allItems()[0]).id;
+  decorate(); showFocus(); drawFunnel(); drawDiv(); drawYield(); drawTags(); drawPool(); updateCrumbs();
+}
+function applyHash() {
+  const h = BS.link.parse(); if ('order' in h) { BS.order.open(); try { history.replaceState(null, '', location.pathname + location.search); } catch (e) { /* the hash stays */ } }
+  if (!h.f && !h.d) return; let it = null, sib = null;
+  if (h.d && C.byId[h.d]) { const d = C.byId[h.d]; if (st.unit === 'fam') { it = FB[d.bb]; sib = d.id; } else it = D.find((x) => x.id === d.id); }
+  else if (h.f) it = st.unit === 'fam' ? FB[h.f] : D.find((x) => x.id === h.f) || (FB[h.f] && FB[h.f].rep);
+  if (!it) { note('Nothing on the board has the id ' + (h.f || h.d) + '.', 'bad'); return; }
+  const run = repOf(it).run; if (run && !BS.runFilter.includes(run)) BS.runFilter.set([run]);
+  if (st.q) { st.q = ''; qs.value = ''; } st.undecided = false; $('#fUndec').checked = false; st.hideRej = false; $('#fHideRej').checked = false; buildGrid();
+  setFocus(it.id, true); if (sib) { st.sib = sib; showFocus(); }
+}
+C.onTheme(() => { redrawAll(); showFocus(); drawSide(); drawDiv(); drawYield(); });
+addEventListener('resize', () => { drawDiv(); drawYield(); });
+BS.link.onChange(applyHash); BS.runFilter.onChange(onRunChange);
+$$('[data-nav]').forEach((a) => a.addEventListener('click', (e) => { if (a.getAttribute('href') === '#') e.preventDefault(); }));
+/* The statistics drawer. Shut to begin with: the funnel, the diversity and the
+   yield estimate are read once at the start of a session, while the decision
+   below them is made for every family. What the person chooses is remembered. */
+(function () {
+  const box = document.getElementById('statDrawer'), btn = document.getElementById('statToggle'), body = document.getElementById('statBody');
+  if (!box || !btn || !body) return;
+  const KEY = 'binderscope.board.stats';
+  const set = (open) => { box.dataset.open = open ? '1' : '0'; body.hidden = !open; btn.setAttribute('aria-expanded', open ? 'true' : 'false'); };
+  let open = false;
+  try { open = BS.storage.get(KEY) === '1'; } catch (e) { open = false; }   // storage can refuse; the drawer still works
+  set(open);
+  btn.addEventListener('click', () => { open = !open; set(open); try { BS.storage.set(KEY, open ? '1' : '0'); } catch (e) { /* in memory only */ } });
+}());
+
+initProfile(); initSummary(); initTags(); buildGrid(); st.focus = (vis[0] || FAMS[0]).id; decorate(); showFocus(); drawFunnel(); drawDiv(); drawYield(); drawTags(); drawPool(); updateCrumbs(); applyHash(); loadSpecificity();
+window.__fb = { st, D, drawLab, labStats, FAMS, recluster, computeAdv, drawYield, drawDiv, drawFunnel, CL: () => CL, ADV: () => ADV, model, get decs() { return decAll(); }, picks: pickMem, reasons: reasonMem, store: () => store, startDemo, importModal, openCompare, whyList, checkRows, orderList, orderCsv, orderFasta, FEATS: () => FEATS.map((f) => [f[0], f[2]]), COMPARE: () => COMPARE.map((r) => r[0]), SIBCOLS: () => SIBCOLS.map((c) => c[0]), onRunChange, drawTags, setTagSize, tagPlanCsv, famPickOf: (f, k) => TM.famPick(f.rep, f.designs, k) };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,857 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Demo · Binder Campaign Map</title>
+<script>if(location.hash=="#light")document.documentElement.setAttribute("data-theme","light");if(location.hash=="#dark")document.documentElement.setAttribute("data-theme","dark");</script>
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
+<link rel="stylesheet" href="assets/css/shared.css">
+<style>
+/* ---- Campaign Map ---- */
+.app { min-height: 720px; }
+.strip { flex: none; display: flex; align-items: stretch; gap: 10px; padding: 10px 16px; background: var(--bg); min-width: 0; }
+.funnel { display: flex; align-items: stretch; gap: 0; flex: 1; min-width: 0; overflow-x: auto; }
+.stage { flex: 1 1 0; min-width: 118px; text-align: left; background: var(--surface); border: 1px solid var(--line); padding: 7px 10px 8px; cursor: pointer; position: relative; border-radius: 0; display: flex; flex-direction: column; gap: 2px; }
+.stage:first-child { border-radius: 8px 0 0 8px; } .stage:last-child { border-radius: 0 8px 8px 0; } .stage + .stage { margin-left: -1px; }
+.stage:hover { background: var(--surface-2); }
+.stage[aria-pressed="true"] { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); z-index: 1; background: var(--surface); }
+.stage .lbl { font-size: 11px; color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.stage .n { font-size: 20px; font-weight: 600; line-height: 1.1; letter-spacing: -.01em; }
+.stage .drop { font-size: 11px; color: var(--ink-3); font-weight: 400; margin-left: 6px; }
+.stage .bar { height: 4px; border-radius: 2px; background: var(--surface-3); margin-top: 4px; overflow: hidden; }
+.stage .bar i { display: block; height: 100%; background: var(--accent); border-radius: 2px; }
+.stage .thr { font-size: 10.5px; color: var(--ink-3); overflow: hidden; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow-wrap: anywhere; } /* the whole definition is in the stage's title */
+.panel-h { flex-wrap: wrap; row-gap: 4px; } .panel-h .sub { flex: 1 1 5em; } /* the epitope header carries two segmented controls: they wrap under the title instead of leaving the panel */
+.strip-r { display: flex; flex-direction: column; justify-content: center; gap: 6px; flex: none; font-size: 12px; color: var(--ink-2); }
+.strip-r select { font-size: 12px; }
+.grid { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(300px, 1.05fr) minmax(400px, 1.3fr) minmax(300px, 1fr); gap: 10px; padding: 0 16px 14px; }
+.vbox { position: relative; flex: 1; min-height: 200px; background: var(--viewer-bg); border-top: 1px solid var(--line); }
+.vbox canvas { position: absolute; inset: 0; }
+.vbadge { position: absolute; left: 10px; top: 10px; display: flex; gap: 6px; flex-wrap: wrap; pointer-events: none; }
+.vlegend { position: absolute; left: 10px; bottom: 8px; display: flex; align-items: center; gap: 8px; font-size: 11px; color: var(--ink-3); pointer-events: none; }
+.ramp { width: 96px; height: 8px; border-radius: 4px; border: 1px solid var(--line); }
+.vtools { position: absolute; right: 8px; top: 8px; display: flex; gap: 4px; }
+.strip1d { flex: none; border-top: 1px solid var(--line); padding: 6px 10px 8px; position: relative; }
+.strip1d canvas { width: 100%; height: 116px; cursor: crosshair; }
+.strip1d .cap { display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--ink-3); margin-bottom: 2px; gap: 8px; }
+.mapwrap { position: relative; flex: 1; min-height: 240px; background: var(--viewer-bg); border-top: 1px solid var(--line); }
+.mapwrap canvas { position: absolute; inset: 0; }
+.legend { flex: none; display: flex; flex-wrap: wrap; gap: 6px; padding: 8px 10px; border-top: 1px solid var(--line); }
+.lg { display: inline-flex; align-items: center; gap: 6px; padding: 3px 8px 3px 6px; border: 1px solid var(--line); border-radius: 99px; background: var(--surface); cursor: pointer; font-size: 11.5px; color: var(--ink-2); white-space: nowrap; }
+.lg:hover { border-color: var(--line-strong); color: var(--ink); }
+.lg[aria-pressed="true"] { border-color: var(--ink); color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
+.lg svg { width: 12px; height: 12px; }
+.lg .c { color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.hover-card { position: fixed; z-index: 60; pointer-events: none; width: 232px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: 10px; box-shadow: var(--shadow); padding: 8px; opacity: 0; transition: opacity .08s; }
+.hover-card.on { opacity: 1; }
+.hover-card canvas { width: 100%; height: 118px; background: var(--viewer-bg); border-radius: 6px; border: 1px solid var(--line); }
+.hc-h { display: flex; align-items: center; gap: 6px; margin: 6px 0 4px; font-weight: 600; }
+.hc-g { display: grid; grid-template-columns: repeat(3, 1fr); gap: 2px 8px; font-size: 11px; }
+.hc-g span { color: var(--ink-3); display: block; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.hc-g b { font-weight: 600; font-variant-numeric: tabular-nums; }
+.detail { padding: 0 12px 12px; display: flex; flex-direction: column; gap: 12px; overflow: auto; min-height: 0; flex: 1; }
+.dh { display: flex; align-items: center; gap: 8px; padding-top: 2px; }
+.dh h3 { margin: 0; font-size: 15px; font-weight: 600; }
+.stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.stats > div { background: var(--surface); padding: 6px 8px; min-width: 0; }
+.stats .k { font-size: 10px; letter-spacing: .05em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.stats .v { font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.sect { font-size: 10.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; margin: 0 0 6px; display: flex; align-items: center; gap: 8px; }
+.sect .grow { flex: 1; height: 1px; background: var(--line); }
+.row { display: grid; grid-template-columns: 88px 1fr auto; gap: 8px; align-items: center; padding: 5px 4px; border-radius: 7px; cursor: pointer; border: 1px solid transparent; }
+.row:hover, .row.on { background: var(--surface-2); border-color: var(--line); }
+.row canvas { width: 88px; height: 60px; border-radius: 5px; background: var(--viewer-bg); border: 1px solid var(--line); }
+.row .t1 { display: flex; align-items: center; gap: 6px; font-weight: 600; }
+.row .t2 { font-size: 11px; color: var(--ink-3); display: flex; gap: 8px; flex-wrap: wrap; margin-top: 2px; }
+.minibar { display: inline-flex; align-items: center; gap: 4px; }
+.minibar i { display: inline-block; width: 42px; height: 4px; background: var(--surface-3); border-radius: 2px; position: relative; overflow: hidden; }
+.minibar i b { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 2px; }
+.star { border: 0; background: transparent; cursor: pointer; color: var(--ink-3); padding: 4px; border-radius: 6px; }
+.star:hover { color: var(--ink); background: var(--surface-3); }
+.star[aria-pressed="true"] { color: var(--hotspot); }
+.star[aria-pressed="true"] .ic { fill: currentColor; }
+.picks { display: flex; flex-wrap: wrap; gap: 5px; }
+.pk { display: inline-flex; align-items: center; gap: 5px; padding: 2px 7px 2px 5px; border: 1px solid var(--line); border-radius: 6px; font-size: 11.5px; background: var(--surface); cursor: pointer; font-family: var(--font-mono); }
+.pk:hover { border-color: var(--line-strong); background: var(--surface-2); }
+.ctl { display: grid; grid-template-columns: 82px 1fr 34px; gap: 8px; align-items: center; font-size: 12px; color: var(--ink-2); }
+.ctl output { font-variant-numeric: tabular-nums; text-align: right; color: var(--ink); font-weight: 500; }
+.covbar { display: flex; height: 10px; border-radius: 5px; overflow: hidden; gap: 2px; background: var(--surface-3); }
+.covbar i { display: block; height: 100%; }
+.consensus { display: flex; flex-wrap: wrap; gap: 4px; }
+.pbrow { display: grid; grid-template-columns: 112px 1fr 44px; gap: 8px; align-items: center; font-size: 11.5px; padding: 2px 0; }
+.pbrow .b { position: relative; height: 8px; background: var(--surface-2); border-radius: 2px; } .pbrow .b i { position: absolute; top: 0; bottom: 0; left: 0; background: var(--m1); border-radius: 2px; } .pbrow .b i.s { background: color-mix(in srgb, var(--m1) 38%, transparent); border-radius: 0 2px 2px 0; }
+.pbrow output { text-align: right; color: var(--ink-3); font-family: var(--font-mono); font-size: 11px; }
+.stk { display: flex; height: 10px; gap: 2px; border-radius: 3px; overflow: hidden; } .stk i { display: block; min-width: 2px; }
+.cres { font-family: var(--font-mono); font-size: 11px; padding: 1px 5px; border-radius: 4px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink-2); }
+.cres.hot { border-color: var(--hotspot); color: var(--hotspot-ink); }
+.note { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; }
+.tblw { position: absolute; inset: 0; overflow: auto; }
+.tblw table tr { cursor: pointer; }
+.tblw tr.on td { background: var(--accent-soft); }
+.chipx { display: inline-flex; align-items: center; gap: 4px; padding: 2px 4px 2px 8px; border-radius: 99px; background: var(--accent-soft); border: 1px solid var(--accent); color: var(--ink); font-size: 11.5px; }
+.chipx button { border: 0; background: transparent; cursor: pointer; color: var(--ink-2); display: inline-flex; padding: 1px; border-radius: 50%; }
+.chipx button:hover { background: var(--surface-3); }
+@media (max-width: 1100px) {
+  .app { height: auto; } html, body { height: auto; }
+  .grid { grid-template-columns: 1fr; } .panel { min-height: 420px; }
+  .strip { flex-direction: column; } .strip-r { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .hdr { flex-wrap: wrap; height: auto; padding-block: 8px; } .views { order: 5; }
+}
+
+.credit { flex: none; padding: 4px 16px 8px; font-size: 11px; color: var(--ink-3); } .credit a { color: var(--ink-2); }
+.tag-real { font-size: 11px; color: var(--good-ink); border: 1px solid var(--good); background: var(--good-soft); padding: 2px 7px; border-radius: 99px; white-space: nowrap; }
+.btn[aria-pressed="true"] { background: var(--accent-soft); border-color: var(--accent); }
+.lab { font-size: 12px; font-weight: 700; } .lab.y { color: var(--good-ink); } .lab.n { color: var(--bad-ink); }
+.vbadge { right: 52px; } .vbadge .chip { white-space: normal; }
+@media (max-width: 720px) { .tag-real { display: none; } }
+
+/* per-run features and links (exported projects) */
+a.mono, a.idlink { color: inherit; text-decoration: none; } a.mono:hover, a.idlink:hover { text-decoration: underline; }
+.pkx { margin-left: 3px; color: var(--ink-3); text-decoration: none; } .pkx:hover { color: var(--ink); }
+.chip.rm { background: repeating-linear-gradient(135deg, var(--surface-2) 0 4px, var(--line) 4px 5px); } /* opaque: the 3D view must not show through the label */
+.strip-r .btn { align-self: flex-start; }
+.row .t1 { flex-wrap: wrap; row-gap: 2px; }
+@media (max-width: 720px) { .vbox { min-height: 300px; } }
+</style>
+<meta name="description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:title" content="Binderscope demo: reviewing BindCraft binder designs">
+<meta property="og:description" content="A live Binderscope review of one BindCraft 2 run: backbone families, 3D design inspection, binding-mode maps and a rule-based structure query. Runs in the browser, nothing to install.">
+<meta property="og:type" content="website">
+<meta name="robots" content="index,follow">
+<style id="bs-demo-css">
+.bs-demo{position:fixed;left:12px;bottom:12px;z-index:9999;display:flex;align-items:center;gap:8px;max-width:min(560px,calc(100vw - 24px));
+  padding:7px 10px 7px 12px;border-radius:10px;background:var(--surface,#fff);color:var(--ink-2,#444b5e);border:1px solid var(--line-strong,#c7ccda);
+  box-shadow:0 6px 24px rgba(0,0,0,.18);font:12px/1.35 var(--font-ui,system-ui,sans-serif)}
+.bs-demo b{color:var(--ink,#141824);font-weight:600}
+.bs-demo a{color:var(--accent,#4a3aa7);font-weight:600;text-decoration:none;white-space:nowrap}
+.bs-demo a:hover{text-decoration:underline}
+.bs-demo button{flex:none;border:0;background:none;color:var(--ink-3,#586280);font-size:15px;line-height:1;cursor:pointer;padding:0 2px}
+.bs-demo[hidden]{display:none}
+.bs-demo-chip{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;font-size:11.5px;font-weight:600;white-space:nowrap;
+  text-decoration:none;color:var(--accent-ink,#fff);background:var(--accent,#4a3aa7);border:1px solid var(--accent,#4a3aa7);margin-left:6px}
+.bs-demo-chip:hover{filter:brightness(1.12)}
+@media print{.bs-demo,.bs-demo-chip{display:none}}
+</style>
+</head>
+<body data-page="map">
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+<symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+<symbol id="i-x" viewBox="0 0 24 24"><path d="M18 6 6 18M6 6l12 12"/></symbol>
+<symbol id="i-alert" viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0zM12 9v4M12 17h.01"/></symbol>
+<symbol id="i-star" viewBox="0 0 24 24"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8L12 17.8 5.8 21l1.2-6.8-5-4.9 6.9-1z"/></symbol>
+<symbol id="i-copy" viewBox="0 0 24 24"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></symbol>
+<symbol id="i-pose" viewBox="0 0 24 24"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></symbol>
+<symbol id="i-layers" viewBox="0 0 24 24"><path d="m12 3 9 5-9 5-9-5zM3 13l9 5 9-5"/></symbol>
+<symbol id="i-reset" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></symbol>
+<symbol id="i-chev" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+</defs></svg>
+
+<div class="app">
+  <header class="hdr">
+    <a class="brand" href="index.html" title="Project overview"><svg class="mark" aria-hidden="true" focusable="false" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- A lowercase b: a helix for the stem, a bowl holding the hotspot. The same
+       drawing as the launcher's mark. The stripes are cut with a mask rather
+       than painted in the background colour, so they show whatever is behind;
+       the stem and the bowl follow currentColor, which is what lets the header
+       colour them and favicon_svg() substitute a literal for a tab strip. -->
+  <defs>
+    <mask id="bs-mark-stem">
+      <rect width="64" height="64" fill="#fff"/>
+      <path d="M9 57C12.5 57 16.5 50 20 50M9 46C12.5 46 16.5 39 20 39M9 35C12.5 35 16.5 28 20 28M9 24C12.5 24 16.5 17 20 17M9 13C12.5 13 16.5 6 20 6" fill="none" stroke="#000" stroke-width="2.6"/>
+    </mask>
+  </defs>
+  <g transform="translate(1.5 0)">
+    <rect x="9" y="3" width="11" height="57" rx="5.5" fill="currentColor" mask="url(#bs-mark-stem)"/>
+    <circle cx="36" cy="40" r="15" fill="none" stroke="currentColor" stroke-width="10"/>
+    <circle cx="36" cy="40" r="5.5" fill="#f08a24"/>
+  </g>
+</svg><span class="bname">Binderscope</span><span class="bproj" title="Q9NZQ7">Q9NZQ7</span></a>
+    <div class="crumbs"><span>Campaigns</span><span>/</span><b id="crumbT"></b><span class="muted" id="crumbS"></span></div>
+    <div class="grow"></div>
+    <span class="tag-run" id="tagMock" title="Designs and scores come from BindCraft runs. Where orthologs or paralogs were given, they are UniProt sequences aligned to the target construct and conservation grades are computed from the orthologs only.">BindCraft output</span><a class="bs-demo-chip" href="https://github.com/schnickn/binderscope" target="_blank" rel="noopener" title="This is a demo with sample data. Binderscope is free to install and reviews your own runs.">Demo &middot; Get Binderscope &#8599;</a>
+    <div class="runslot" id="bsRunSlot" hidden></div>
+    <nav class="views" aria-label="Views"><a href="index.html" data-nav="index">Overview</a><a href="board.html" data-nav="board">Board</a><a href="inspector.html" data-nav="inspector">Inspector</a><a href="map.html" data-nav="map" aria-current="page">Map</a><a href="query.html" data-nav="query">Query</a><a class="extra" href="guide.html" data-nav="guide">Guide</a></nav>
+  </header>
+
+  <section class="strip" aria-label="Filter funnel">
+    <div class="funnel" id="funnel" role="group"></div>
+    <div class="strip-r">
+      <label>Thresholds <select id="preset"></select></label>
+      <div class="note" id="stripNote"></div>
+    </div>
+  </section>
+
+  <main class="grid">
+    <!-- Epitope map -->
+    <section class="panel" aria-labelledby="h-epi">
+      <div class="panel-h"><h2 id="h-epi">Epitope map</h2><span class="sub" id="epiSub"></span><span class="grow"></span>
+        <div class="seg" id="epiSeg" role="group" aria-label="Binders shown"><button data-v="ens" aria-pressed="true" title="Overlay the top designs of the selected mode">Binders</button><button data-v="none" aria-pressed="false">Surface</button></div><div class="seg" id="colSeg" role="group" aria-label="Colour the target by"><button data-v="freq" aria-pressed="true" title="How many designs contact each residue">Contacts</button><button data-v="cons" aria-pressed="false">Conservation</button></div></div>
+      <div class="vbox" id="vbox"><canvas id="cv3d" aria-label="3D view of the target coloured by how many designs contact each residue"></canvas>
+        <div class="vbadge" id="vbadge"></div>
+        <div class="vtools"><button class="btn sm ghost" id="btnReset" title="Reset view"><svg class="ic"><use href="#i-reset"/></svg></button></div>
+        <div class="vlegend"><span id="rampMin">0</span><canvas class="ramp" id="ramp" width="96" height="8" style="position:static"></canvas><span id="rampMax">max</span><span id="rampCap">designs contacting residue</span></div>
+      </div>
+      <div class="strip1d"><div class="cap"><span>Contact frequency by residue</span><span id="rangeCap">drag to filter designs by region</span></div><canvas id="cvStrip" aria-label="Bar chart of designs contacting each target residue"></canvas></div>
+    </section>
+
+    <!-- Binding modes -->
+    <section class="panel" aria-labelledby="h-map">
+      <div class="panel-h"><h2 id="h-map">Binding modes</h2><span class="sub" id="mapSub">closer = touches the same target residues</span><span class="grow"></span>
+        <div class="seg" id="viewSeg" role="group" aria-label="View"><button data-v="map" aria-pressed="true">Map</button><button data-v="fp" aria-pressed="false">Fingerprints</button><button data-v="tbl" aria-pressed="false">Table</button></div></div>
+      <div class="mapwrap" id="mapwrap"><canvas id="cvMap" aria-label="Scatter of designs by binding mode"></canvas><div class="tblw" id="tblw" hidden></div></div>
+      <div class="legend" id="legend"></div>
+    </section>
+
+    <!-- Mode detail -->
+    <section class="panel" aria-labelledby="h-det">
+      <div class="panel-h"><h2 id="h-det">Mode detail</h2><span class="sub" id="detSub"></span><span class="grow"></span><span class="chip" id="shortChip" title="Starred designs">★ <b id="shortN">0</b> shortlisted</span></div>
+      <div class="detail" id="detail"></div>
+    </section>
+  </main>
+</div>
+<div class="hover-card" id="hcard"><canvas id="hcCv"></canvas><div class="hc-h" id="hcH"></div><div class="hc-g" id="hcG"></div></div>
+
+<script src="assets/js/mini3d.js"></script>
+<script src="assets/js/bs.js"></script>
+<script src="assets/js/common.js"></script>
+<script src="data/campaign.js"></script>
+<script src="data/homolog.js"></script>
+<script src="data/manifest.js"></script>
+<script>
+const RAW = BS.data('campaign');
+const HOM = BS.data('homolog');
+(function () {
+'use strict';
+const C = Common.load(RAW), T = C.T, M3 = Mini3D, tip = C.tip(), SP = C.Spec(HOM), RUN = RAW.run || {};
+const CAP = (f) => PF.cap(f), esc = BS.esc;
+/* The runs of the project (campaign.runs[]) each carry their own hotspots and target construct. A bundle without runs[] (the mockup data) is one run
+   and every per-run feature below stays off, so those pages read exactly as before. */
+const RUNS = Array.isArray(RAW.runs) ? RAW.runs : [], PER_RUN = RUNS.length > 0, MULTI = RUNS.length > 1;
+const HBR = PER_RUN && T.hotspots_by_run ? T.hotspots_by_run : null;
+const ALL = C.designs, ACC = ALL.filter((d) => d.status !== 'rejected'), REJ = ALL.filter((d) => d.status === 'rejected');
+SP.attach(ALL);
+let D = ACC, DR = [];   // the designs in view (accepted, in the selected runs) and the rejected ones drawn on the map when asked for
+const runTag = (id) => (/^run/i.test(id) ? 'r' + String(id).slice(3) : String(id));
+const sid = (d) => {
+  const m = d.id.match(/_s(\d+)_mpnn(\d+)$/); if (!m) return esc(d.id);
+  return PER_RUN ? (MULTI ? esc(runTag(d.run)) + ' · ' : '') + 's' + m[1] + ' · m' + m[2] : 'seed ' + m[1] + ' · m' + m[2];
+};
+const idLink = (d, txt, cls, notitle) => '<a class="' + (cls || 'mono') + '" href="' + BS.link.design(d.id) + '"' + (notitle ? '' : ' title="' + esc(d.id) + '"') + '>' + txt + '</a>';
+const num = (v, n) => (C.has(v) ? v.toFixed(n === undefined ? 2 : n) : '–');
+const numU = (v, n, u) => (C.has(v) ? v.toFixed(n) + u : '–');
+const tok = (o) => { const r = {}; Object.keys(o).forEach((k) => { const v = o[k]; if (v !== undefined && v !== null && !(typeof v === 'number' && !Number.isFinite(v))) r[k] = v; }); return r; };
+
+C.tips(BS.tipsFor('map', ['Click a binding mode in the legend or on the map. The epitope map, residue strip and detail panel all follow it.', 'Drag across the <b>residue strip</b> under the 3D view to keep only designs that touch that region.', 'Drag a box over empty space on the map to select a custom group.', 'Switch to <b>Fingerprints</b>: one row per design, one column per target residue. Binding modes show up as stripes.']
+  .concat(PER_RUN ? ['Switch to <b>By mode</b> for a heat map of contact frequency: one row per binding mode, one column per target residue. Hatched columns are not in the target of every run; orange marks are the hotspots of each run.'] : [])
+  .concat(PER_RUN ? ['Keyboard: <b>1</b> to <b>9</b> pick a binding mode, <b>←</b> and <b>→</b> step through them, <b>M</b> <b>F</b> <b>B</b> <b>T</b> switch the view (map, fingerprints, by mode, table), <b>R</b> shows or hides rejected designs, <b>Esc</b> clears a selection.'] : [])
+  .concat(['In the picks panel, set <b>Diversity</b> to 0 and then to 1 and compare what is picked.', 'Change <b>Thresholds</b> at the top right and watch the funnel recount.'])
+  .concat(MULTI ? ['Use <b>Runs</b> in the header to look at one run: hotspots, removed regions and counts follow it. The pooled view is descriptive only, the runs differ in hotspots and target.'] : [])
+  .concat(CAP('outcomes') ? ['Press <b>Show lab results</b> to ring the designs that bound on the map and to see how each mode did in the lab.'] : [])
+  .concat(['Switch the epitope map to <b>Conservation</b> to colour the target by how conserved each residue is across species, then read the <b>Specificity</b> block in the mode detail.'])));
+const $ = (s, r) => (r || document).querySelector(s), $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
+const MODES = C.MODES; let MV = MODES;   // MV: the modes that have designs in view
+const MNAME = {}; MODES.forEach((m) => (MNAME[m] = RAW.modes[m].name));
+const modeNote = (m) => (RAW.modes[m] && RAW.modes[m].note) || PF.get('modes.notes.' + m, '');
+const icon = (id, cls) => '<svg class="ic ' + (cls || '') + '"><use href="#' + id + '"/></svg>';
+const shapeSvg = (m, size) => '<svg viewBox="0 0 12 12" width="' + (size || 12) + '" height="' + (size || 12) + '" style="color:' + C.modeCss(m) + '" fill="currentColor">' + C.SHAPE_SVG[C.MODE_SHAPE[m]] + '</svg>';
+const SM = { t: M3.smooth(T.caF, 2), b(d) { return d._sm || (d._sm = M3.smooth(d.caF, 2)); } };
+const HEAD = CAP('ipsae') ? { key: 'ipsae', label: 'ipSAE' } : { key: 'iptm_b', label: 'i_pTM' };   // the confidence score the page leads with
+const headVal = (d) => { const v = d.m[HEAD.key]; return C.has(v) ? v : C.has(d.m.iptm) ? d.m.iptm : NaN; };
+const sizeVal = (d) => { const v = PF.get('view.map_size_metric', 'ipsae') === 'iptm' ? (C.has(d.m.iptm_b) ? d.m.iptm_b : d.m.iptm) : d.m.ipsae; return C.has(v) ? v : (C.has(headVal(d)) ? headVal(d) : 0.5); };
+const epiOk = (d) => d.hot.length >= Math.min(C.PRESET.hotspots, C.hotOf(d));
+const wrongSite = (d) => PER_RUN && C.hotOf(d) > 0 && d.hot.length === 0;   // touches none of the hotspots of its own run
+
+/* ---------------- state ---------------- */
+let picks = new Set(), pickList = [];
+const famCounts = () => { const c = {}; D.forEach((d) => (c[d.bb] = (c[d.bb] || 0) + 1)); return c; };
+const hotOfText = () => { const s = Array.from(new Set(D.map((d) => C.hotOf(d)))).sort((a, b) => a - b); return !s.length ? String(T.hotspots.length) : s.length > 1 ? s[0] + '–' + s[s.length - 1] : String(s[0]); };
+const crumbTokens = () => { const fc = famCounts(); return tok({ run_name: RUN.name, run_source: RUN.source, n_runs: RUNS.length || 1, n_designs: D.length, n_families: Object.keys(fc).length, n_sample: RUN.n_sample, n_total: RUN.n_total, max_seq: Math.max(0, ...Object.values(fc)) }); };
+const okBase = (d) => d.checks.fold === 'pass' && d.checks.interface === 'pass' && d.checks.consistency === 'pass';
+const hasPose = CAP('complex_rmsd') || CAP('binder_rmsd'), hasCtx = C.hasContext();
+const STAGES = [
+  { key: 'all', label: PF.t('map.stage.all.label', null, 'All designs'), thr: () => PF.t('map.stage.all.thr', crumbTokens(), '{n_designs} designs in {n_families} families'), test: () => true },
+  { key: 'fold', label: 'Fold confident', thr: (P) => 'pLDDT ≥ ' + P.plddt.toFixed(2) + ' · pTM ≥ ' + P.ptm.toFixed(2), test: (d) => d.checks.fold === 'pass' },
+  { key: 'iface', label: 'Interface confident', thr: (P) => PF.t('map.stage.iface.thr', tok({ ipsae: C.has(P.ipsae) ? P.ipsae.toFixed(2) : undefined, min_ipae: P.min_ipae, iptm_b: C.has(P.iptm_b) ? P.iptm_b.toFixed(2) : undefined, ipae_norm: C.has(P.ipae_norm) ? P.ipae_norm.toFixed(2) : undefined }),
+      CAP('ipsae') ? 'ipSAE ≥ {ipsae}' + (CAP('min_ipae') ? ' · iPAE ≤ {min_ipae} Å' : '') : 'i_pTM ≥ {iptm_b} · i_pAE ≤ {ipae_norm}'), test: (d) => d.checks.fold === 'pass' && d.checks.interface === 'pass' },
+  hasPose && { key: 'pose', label: PF.t('map.stage.pose.label', null, 'Pose-consistent'), thr: (P) => PF.t('map.stage.pose.thr', tok({ complex_rmsd: P.complex_rmsd, binder_rmsd: P.binder_rmsd }), CAP('complex_rmsd') ? 'complex RMSD ≤ {complex_rmsd} Å' : 'binder alone within {binder_rmsd} Å of its complex shape'), test: okBase },
+  hasCtx && { key: 'ctx', label: PF.t('map.stage.ctx.label', null, 'Fits its surroundings'), thr: () => PF.t('map.stage.ctx.thr', { n3: C.S.partner.fail_n3 }, 'under {n3} atoms within 3 Å of the rest of the assembly'), test: (d) => okBase(d) && d.checks.context !== 'fail' },
+  { key: 'epi', label: PF.t('map.stage.epi.label', null, 'On the intended epitope'), thr: (P) => PF.t('map.stage.epi.thr', { hotspots: P.hotspots, hot_of: hotOfText() }, '≥ {hotspots} of {hot_of} hotspots touched'), test: (d) => okBase(d) && (!hasCtx || d.checks.context !== 'fail') && epiOk(d) },
+  { key: 'picks', label: 'Diverse picks', thr: () => 'quality–diversity selection', test: (d) => picks.has(d) },
+].filter(Boolean);
+const PI = STAGES.length - 1, EPI = STAGES.findIndex((s) => s.key === 'epi'), POSE = Math.max(STAGES.findIndex((s) => s.key === 'ctx'), STAGES.findIndex((s) => s.key === 'pose'), STAGES.findIndex((s) => s.key === 'iface'));
+const st = { reveal: false, col: 'freq', stage: 0, mode: null, range: null, focus: null, hover: null, brush: null, view: 'map', shortlist: new Set(), k: 8, alpha: 0.5, pool: 'epi', epi: 'ens', preset: C.PRESET_DEFAULT(), rej: false };
+function computePicks() {
+  const pool = D.filter((d) => (st.pool === 'epi' ? STAGES[EPI].test(d) : STAGES[POSE].test(d)));
+  pickList = C.select(pool, Math.min(st.k, pool.length), st.alpha); picks = new Set(pickList);
+}
+const inRange = (d) => !st.range || d.tc.some((r) => r >= st.range[0] && r <= st.range[1]);
+const isLive = (d) => STAGES[st.stage].test(d) && inRange(d);
+const inScope = (d) => isLive(d) && (st.brush ? st.brush.has(d.id) : !st.mode || d.mode === st.mode);
+const median = (a) => { if (!a.length) return NaN; const s = a.slice().sort((x, y) => x - y); return s[s.length >> 1]; };
+
+/* ---------------- runs in view: hotspots and removed regions of the selected runs ---------------- */
+let selIds = RUNS.map((r) => r.id), hotShown = T.hotspots.slice(), hotTag = {}, hotSetSel = T.hotSet, remSt = new Uint8Array(T.n), remBy = [];
+const removedOf = (id) => { const r = RUNS.find((x) => x.id === id); return (r && r.target && r.target.removed) || []; };
+const inRanges = (rs, x) => rs.some((a) => x >= a[0] && x <= a[1]);
+function refreshRuns() {
+  const sel = BS.runFilter.selected(); selIds = sel || RUNS.map((r) => r.id);
+  hotTag = {};
+  if (HBR) { const has = (id, r) => (HBR[id] || []).indexOf(r) >= 0; hotShown = T.hotspots.filter((r) => selIds.some((id) => has(id, r))); hotShown.forEach((r) => { const w = selIds.filter((id) => has(id, r)); hotTag[r] = w.length < selIds.length ? w : null; }); }
+  else hotShown = T.hotspots.slice();
+  hotSetSel = new Set(hotShown);
+  remSt = new Uint8Array(T.n); remBy = [];
+  for (let i = 0; i < T.n; i++) { const w = PER_RUN ? selIds.filter((id) => inRanges(removedOf(id), T.resi[i])) : []; remBy.push(w); remSt[i] = !w.length ? 0 : w.length === selIds.length ? 2 : 1; }
+}
+const hotLabel = (r) => T.resn[T.idx[r]] + r;
+const isHot = (r) => hotSetSel.has(r);
+function setPool() {
+  const sel = BS.runFilter.selected(), inSel = (d) => !sel || sel.indexOf(d.run) >= 0;
+  D = ACC.filter(inSel); DR = st.rej ? REJ.filter(inSel) : [];
+  MV = MODES.filter((m) => D.some((d) => d.mode === m));
+  if (st.mode && MV.indexOf(st.mode) < 0) st.mode = MV[0] || null;
+  if (st.brush) { const ids = new Set(D.concat(DR).map((d) => d.id)); st.brush = new Set(Array.from(st.brush).filter((i) => ids.has(i))); if (!st.brush.size) st.brush = null; }
+  if (st.focus && !D.concat(DR).some((d) => d.id === st.focus)) st.focus = null;
+}
+
+/* ---------------- lab outcomes (only with caps.outcomes) ---------------- */
+const fmtKd = (kd) => (kd == null ? '' : kd < 1e-9 ? (kd * 1e12).toFixed(0) + ' pM' : kd < 1e-6 ? (kd * 1e9).toFixed(kd < 1e-8 ? 1 : 0) + ' nM' : (kd * 1e6).toFixed(1) + ' µM');
+const labPillM = (d) => '<span class="lab ' + (d.outcome.binds ? 'y' : 'n') + '" title="' + (d.outcome.binds ? 'binds in the lab' + (d.outcome.kd != null ? ', KD ' + fmtKd(d.outcome.kd) : '') : 'no binding detected') + '">' + (d.outcome.binds ? '✓' : '✕') + '</span>';
+const wOf = (d) => (CAP('weights') ? d.wt || 1 : 1);
+function labModes(sel) {
+  const rows = MODES.map((mm) => { const g = D.filter((d) => d.mode === mm), w = g.reduce((a, d) => a + wOf(d), 0), wb = g.reduce((a, d) => a + (d.outcome.binds ? wOf(d) : 0), 0); return { m: mm, n: g.length, b: g.filter((d) => d.outcome.binds).length, rate: w ? wb / w : 0 }; }), mx = Math.max(0.05, ...rows.map((r) => r.rate));
+  return '<div><div class="sect">What the lab found<span class="grow"></span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">share that bound' + (CAP('weights') ? ', weighted to the full dataset' : '') + '</span></div>' + rows.map((r) => '<div class="pbrow" style="grid-template-columns:150px 1fr 92px;' + (r.m === sel ? 'font-weight:600' : '') + '" title="' + r.b + ' of ' + r.n + ' designs in the sample bound"><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + shapeSvg(r.m, 10) + ' ' + r.m + ' ' + esc(MNAME[r.m]) + '</span><span class="b"><i style="width:' + Math.min(100, (100 * r.rate) / mx) + '%;background:' + C.modeCss(r.m) + '"></i></span><output>' + (100 * r.rate).toFixed(0) + '% · ' + r.b + '/' + r.n + '</output></div>').join('') + (CAP('weights') ? '<div class="note" style="margin-top:4px">The sample keeps every binder but only some of the other designs, so the weighted share is the one to compare with the full dataset. Counts are from the sample.</div>' : '') + '</div>';
+}
+function initPage() {
+  const app0 = $('.app'), cr = PF.get('credit.html', null); if (app0 && cr) { const f0 = document.createElement('div'); f0.className = 'credit'; f0.innerHTML = cr; app0.appendChild(f0); }
+  const cb = $('#colSeg button[data-v="cons"]'); if (cb) cb.title = PF.t('map.cons.title', null, 'Conservation across ' + PF.get('specificity.panel_noun', 'orthologs') + ' (ConSurf-style grade)');
+  const pre = $('#preset'); pre.innerHTML = Object.keys(C.PRESETS).map((k) => '<option value="' + esc(k) + '">' + esc(C.PRESETS[k].name) + '</option>').join(''); pre.value = C.PRESET_DEFAULT();
+  const hdr = $('.hdr'), views = hdr.querySelector('.views'), tg = $('#tagMock');
+  if (CAP('outcomes')) {
+    const b = document.createElement('button'); b.className = 'btn sm'; b.id = 'btnReveal'; b.setAttribute('aria-pressed', 'false'); b.textContent = 'Show lab results'; hdr.insertBefore(b, tg || views);
+    b.onclick = () => { st.reveal = !st.reveal; b.setAttribute('aria-pressed', String(st.reveal)); b.textContent = st.reveal ? 'Hide lab results' : 'Show lab results'; update(true); };
+  }
+  if (PER_RUN) { const sg = $('#viewSeg'), tb = $('#viewSeg button[data-v="tbl"]'), hb = document.createElement('button'); hb.dataset.v = 'hm'; hb.setAttribute('aria-pressed', 'false'); hb.title = 'Share of the designs of each binding mode that contact each target residue'; hb.textContent = 'By mode'; sg.insertBefore(hb, tb); }
+  if (CAP('rejected') && REJ.length) {
+    const sr = $('.strip-r'), b = document.createElement('button'); b.className = 'btn sm'; b.id = 'btnRej'; b.setAttribute('aria-pressed', 'false'); b.title = 'Draw the designs BindCraft rejected as hollow marks on the map. They never count in the funnel or in the picks.'; sr.insertBefore(b, $('#stripNote'));
+    b.onclick = () => { st.rej = !st.rej; setPool(); update(true); };
+  }
+}
+function drawCrumbs() {
+  const t = $('#crumbT'), s = $('#crumbS'), k = crumbTokens();
+  if (t) t.textContent = PF.t('crumb.map.title', k, '{@target.short} · {run_name}');
+  if (s) s.textContent = PF.t('crumb.map.sub', k, '· {n_designs} designs · {n_families} families');
+}
+function syncRej() {
+  const b = $('#btnRej'); if (!b) return; const sel = BS.runFilter.selected(), n = REJ.filter((d) => !sel || sel.indexOf(d.run) >= 0).length;
+  b.setAttribute('aria-pressed', String(st.rej)); b.disabled = !n; b.textContent = (st.rej ? 'Hide rejected' : 'Show rejected') + ' (' + n + ')';
+}
+
+/* ---------------- funnel ---------------- */
+function drawFunnel() {
+  const el = $('#funnel'); el.innerHTML = ''; let prev = D.length; const nD = Math.max(1, D.length);
+  STAGES.forEach((s, i) => {
+    const n = D.filter(s.test).length; const b = document.createElement('button');
+    b.className = 'stage'; b.setAttribute('aria-pressed', String(st.stage === i));
+    const thr = s.thr(C.PRESET); if (PF.get('kind') === 'run') b.title = s.label + ': ' + String(thr).replace(/<[^>]*>/g, '');
+    b.innerHTML = '<span class="lbl">' + s.label + '</span><span class="n">' + n + (i > 0 && i < PI ? '<span class="drop"' + (PF.get('kind') === 'run' ? ' title="designs this gate removes compared with the stage before"' : '') + '>' + (prev - n || PF.get('kind') !== 'run' ? '−' + (prev - n) : 'all kept') + '</span>' : '') + '</span><span class="bar"><i style="width:' + (100 * n / nD).toFixed(1) + '%"></i></span><span class="thr">' + thr + '</span>';
+    b.onclick = () => { st.stage = i; update(); };
+    el.appendChild(b); if (i < PI) prev = n;
+  });
+  const live = D.filter(isLive).length;
+  let note = '<b>' + live + '</b> of ' + BS.plural(D.length, 'design') + ' in full colour' + (st.range ? ' · touching residues ' + st.range[0] + '–' + st.range[1] : '');
+  if (MULTI) {   // the counts of every run in view stay visible, and a pooled view says that it is only descriptive
+    note += '<br>' + selIds.map((id) => esc(id) + ' ' + D.filter((d) => d.run === id && isLive(d)).length + '/' + D.filter((d) => d.run === id).length).join(' · ');
+    if (!BS.runFilter.selected()) note += '<br>Pooled view: the runs differ in hotspots and target, so it is descriptive only.';
+  }
+  $('#stripNote').innerHTML = note;
+}
+
+/* ---------------- epitope viewer ---------------- */
+const V = new M3.Viewer($('#cv3d'), { bg: () => C.css('--viewer-bg') });
+const vis = new Uint8Array(T.atomsF.sasa.length); for (let i = 0; i < vis.length; i++) vis[i] = T.atomsF.sasa[i] > 0.3 ? 1 : 0;
+V.setAtoms({ xyz: T.atomsF.xyz, res: T.atomsF.res, radius: 1.95, visible: vis });
+function faceOn(n, tiltDeg) {
+  const z = n; let cx = 0, cy = 0, cz = 0; const N = T.n;
+  for (let i = 0; i < N; i++) { cx += T.caF[i * 3]; cy += T.caF[i * 3 + 1]; cz += T.caF[i * 3 + 2]; } cx /= N; cy /= N; cz /= N;
+  const P = []; for (let i = 0; i < N; i++) { const x = T.caF[i * 3] - cx, y = T.caF[i * 3 + 1] - cy, w = T.caF[i * 3 + 2] - cz; const d = x * z[0] + y * z[1] + w * z[2]; P.push([x - d * z[0], y - d * z[1], w - d * z[2]]); }
+  let v = [1, 0.3, 0.2]; for (let it = 0; it < 30; it++) { const o = [0, 0, 0]; for (const p of P) { const d = p[0] * v[0] + p[1] * v[1] + p[2] * v[2]; o[0] += p[0] * d; o[1] += p[1] * d; o[2] += p[2] * d; } const l = Math.hypot(o[0], o[1], o[2]) || 1; v = [o[0] / l, o[1] / l, o[2] / l]; }
+  const y = v, x = [y[1] * z[2] - y[2] * z[1], y[2] * z[0] - y[0] * z[2], y[0] * z[1] - y[1] * z[0]];
+  let R = [x[0], x[1], x[2], y[0], y[1], y[2], z[0], z[1], z[2]];
+  const a = (tiltDeg * Math.PI) / 180, c = Math.cos(a), s = Math.sin(a); const Ry = [c, 0, s, 0, 1, 0, -s, 0, c];
+  return M3.orthonormalize(M3.mmul(Ry, R));
+}
+V.fitTo(T.caF, 0.9);
+V.R = faceOn(T.sites.A1.normal, 28); V.R0 = V.R.slice(); V.render();
+const halo = () => (C.isDark() ? 'rgba(13,16,22,.85)' : 'rgba(255,255,255,.9)');
+const hotMarkers = () => hotShown.map((r) => { const i = T.idx[r], tg = hotTag[r]; return { p: Array.from(T.caF.subarray(i * 3, i * 3 + 3)), label: T.resn[i] + r + (tg ? ' ·' + tg.map(runTag).join('/') : ''), r: 6, color: M3.hex2rgb(C.css('--hotspot')), halo: halo(), text: C.isDark() ? '#f59a6c' : '#b8430f', id: 'hot' + r }; });
+const glyMarkers = () => T.glycan.map((r) => ({ p: T.glycan_xyz[r], label: 'N' + r, r: 4.5, shape: 'diamond', color: M3.hex2rgb(C.css('--ink-2')), halo: halo(), text: C.css('--ink-2'), id: 'gly' + r }));
+let freq = new Float32Array(T.n), fmax = 1;
+function colorViewer() {
+  const base = M3.hex2rgb(C.css('--target')), gone = M3.mix(base, M3.hex2rgb(C.css('--viewer-bg')), 0.72);   // residues that no run in view has in its target fade out
+  if (st.col === 'cons') V.setColors((i) => { const r = T.atomsF.res[i]; if (remSt[r] === 2) return gone; const gr = SP.grade(T.resi[r]); return gr === null ? base : C.seq(0.1 + 0.9 * (gr - 1) / 8); }); else
+  V.setColors((i) => { const r = T.atomsF.res[i]; if (remSt[r] === 2) return gone; const t = freq[r] / fmax; return t <= 0 ? base : C.seq(0.2 + 0.8 * Math.pow(t, 0.8)); });
+  const g = $('#ramp').getContext('2d'); for (let x = 0; x < 96; x++) { g.fillStyle = M3.rgbs(st.col === 'cons' ? C.seq(0.1 + 0.9 * (x / 95)) : x === 0 ? base : C.seq(0.2 + 0.8 * (x / 95))); g.fillRect(x, 0, 1, 8); }
+  $('#rampMin').textContent = st.col === 'cons' ? 'variable' : '0'; $('#rampMax').textContent = st.col === 'cons' ? 'conserved' : Math.round(fmax); $('#rampCap').textContent = st.col === 'cons' ? PF.t('map.ramp.cons_caption', { n_orth: HOM.n_orth }, 'ConSurf-style grade, {n_orth} orthologs') : 'designs contacting residue';
+}
+const remRanges = () => { const out = []; for (let i = 0; i < T.n; i++) { if (!remSt[i]) continue; const k = remBy[i].join(), last = out[out.length - 1]; if (last && last.z === i - 1 && last.k === k) last.z = i; else out.push({ a: i, z: i, k, st: remSt[i], by: remBy[i] }); } return out; };
+function updateViewer() {
+  const S = D.filter(inScope); freq.fill(0); S.forEach((d) => d.tcIdx.forEach((i) => freq[i]++)); fmax = Math.max(1, ...freq); colorViewer();
+  for (let i = 0; i < 12; i++) V.tubes.delete('e' + i); V.tubes.delete('focus');
+  if (st.epi === 'ens') S.slice().sort((a, b) => b.q - a.q).slice(0, 7).forEach((d, i) => V.tubes.set('e' + i, { xyz: SM.b(d), color: M3.hex2rgb(C.css('--binder')), width: 0.8, alpha: 0.42, outline: false }));
+  const f = st.hover || st.focus;
+  if (f) V.tubes.set('focus', { xyz: SM.b(C.byId[f]), color: M3.hex2rgb(C.css('--binder')), width: 2.0, alpha: 1 });
+  V.setMarkers(hotMarkers().concat(glyMarkers()));
+  { const full = BS.plural(S.length, 'design') + (st.brush ? ' selected' : st.mode ? ' in ' + st.mode + ' · ' + MNAME[st.mode] : ' in view'), es = $('#epiSub');
+    // the header also holds two switches, so the long form is cut off to "22 d..."; keep the count and put the rest in the tooltip
+    es.textContent = PER_RUN ? BS.plural(S.length, 'design') + (st.brush ? ' selected' : '') : full; if (PER_RUN) { es.title = full; es.style.flex = 'none'; } }
+  const dot = '<span class="dot" style="color:var(--hotspot)"></span>';
+  if (HBR) {   // one chip per run in view: its own hotspots, and the regions its target lacks
+    $('#vbadge').innerHTML = selIds.map((id) => '<span class="chip">' + dot + (MULTI ? esc(id) + ' ' : '') + 'hotspots ' + (HBR[id] || []).map(hotLabel).join(' · ') + '</span>').join('') +
+      selIds.filter((id) => removedOf(id).length).map((id) => '<span class="chip rm" title="Residues the design tool was not given: the 3D view fades them and the strip hatches them">' + esc(id) + ' removed ' + removedOf(id).map((a) => a[0] + '–' + a[1]).join(' · ') + '</span>').join('') + '<span class="chip">◆ N-glycan sites</span>';
+  } else $('#vbadge').innerHTML = '<span class="chip">' + dot + 'hotspots ' + T.hotspots.map((r) => T.resn[T.idx[r]] + r).join(' · ') + '</span><span class="chip">◆ N-glycan sites</span>';
+  drawStrip();
+}
+V.onHover = (h, e) => {
+  if (h && h.type === 'atom') {
+    const r = h.res, n = Math.round(freq[r]), rr = T.resi[r], tg = hotTag[rr];
+    tip.show('<span class="v">' + T.resn[r] + rr + '</span> <span class="k">· ' + n + ' design' + (n === 1 ? '' : 's') + ' in view' + (isHot(rr) ? ' · <b style="color:var(--hotspot-ink)">hotspot</b>' + (HBR ? ' of ' + (tg || selIds).map(esc).join(', ') : '') : '') + (T.glycan.includes(rr) ? ' · N-glycan site' : '') + (SP.grade(rr) ? ' · conservation grade ' + SP.grade(rr) : '') + (remBy[r] && remBy[r].length ? ' · not in the target of ' + remBy[r].map(esc).join(', ') : '') + '</span>', e.clientX, e.clientY); }
+  else if (h && h.type === 'marker') tip.show('<span class="v">' + h.id.replace('hot', 'Hotspot residue ').replace('gly', 'N-glycan site N') + '</span>', e.clientX, e.clientY);
+  else tip.hide();
+};
+$('#btnReset').onclick = () => V.reset();
+$$('#colSeg button').forEach((b) => (b.onclick = () => { st.col = b.dataset.v; $$('#colSeg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); updateViewer(); }));
+$$('#epiSeg button').forEach((b) => (b.onclick = () => { st.epi = b.dataset.v; $$('#epiSeg button').forEach((x) => x.setAttribute('aria-pressed', String(x === b))); updateViewer(); }));
+
+/* ---------------- shared drawing helpers ---------------- */
+function hatch(g, x, y, w, h, a) {   // diagonal hatching: residues that are not in the target of every run in view
+  if (w <= 0 || h <= 0) return;
+  const c = document.createElement('canvas'); c.width = c.height = 8; const x2 = c.getContext('2d'); x2.strokeStyle = C.css('--ink-3'); x2.lineWidth = 1.1;
+  x2.beginPath(); x2.moveTo(-2, 2); x2.lineTo(2, -2); x2.moveTo(0, 8); x2.lineTo(8, 0); x2.moveTo(6, 10); x2.lineTo(10, 6); x2.stroke();
+  g.save(); g.globalAlpha = a; g.fillStyle = g.createPattern(c, 'repeat'); g.fillRect(x, y, w, h); g.restore();
+}
+let shadeCache = null;
+function stripShade() {   // [first, last] residue indices shaded as membrane-side: the profile's ranges, else the end of the target closest to the membrane plane
+  if (shadeCache) return shadeCache; const out = [], sh = PF.get('membrane.strip_shade', undefined);
+  if (Array.isArray(sh)) sh.forEach((rg) => { let i0 = -1, i1 = -1; T.resi.forEach((r, i) => { if (r >= rg[0] && r <= rg[1]) { if (i0 < 0) i0 = i; i1 = i; } }); if (i0 >= 0) out.push([i0, i1]); });
+  else if (T.membrane && T.membrane.axis && CAP('membrane')) {
+    const ax = T.membrane.axis, c0 = T.membrane.centroid, pr = []; for (let i = 0; i < T.n; i++) pr.push((T.caF[i * 3] - c0[0]) * ax[0] + (T.caF[i * 3 + 1] - c0[1]) * ax[1] + (T.caF[i * 3 + 2] - c0[2]) * ax[2]);
+    const top = Math.max(...pr); let s = -1; for (let i = 0; i <= T.n; i++) { const on = i < T.n && pr[i] >= top - 10; if (on && s < 0) s = i; else if (!on && s >= 0) { out.push([s, i - 1]); s = -1; } }
+  }
+  return (shadeCache = out);
+}
+
+/* ---------------- 1-D contact strip with brush ---------------- */
+const cvS = $('#cvStrip'); let sDrag = null;
+function drawStrip() {
+  const W = cvS.clientWidth || 400, H = cvS.clientHeight || 116, dpr = Math.min(2, devicePixelRatio || 1);
+  if (cvS.width !== Math.round(W * dpr)) { cvS.width = Math.round(W * dpr); cvS.height = Math.round(H * dpr); }
+  const g = cvS.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H);
+  const padL = 4, padR = 4, n = T.n, bw = (W - padL - padR) / n, top = 18, base = H - 44, X = (i) => padL + i * bw;
+  g.font = '500 10px "IBM Plex Mono", monospace'; g.textBaseline = 'top';
+  for (let i = 0; i < n; i++) if (T.ss[i] === 'E') { g.fillStyle = C.css('--line-strong'); g.fillRect(X(i), 4, bw + 0.4, 6); }
+  g.fillStyle = C.css('--line'); g.fillRect(padL, 7, W - padL - padR, 1);
+  stripShade().forEach((s) => { g.fillStyle = M3.rgbs(M3.hex2rgb(C.css('--ink-3')), 0.10); g.fillRect(X(s[0]), 12, X(s[1] + 1) - X(s[0]), base - 12); });
+  const rr = remRanges(); rr.forEach((r) => hatch(g, X(r.a), 12, X(r.z + 1) - X(r.a), base - 12, r.st === 2 ? 0.75 : 0.3));
+  for (let i = 0; i < n; i++) {
+    const t = freq[i] / fmax; if (t <= 0) continue; const h = Math.max(1.5, t * (base - top));
+    const inR = st.range && T.resi[i] >= st.range[0] && T.resi[i] <= st.range[1];
+    const gr = st.col === 'cons' ? SP.grade(T.resi[i]) : null; g.fillStyle = M3.rgbs(st.col === 'cons' ? (gr === null ? M3.hex2rgb(C.css('--line-strong')) : C.seq(0.1 + 0.9 * (gr - 1) / 8)) : C.seq(0.3 + 0.7 * t), st.range && !inR ? 0.35 : 1); g.fillRect(X(i), base - h, Math.max(1.2, bw - 0.5), h);
+  }
+  g.fillStyle = C.css('--line-strong'); g.fillRect(padL, base, W - padL - padR, 1);
+  g.textAlign = 'center'; rr.forEach((r) => { const w = X(r.z + 1) - X(r.a); if (w < 44) return; const t = r.st === 2 ? 'removed · ' + r.by.map(runTag).join(' ') : 'not in ' + r.by.map(runTag).join(' '), cx = (X(r.a) + X(r.z + 1)) / 2, tw = g.measureText(t).width; g.fillStyle = M3.rgbs(M3.hex2rgb(C.css('--viewer-bg')), 0.85); g.fillRect(cx - tw / 2 - 2, 16, tw + 4, 12); g.fillStyle = C.css('--ink-2'); g.fillText(t, cx, 17); }); g.textAlign = 'left';
+  const lab = []; hotShown.forEach((r) => lab.push({ i: T.idx[r], t: T.resn[T.idx[r]] + r + (hotTag[r] ? ' ·' + hotTag[r].map(runTag).join('/') : ''), hot: true, part: !!hotTag[r] })); T.glycan.forEach((r) => lab.push({ i: T.idx[r], t: 'N' + r, hot: false })); lab.sort((a, b) => a.i - b.i);
+  const rowEnd = [-99, -99, -99], placed = [];
+  lab.forEach((l) => {
+    const x = X(l.i) + bw / 2, w = g.measureText(l.t).width, cx = Math.max(w / 2 + 2, Math.min(W - w / 2 - 2, x));
+    let row = rowEnd.findIndex((e) => cx - w / 2 > e + 4); if (row < 0) row = rowEnd.indexOf(Math.min(...rowEnd));
+    rowEnd[row] = cx + w / 2; placed.push({ l, x, cx, w, row });
+  });
+  placed.forEach(({ l, x, row }) => {
+    if (l.hot) { g.fillStyle = C.css('--hotspot'); g.globalAlpha = l.part ? 0.55 : 1; g.fillRect(x - 1, base + 1, 2, 6 + row * 11); g.globalAlpha = 1; } else { g.fillStyle = C.css('--ink-3'); g.beginPath(); g.moveTo(x, base + 1); g.lineTo(x + 3, base + 4); g.lineTo(x, base + 7); g.lineTo(x - 3, base + 4); g.fill(); }
+  });
+  g.textAlign = 'center'; g.lineJoin = 'round';
+  placed.forEach(({ l, cx, row }) => {
+    const y = base + 10 + row * 11;
+    g.lineWidth = 3; g.strokeStyle = C.css('--surface'); g.strokeText(l.t, cx, y);
+    g.fillStyle = l.hot ? C.css('--hotspot-ink') : C.css('--ink-3'); g.fillText(l.t, cx, y);
+  });
+  g.textAlign = 'left';
+  g.fillStyle = C.css('--ink-3'); g.fillText(String(T.resi[0]), padL, 12); g.textAlign = 'right'; g.fillText(String(T.resi[n - 1]), W - padR - 2, 12); g.textAlign = 'center';
+  const stp = n > 150 ? 25 : 10; for (let i = 1; i < n - 1; i++) if (T.resi[i] % stp === 0) { const x = X(i) + bw / 2; if (x > padL + 30 && x < W - padR - 30) { g.fillStyle = C.css('--line-strong'); g.fillRect(x, 8, 1, 3); if (T.resi[i] % (2 * stp) === 0 && !rr.some((r) => i >= r.a && i <= r.z)) { g.fillStyle = C.css('--ink-3'); g.fillText(String(T.resi[i]), x, 12); } } } g.textAlign = 'left';
+  const b = sDrag ? [sDrag.a, sDrag.b] : st.range ? [T.idx[st.range[0]] ?? 0, T.idx[st.range[1]] ?? 0] : null;
+  if (b) { const a = Math.min(b[0], b[1]), z = Math.max(b[0], b[1]); g.fillStyle = M3.rgbs(M3.hex2rgb(C.css('--accent')), 0.14); g.fillRect(X(a), 2, X(z + 1) - X(a), base - 2); g.strokeStyle = C.css('--accent'); g.lineWidth = 1.5; g.strokeRect(X(a) + 0.5, 2.5, X(z + 1) - X(a) - 1, base - 3); }
+  let cap = st.col === 'cons' ? 'Height = contacts · colour = conservation' : PF.t('map.strip.caption', null, stripShade().length ? 'Contact frequency by residue · shaded = the end of the target closest to the membrane-side plane' : 'Contact frequency by residue');
+  if (PER_RUN && rr.length) cap += ' · hatched = not in the target of ' + Array.from(new Set(rr.reduce((a, r) => a.concat(r.by), []))).join(', ');
+  $('.strip1d .cap span').textContent = cap;
+  $('#rangeCap').innerHTML = st.range ? '<span class="chipx">residues ' + st.range[0] + '–' + st.range[1] + '<button aria-label="Clear region filter" id="clrRange">' + icon('i-x') + '</button></span>' : 'drag to keep only designs touching a region' + (PER_RUN && PF.get('target.uniprot', '') ? ' · UniProt ' + PF.get('target.uniprot', '') + ' numbering' : '');
+  const cr = $('#clrRange'); if (cr) cr.onclick = () => { st.range = null; update(); };
+}
+(function bindStrip() {
+  const idxAt = (e) => { const r = cvS.getBoundingClientRect(); const bw = (r.width - 8) / T.n; return Math.max(0, Math.min(T.n - 1, Math.floor((e.clientX - r.left - 4) / bw))); };
+  cvS.addEventListener('pointerdown', (e) => { cvS.setPointerCapture(e.pointerId); const i = idxAt(e); sDrag = { a: i, b: i, moved: false }; });
+  cvS.addEventListener('pointermove', (e) => { const i = idxAt(e); if (sDrag) { sDrag.b = i; sDrag.moved = sDrag.moved || i !== sDrag.a; drawStrip(); } tip.show('<span class="v">' + T.resn[i] + T.resi[i] + '</span> <span class="k">· ' + Math.round(freq[i]) + ' designs' + (isHot(T.resi[i]) ? ' · hotspot' + (hotTag[T.resi[i]] ? ' of ' + hotTag[T.resi[i]].map(esc).join(', ') : '') : '') + (remBy[i] && remBy[i].length ? ' · not in the target of ' + remBy[i].map(esc).join(', ') : '') + '</span>', e.clientX, e.clientY); });
+  cvS.addEventListener('pointerleave', () => tip.hide());
+  cvS.addEventListener('pointerup', () => { if (!sDrag) return; if (sDrag.moved) { const a = Math.min(sDrag.a, sDrag.b), z = Math.max(sDrag.a, sDrag.b); st.range = [T.resi[a], T.resi[z]]; } else st.range = null; sDrag = null; update(); });
+})();
+
+/* ---------------- map / fingerprints / table ---------------- */
+const cvM = $('#cvMap'); let mapPts = [], brushRect = null, fpInfo = null;
+const hash = (s) => { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return ((h >>> 0) % 1000) / 1000; };
+function shapePath(g, sh, x, y, r) {
+  g.beginPath();
+  if (sh === 'circle') g.arc(x, y, r, 0, 6.2832);
+  else if (sh === 'ring') g.arc(x, y, r * 0.8, 0, 6.2832);
+  else if (sh === 'square') g.rect(x - r * 0.88, y - r * 0.88, r * 1.76, r * 1.76);
+  else if (sh === 'triangle') { g.moveTo(x, y - r * 1.05); g.lineTo(x + r, y + r * 0.8); g.lineTo(x - r, y + r * 0.8); g.closePath(); }
+  else if (sh === 'diamond') { g.moveTo(x, y - r * 1.15); g.lineTo(x + r * 1.05, y); g.lineTo(x, y + r * 1.15); g.lineTo(x - r * 1.05, y); g.closePath(); }
+  else if (sh === 'cross') { const a = r * 0.42; g.moveTo(x - a, y - r); g.lineTo(x + a, y - r); g.lineTo(x + a, y - a); g.lineTo(x + r, y - a); g.lineTo(x + r, y + a); g.lineTo(x + a, y + a); g.lineTo(x + a, y + r); g.lineTo(x - a, y + r); g.lineTo(x - a, y + a); g.lineTo(x - r, y + a); g.lineTo(x - r, y - a); g.lineTo(x - a, y - a); g.closePath(); }
+  else { for (let k = 0; k < 6; k++) { const a = Math.PI / 6 + (k * Math.PI) / 3; g[k ? 'lineTo' : 'moveTo'](x + r * 1.05 * Math.cos(a), y + r * 1.05 * Math.sin(a)); } g.closePath(); }
+}
+function hull(pts) {
+  pts = pts.slice().sort((a, b) => a[0] - b[0] || a[1] - b[1]); if (pts.length < 3) return pts;
+  const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); const lo = [];
+  for (const p of pts) { while (lo.length >= 2 && cr(lo[lo.length - 2], lo[lo.length - 1], p) <= 0) lo.pop(); lo.push(p); }
+  const up = []; for (let i = pts.length - 1; i >= 0; i--) { const p = pts[i]; while (up.length >= 2 && cr(up[up.length - 2], up[up.length - 1], p) <= 0) up.pop(); up.push(p); }
+  up.pop(); lo.pop(); return lo.concat(up);
+}
+function prep() {
+  const W = cvM.parentElement.clientWidth, H = cvM.parentElement.clientHeight, dpr = Math.min(2, devicePixelRatio || 1);
+  cvM.width = Math.round(W * dpr); cvM.height = Math.round(H * dpr); cvM.style.width = W + 'px'; cvM.style.height = H + 'px';
+  const g = cvM.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, W, H); return { g, W, H };
+}
+function emptyMsg(g, W, H) { g.font = '12px "IBM Plex Sans", sans-serif'; g.fillStyle = C.css('--ink-3'); g.textAlign = 'center'; g.fillText(PER_RUN && ACC.length ? 'No designs of the selected runs to show.' : 'No designs to show.', W / 2, H / 2); g.textAlign = 'left'; }
+function drawMap() {
+  const { g, W, H } = prep(); if (!W || !H) return; const pad = 38;
+  const pt = (d) => ({ d, x: pad + d.emb[0] * (W - 2 * pad) + (hash(d.id) - 0.5) * 12, y: pad + (1 - d.emb[1]) * (H - 2 * pad - 8) + (hash(d.id + 'y') - 0.5) * 12 });
+  mapPts = D.map(pt); const rejPts = DR.map(pt); rejPts.forEach((p) => (p.rej = true));
+  const hulls = {};
+  MODES.forEach((m) => {
+    const ps = mapPts.filter((p) => p.d.mode === m).map((p) => [p.x, p.y]); if (ps.length < 3) return; const h = hull(ps); hulls[m] = h; const col = C.modeCol(m); const sel = st.mode === m && !st.brush;
+    g.beginPath(); h.forEach((p, i) => (i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]))); g.closePath(); g.lineJoin = 'round';
+    g.fillStyle = M3.rgbs(col, sel ? 0.15 : 0.06); g.fill(); g.strokeStyle = M3.rgbs(col, sel ? 0.22 : 0.09); g.lineWidth = 22; g.stroke();
+    g.strokeStyle = M3.rgbs(col, sel ? 0.95 : 0.35); g.lineWidth = sel ? 1.8 : 1; g.stroke();
+  });
+  const order = mapPts.slice().sort((a, b) => ({ fail: 0, review: 1, pass: 2 }[a.d.verdict] - { fail: 0, review: 1, pass: 2 }[b.d.verdict]));
+  const surf = C.css('--viewer-bg');
+  rejPts.forEach((p) => { const d = p.d, col = C.modeCol(d.mode), r = 3.6; g.globalAlpha = 0.55; g.beginPath(); g.arc(p.x, p.y, r, 0, 6.2832); g.lineWidth = 1.3; g.strokeStyle = M3.rgbs(col); g.stroke(); g.globalAlpha = 1; if (d.id === st.focus || d.id === st.hover) { g.beginPath(); g.arc(p.x, p.y, r + 4, 0, 6.2832); g.lineWidth = 2.2; g.strokeStyle = C.css('--ink'); g.stroke(); } });
+  order.forEach((p) => {
+    const d = p.d, live = isLive(d), col = C.modeCol(d.mode), sh = C.MODE_SHAPE[d.mode]; const r = (4.2 + 5 * sizeVal(d)) * (d.verdict === 'fail' ? 0.7 : 1);
+    g.globalAlpha = live ? (d.verdict === 'fail' ? 0.5 : d.verdict === 'review' ? 0.88 : 1) : 0.10;
+    shapePath(g, sh, p.x, p.y, r);
+    if (sh === 'ring') { g.lineWidth = 2.2; g.strokeStyle = M3.rgbs(col); g.stroke(); } else { g.fillStyle = M3.rgbs(col); g.fill(); if (live && d.verdict !== 'fail') { g.lineWidth = 1.6; g.strokeStyle = surf; g.stroke(); } }
+    g.globalAlpha = 1;
+    if (CAP('outcomes') && st.reveal && live && d.outcome.binds) { shapePath(g, sh, p.x, p.y, r + 2.8); g.lineWidth = 2.2; g.strokeStyle = C.css('--good'); g.stroke(); }
+    if (live && st.stage === PI) { shapePath(g, sh, p.x, p.y, r + 3.5); g.lineWidth = 1.6; g.strokeStyle = C.css('--ink'); g.stroke(); }
+    if (live && wrongSite(d)) { g.beginPath(); g.arc(p.x, p.y, r + 2.4, 0, 6.2832); g.lineWidth = 1.3; g.setLineDash([2.5, 2.5]); g.strokeStyle = C.css('--hotspot-ink'); g.stroke(); g.setLineDash([]); }
+    if (st.brush && st.brush.has(d.id)) { shapePath(g, sh, p.x, p.y, r + 3); g.lineWidth = 1.6; g.strokeStyle = C.css('--accent'); g.stroke(); }
+    if (st.shortlist.has(d.id)) { g.fillStyle = C.css('--hotspot'); g.beginPath(); g.arc(p.x + r + 2, p.y - r - 2, 3.4, 0, 6.2832); g.fill(); g.strokeStyle = surf; g.lineWidth = 1.2; g.stroke(); }
+    if (d.id === st.focus || d.id === st.hover) { shapePath(g, sh, p.x, p.y, r + 5); g.lineWidth = 2.2; g.strokeStyle = C.css('--ink'); g.stroke(); }
+  });
+  mapPts = mapPts.concat(rejPts);
+  // mode labels on top
+  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+  MODES.forEach((m) => { const h = hulls[m]; if (!h) return; const sel = st.mode === m && !st.brush; const cx = h.reduce((a, p) => a + p[0], 0) / h.length, top = Math.min(...h.map((p) => p[1]));
+    const txt = sel ? m + ' · ' + MNAME[m] : m; g.font = (sel ? '600 12px' : '600 11px') + ' "IBM Plex Sans", sans-serif'; const tx = Math.max(g.measureText(txt).width / 2 + 6, Math.min(W - g.measureText(txt).width / 2 - 6, cx)), ty = Math.max(14, top - 17);
+    g.lineWidth = 4; g.strokeStyle = surf; g.strokeText(txt, tx, ty); g.fillStyle = C.css('--ink'); g.globalAlpha = sel ? 1 : 0.8; g.fillText(txt, tx, ty); g.globalAlpha = 1; });
+  if (brushRect) { g.fillStyle = M3.rgbs(M3.hex2rgb(C.css('--accent')), 0.10); g.strokeStyle = C.css('--accent'); g.lineWidth = 1.2; g.fillRect(brushRect.x, brushRect.y, brushRect.w, brushRect.h); g.strokeRect(brushRect.x, brushRect.y, brushRect.w, brushRect.h); }
+  g.font = '11px "IBM Plex Sans", sans-serif'; g.fillStyle = C.css('--ink-3'); g.textAlign = 'left';
+  const extra = (CAP('outcomes') && st.reveal ? ' · green = bound' : '') + (PER_RUN && D.some(wrongSite) ? ' · dashed ring = wrong site (touches none of its run’s hotspots)' : '') + (st.rej ? ' · hollow = rejected' : '');
+  const hint = PF.t('map.hint', null, 'Size = ' + HEAD.label + ' · small and faint = NO PASS · ring outline = PASS or REVIEW · drag on empty space to select');
+  if (!D.length) emptyMsg(g, W, H);
+  g.textAlign = 'left'; g.fillStyle = C.css('--ink-3'); if (extra && g.measureText(hint + extra).width > W - 20) { g.fillText(hint, 10, H - 24); g.fillText(extra.replace(/^ · /, ''), 10, H - 10); } else g.fillText(hint + extra, 10, H - 10);
+  cvM._hulls = hulls;
+}
+function nearest(x, y, maxd) { let best = null, bd = maxd * maxd; for (const p of mapPts) { const dx = p.x - x, dy = p.y - y, dd = dx * dx + dy * dy; if (dd < bd && (p.rej ? dd < bd * 0.3 : isLive(p.d) || dd < bd * 0.3)) { bd = dd; best = p; } } return best; }
+function inHull(m, x, y) { const h = cvM._hulls && cvM._hulls[m]; if (!h) return false; let c = false; for (let i = 0, j = h.length - 1; i < h.length; j = i++) if (h[i][1] > y !== h[j][1] > y && x < ((h[j][0] - h[i][0]) * (y - h[i][1])) / (h[j][1] - h[i][1]) + h[i][0]) c = !c; return c; }
+
+function colDecor(g, left, cw, H, bottom) {   // the target columns shared by the fingerprints and the by-mode heat map: secondary structure, removed regions, hotspots of the runs in view, glycan sites
+  g.font = '10px "IBM Plex Mono", monospace'; g.textBaseline = 'top';
+  for (let i = 0; i < T.n; i++) if (T.ss[i] === 'E') { g.fillStyle = C.css('--line-strong'); g.fillRect(left + i * cw, 10, cw + 0.3, 4); }
+  remRanges().forEach((r) => hatch(g, left + r.a * cw, 18, (r.z - r.a + 1) * cw, H - 18 - bottom, r.st === 2 ? 0.75 : 0.3));
+  hotShown.forEach((r) => { const i = T.idx[r], part = !!hotTag[r]; g.fillStyle = M3.rgbs(M3.hex2rgb(C.css('--hotspot')), part ? 0.12 : 0.22); g.fillRect(left + i * cw - 1, 18, Math.max(3, cw + 2), H - 18 - bottom); g.fillStyle = C.css('--hotspot'); g.globalAlpha = part ? 0.55 : 1; g.fillRect(left + i * cw, 18, Math.max(1, cw), 4); g.globalAlpha = 1; });
+  g.fillStyle = C.css('--ink-3'); g.fillText('SS', 10, 8); g.fillText('hotspot', 10, 18);
+  T.glycan.forEach((r) => { const i = T.idx[r]; g.fillStyle = C.css('--ink-3'); g.fillText('◆', left + i * cw - 3, 26); });
+}
+function drawFingerprints() {
+  const { g, W, H } = prep(); const rows = []; MV.forEach((m) => D.filter((d) => d.mode === m).sort((a, b) => b.q - a.q).forEach((d) => rows.push(d)));
+  const left = 44, top = 40, right = 10, bottom = 26, cw = (W - left - right) / T.n, gap = 3;
+  mapPts = []; colDecor(g, left, cw, H, bottom);
+  if (!rows.length) { emptyMsg(g, W, H); fpInfo = null; return; }
+  const rh = (H - top - bottom - gap * Math.max(0, MV.length - 1)) / rows.length;
+  let y = top, prevM = rows[0].mode;
+  rows.forEach((d) => {
+    if (d.mode !== prevM) { y += gap; prevM = d.mode; } const live = isLive(d), col = C.modeCol(d.mode);
+    g.fillStyle = M3.rgbs(col, live ? 1 : 0.25); g.fillRect(6, y, 6, Math.max(1, rh - 0.4));
+    g.fillStyle = M3.rgbs(col, live ? 0.92 : 0.16); d.tcIdx.forEach((i) => g.fillRect(left + i * cw, y, Math.max(1, cw - 0.2), Math.max(1, rh - 0.4)));
+    if (d.id === st.focus) { g.strokeStyle = C.css('--ink'); g.lineWidth = 1.2; g.strokeRect(left - 1, y - 0.5, W - left - right + 2, rh + 1); }
+    mapPts.push({ d, y, h: rh }); y += rh;
+  });
+  remRanges().forEach((r) => hatch(g, left + r.a * cw, top, (r.z - r.a + 1) * cw, y - top, r.st === 2 ? 0.55 : 0.2));
+  MV.forEach((m) => { const first = mapPts.find((p) => p.d.mode === m); if (first) { g.fillStyle = C.css('--ink-2'); g.fillText(m, 16, first.y - 1); } });
+  g.fillStyle = C.css('--ink-3'); g.fillText(String(T.resi[0]), left, H - 14); g.textAlign = 'right'; g.fillText(String(T.resi[T.n - 1]), W - right, H - 14); g.textAlign = 'center'; g.fillText('target residue →', (left + W - right) / 2, H - 14); g.textAlign = 'left';
+  fpInfo = { left, cw };
+}
+/* By mode: one row per binding mode, one column per target residue, colour = share of the designs of that mode in view that contact the residue. */
+function drawHeat() {
+  const { g, W, H } = prep(); mapPts = [];
+  const left = 124, top = 40, right = 10, bottom = 34, cw = (W - left - right) / T.n, gap = 3;
+  colDecor(g, left, cw, H, bottom);
+  if (!MV.length) { emptyMsg(g, W, H); fpInfo = null; return; }
+  const rh = Math.min(48, (H - top - bottom - gap * (MV.length - 1)) / MV.length);
+  let y = top;
+  MV.forEach((m) => {
+    const all = D.filter((d) => d.mode === m), ds = all.filter(isLive), cnt = new Float32Array(T.n); ds.forEach((d) => d.tcIdx.forEach((i) => cnt[i]++));
+    g.fillStyle = M3.rgbs(M3.hex2rgb(C.css('--surface-2'))); g.fillRect(left, y, W - left - right, rh);
+    for (let i = 0; i < T.n; i++) { const s = ds.length ? cnt[i] / ds.length : 0; if (s <= 0) continue; g.fillStyle = M3.rgbs(C.seq(0.12 + 0.88 * Math.pow(s, 0.8))); g.fillRect(left + i * cw, y, Math.max(1, cw - 0.1), rh - 0.4); }
+    g.fillStyle = M3.rgbs(C.modeCol(m), ds.length ? 1 : 0.25); g.fillRect(6, y, 6, rh - 0.4);
+    g.font = '600 11px "IBM Plex Sans", sans-serif'; g.fillStyle = C.css('--ink'); g.fillText(m, 18, y + Math.max(1, rh / 2 - 12));
+    g.font = '10.5px "IBM Plex Mono", monospace'; g.fillStyle = C.css('--ink-3'); g.fillText(ds.length + (ds.length !== all.length ? '/' + all.length : '') + ' designs', 18, y + Math.max(13, rh / 2 + 1));
+    if (st.mode === m && !st.brush) { g.strokeStyle = C.css('--ink'); g.lineWidth = 1.4; g.strokeRect(left - 1, y - 0.5, W - left - right + 2, rh + 1); }
+    mapPts.push({ m, y, h: rh, cnt, n: ds.length }); y += rh + gap;
+  });
+  remRanges().forEach((r) => hatch(g, left + r.a * cw, top, (r.z - r.a + 1) * cw, y - top - gap, r.st === 2 ? 0.55 : 0.2));
+  g.font = '10px "IBM Plex Mono", monospace'; g.textBaseline = 'top'; g.fillStyle = C.css('--ink-3'); g.fillText(String(T.resi[0]), left, H - 28); g.textAlign = 'right'; g.fillText(String(T.resi[T.n - 1]), W - right, H - 28); g.textAlign = 'left';
+  for (let x = 0; x < 72; x++) { g.fillStyle = M3.rgbs(C.seq(0.12 + 0.88 * (x / 71))); g.fillRect(left + 70 + x, H - 14, 1, 7); }
+  g.fillStyle = C.css('--ink-3'); g.fillText('0', left + 62, H - 15); g.fillText('100% of the designs of the mode', left + 148, H - 15);
+  fpInfo = { left, cw };
+}
+function specCols() {   // species columns of the table and the hover card: the profile's table and card labels, then the focus paralog
+  const sp = PF.get('specificity.species', []), foc = PF.get('specificity.paralogs.focus', null), out = { table: [], card: [] };
+  ['table', 'card'].forEach((kind) => {
+    sp.forEach((e) => { if (e[kind] && SP.orth.some((o) => o.key === e.key)) out[kind].push({ key: e.key, label: e[kind], phrase: e.phrase || e.label }); });
+    if (foc && foc[kind] && SP.hasPar) out[kind].push({ key: null, label: foc[kind], phrase: foc.phrase || foc.label || foc[kind] });
+    if (!out[kind].length && !foc) SP.show.forEach((k) => { const o = SP.orth.find((x) => x.key === k); if (o) out[kind].push({ key: k, label: o.label, phrase: o.label }); });
+  });
+  return out;
+}
+const SPC = specCols(), subj = () => PF.get('specificity.subject', SP.subject);
+const pct = (v) => (v === undefined ? '–' : Math.round(v * 100) + '%');
+const spVal = (d, c) => (c.key === null ? Math.round(d.sp.focus * 100) + '%' : pct((d.sp.fr || {})[c.key]));
+function drawTable() {
+  const el = $('#tblw'), rows = D.filter(isLive).sort((a, b) => b.q - a.q).slice(0, 80), rev = st.reveal && CAP('outcomes');
+  const m2 = CAP('min_ipae') ? 'Min iPAE' : CAP('ipsae') ? 'ipTM' : 'i_pAE', rmsTitle = !CAP('complex_rmsd') ? ' title="' + esc(PF.t('map.table.refold_title', null, 'binder predicted alone against its shape in the complex')) + '"' : '';
+  const head = '<th>Design</th><th>Mode</th><th>Verdict</th><th>' + HEAD.label + '</th><th>' + m2 + '</th><th>pLDDT</th><th' + rmsTitle + '>' + (CAP('complex_rmsd') ? 'RMSD' : 'Refold') + '</th><th>Buried</th>' + (CAP('dg') ? '<th>ΔG</th>' : '') + '<th>Hotspots</th>' +
+    SPC.table.map((c) => '<th title="' + esc(PF.t('map.table.spec_title', { subject: subj(), phrase: c.phrase }, 'Share of contacted {subject} residues identical in {phrase}')) + '">' + esc(c.label) + '</th>').join('') + (rev ? '<th>Lab</th>' : '');
+  el.innerHTML = '<table class="tbl"><thead><tr>' + head + '</tr></thead><tbody>' +
+    rows.map((d) => { const v = C.VERDICT[d.verdict]; return '<tr data-id="' + esc(d.id) + '" class="' + (d.id === st.focus ? 'on' : '') + '"><td class="mono" title="' + esc(d.id) + '">' + idLink(d, sid(d), 'idlink', true) + '</td><td>' + shapeSvg(d.mode, 10) + ' ' + d.mode + '</td><td><span class="st ' + v.cls + '">' + icon(v.icon) + v.label + '</span></td><td class="num">' + num(headVal(d)) + '</td><td class="num">' + (CAP('min_ipae') ? numU(d.m.min_ipae, 1, ' Å') : CAP('ipsae') ? num(d.m.iptm) : num(d.m.ipae_norm)) + '</td><td class="num">' + num(d.m.plddt) + '</td><td class="num">' + (CAP('complex_rmsd') ? numU(d.m.complex_rmsd, 1, ' Å') : numU(d.m.binder_rmsd, 1, ' Å')) + '</td><td class="num">' + Math.round(d.m.dsasa) + ' Å²</td>' + (CAP('dg') ? '<td class="num">' + Math.round(d.m.dg) + '</td>' : '') + '<td class="num">' + d.hot.length + '/' + C.hotOf(d) + '</td>' + SPC.table.map((c) => '<td class="num">' + spVal(d, c) + '</td>').join('') + (rev ? '<td>' + labPillM(d) + (d.outcome.kd != null ? ' <span class="muted">' + fmtKd(d.outcome.kd) + '</span>' : '') + '</td>' : '') + '</tr>'; }).join('') + '</tbody></table>' +
+    '<div class="note" style="padding:8px 10px">Top ' + rows.length + ' of ' + D.filter(isLive).length + ' designs in view, ranked by the composite quality score. Every mark on the map is a row here.</div>';
+  $$('tbody tr', el).forEach((tr) => (tr.onclick = () => { const d = C.byId[tr.dataset.id]; st.focus = d.id; st.mode = d.mode; st.brush = null; update(); }));
+  $$('a.idlink', el).forEach((a) => (a.onclick = (e) => e.stopPropagation()));
+}
+function drawLegend() {
+  const el = $('#legend'); el.innerHTML = '';
+  MV.forEach((m) => {
+    const n = D.filter((d) => d.mode === m).length, live = D.filter((d) => d.mode === m && isLive(d)).length;
+    const b = document.createElement('button'); b.className = 'lg'; b.setAttribute('aria-pressed', String(st.mode === m && !st.brush));
+    b.innerHTML = shapeSvg(m, 12) + '<span>' + m + ' ' + esc(MNAME[m]) + '</span><span class="c">' + live + (live !== n ? '/' + n : '') + '</span>';
+    b.onclick = () => { st.mode = st.mode === m ? null : m; st.focus = null; st.brush = null; update(); };
+    el.appendChild(b);
+  });
+}
+/* one set of pointer handlers, dispatched by view */
+(function bindCanvas() {
+  let drag = null; const pos = (e) => { const r = cvM.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
+  cvM.addEventListener('pointerdown', (e) => { const [x, y] = pos(e); if (st.view === 'map') { cvM.setPointerCapture(e.pointerId); drag = { x, y, moved: false }; } else if (st.view === 'fp') { const row = mapPts.find((p) => y >= p.y && y < p.y + p.h); if (row) { st.focus = row.d.id; st.mode = row.d.mode; st.brush = null; update(); } } else if (st.view === 'hm') { const row = mapPts.find((p) => y >= p.y && y < p.y + p.h); if (row) { st.mode = row.m; st.focus = null; st.brush = null; update(); } } });
+  cvM.addEventListener('pointermove', (e) => {
+    const [x, y] = pos(e);
+    if (st.view === 'fp') { const row = mapPts.find((p) => y >= p.y && y < p.y + p.h), col = fpInfo ? Math.floor((x - fpInfo.left) / fpInfo.cw) : -1; if (row && col >= 0 && col < T.n) tip.show('<span class="v">' + esc(row.d.id) + '</span> <span class="k">· ' + row.d.mode + (MULTI ? ' · ' + esc(row.d.run) : '') + ' · ' + T.resn[col] + T.resi[col] + (row.d.tcSet.has(T.resi[col]) ? ' · <b>contact</b>' : ' · no contact') + '</span>', e.clientX, e.clientY); else tip.hide(); return; }
+    if (st.view === 'hm') { const row = mapPts.find((p) => y >= p.y && y < p.y + p.h), col = fpInfo ? Math.floor((x - fpInfo.left) / fpInfo.cw) : -1; if (row && col >= 0 && col < T.n) { const k = row.cnt[col], rm = remBy[col] && remBy[col].length; tip.show('<span class="v">' + row.m + ' · ' + esc(MNAME[row.m]) + '</span> <span class="k">· ' + T.resn[col] + T.resi[col] + ' · ' + k + ' of ' + row.n + ' designs (' + (row.n ? Math.round(100 * k / row.n) : 0) + '%)' + (isHot(T.resi[col]) ? ' · hotspot' : '') + (rm ? ' · not in the target of ' + remBy[col].map(esc).join(', ') : '') + '</span>', e.clientX, e.clientY); } else tip.hide(); return; }
+    if (st.view !== 'map') return;
+    if (drag) { if (Math.abs(x - drag.x) + Math.abs(y - drag.y) > 5) drag.moved = true; if (drag.moved) { brushRect = { x: Math.min(x, drag.x), y: Math.min(y, drag.y), w: Math.abs(x - drag.x), h: Math.abs(y - drag.y) }; drawMap(); } return; }
+    const p = nearest(x, y, 14), id = p ? p.d.id : null;
+    if (id !== st.hover) { st.hover = id; drawMap(); updateViewer(); }
+    if (p) showCard(p.d, e.clientX, e.clientY); else hideCard();
+  });
+  cvM.addEventListener('pointerleave', () => { tip.hide(); if (st.view === 'map' && !drag) { st.hover = null; hideCard(); drawMap(); updateViewer(); } });
+  cvM.addEventListener('pointerup', (e) => {
+    if (st.view !== 'map') return; const [x, y] = pos(e);
+    if (drag && drag.moved && brushRect) {
+      const sel = mapPts.filter((p) => !p.rej && isLive(p.d) && p.x >= brushRect.x && p.x <= brushRect.x + brushRect.w && p.y >= brushRect.y && p.y <= brushRect.y + brushRect.h).map((p) => p.d);
+      brushRect = null; if (sel.length) { st.brush = new Set(sel.map((d) => d.id)); st.focus = sel.slice().sort((a, b) => b.q - a.q)[0].id; } update();
+    } else {
+      const p = nearest(x, y, 14);
+      if (p) { st.focus = p.d.id; st.mode = p.d.mode; st.brush = null; } else { const hit = MODES.find((m) => inHull(m, x, y)); if (hit) { st.mode = hit; st.focus = null; st.brush = null; } }
+      update();
+    }
+    drag = null;
+  });
+})();
+
+/* ---------------- hover card ---------------- */
+const hc = $('#hcard'), hcCv = $('#hcCv');
+function thumb(cv, d, w, h, small) {
+  const dpr = Math.min(2, devicePixelRatio || 1); cv.width = w * dpr; cv.height = h * dpr; cv.style.width = w + 'px'; cv.style.height = h + 'px';
+  M3.drawThumb(cv.getContext('2d'), w, h, { dpr, target: SM.t, binder: SM.b(d), view: d.view, c: d.vc, tColor: M3.hex2rgb(C.css('--target')), bColor: C.modeCol(d.mode), contacts: small ? null : d.tcIdx.map((i) => i * 2), hot: small ? null : d.hotIdx.map((i) => i * 2), pad: small ? 4 : 8, tWidth: small ? 2.6 : 3.3, bWidth: small ? 3.2 : 3.4 });
+}
+const flagsOf = (d) => {
+  const f = [];
+  if (CAP('complex_rmsd') && d.m.complex_rmsd > 2.5 && d.m.ipsae >= 0.6) f.push(['i-pose', 'Confident but the refold pose differs from the design']);
+  if (d.m.mem_excess > 0) f.push(['i-alert', 'Reaches the membrane side']);
+  if (d.m.hphob_patch > 500) f.push(['i-alert', 'Large exposed hydrophobic patch']);
+  if (d.liabBad || d.liabWarn) f.push(['i-alert', 'Sequence liability']);
+  if (CAP('olig') && d.m.olig_n3 >= C.S.partner.fail_n3) f.push(['i-alert', PF.t('map.flag.partner', null, 'Overlaps the other subunit')]);
+  if (CAP('rest_ctx') && d.m.rest_n3 >= C.S.rest.fail_n3) f.push(['i-alert', PF.t('map.flag.rest', null, 'Overlaps the rest of the protein')]);
+  if (wrongSite(d)) f.push(['i-alert', 'Touches none of the hotspots of its run (wrong site)']);
+  return f;
+};
+function cardCells(d) {   // [label, value, bad?]: the score the page leads with, the confidence of the interface, the refold, the interface size, the hotspots and the species columns of the profile
+  const c = [[HEAD.label, num(headVal(d))], CAP('min_ipae') ? ['min iPAE', numU(d.m.min_ipae, 1, ' Å')] : CAP('ipsae') ? ['ipTM', num(d.m.iptm)] : ['i_pAE', num(d.m.ipae_norm)], ['pLDDT', num(d.m.plddt)],
+    CAP('complex_rmsd') ? ['RMSD', numU(d.m.complex_rmsd, 1, ' Å')] : ['refold', numU(d.m.binder_rmsd, 1, ' Å')], ['buried', Math.round(d.m.dsasa) + ' Å²'],
+    wrongSite(d) ? ['wrong site', d.hot.length + '/' + C.hotOf(d), true] : ['hotspots', d.hot.length + '/' + C.hotOf(d)]];
+  SPC.card.forEach((s) => { if (s.key !== null) c.push([s.label, pct((d.sp.fr || {})[s.key])]); });
+  const par = SPC.card.find((s) => s.key === null);
+  if (par) c.push([par.label, spVal(d, par)]); else c.push(CAP('outcomes') && st.reveal ? ['lab', d.outcome.binds ? 'binds' : 'none'] : ['class', d.sc]);
+  if (par && CAP('outcomes') && st.reveal) c.push(['lab', d.outcome.binds ? 'binds' : 'none']);
+  return c;
+}
+function showCard(d, x, y) {
+  const w = 232, hgt = 238; let px = x + 16, py = y + 16; if (px + w > innerWidth - 8) px = x - w - 16; if (py + hgt > innerHeight - 8) py = y - hgt - 16;
+  hc.style.left = px + 'px'; hc.style.top = Math.max(6, py) + 'px'; hc.classList.add('on'); thumb(hcCv, d, 214, 118); const v = C.VERDICT[d.verdict];
+  $('#hcH').innerHTML = shapeSvg(d.mode, 11) + '<span class="mono" title="' + esc(d.id) + '">' + sid(d) + '</span>' + (d.status === 'rejected' ? '<span class="muted" style="font-size:11px">rejected</span>' : '') + '<span class="st ' + v.cls + '" style="margin-left:auto">' + icon(v.icon) + v.label + '</span>';
+  $('#hcG').innerHTML = cardCells(d).map((kv) => '<div><span>' + esc(kv[0]) + '</span><b' + (kv[2] ? ' style="color:var(--hotspot-ink)"' : '') + '>' + esc(kv[1]) + '</b></div>').join('');
+}
+function hideCard() { hc.classList.remove('on'); }
+
+/* ---------------- specificity of the epitope a mode (or selection) uses ---------------- */
+function specBlock(scope, topRes) {
+  if (!scope.length) return '';
+  const share = (r) => r[1] / scope.length; let E = topRes.filter((r) => share(r) >= 0.3).map((r) => r[0]); if (E.length < 5) E = topRes.slice(0, 6).map((r) => r[0]);
+  const s = SP.stats(E), n = s.n; if (n < 3) return '';
+  const bar = (label, ov, tip2) => '<div class="pbrow" title="' + esc(tip2) + '"><span>' + esc(label) + '</span><span class="b"><i style="width:' + (100 * ov.id) / n + '%"></i><i class="s" style="left:' + (100 * ov.id) / n + '%;width:' + (100 * ov.sm) / n + '%"></i></span><output>' + ov.id + '/' + n + '</output></div>';
+  const cc = [C.seq(0.18), C.seq(0.55), C.seq(0.95)].map((c) => M3.rgbs(c)), g = s.E.map(SP.grade), bins = [g.filter((v) => v <= 3).length, g.filter((v) => v >= 4 && v <= 6).length, g.filter((v) => v >= 7).length];
+  const foc = PF.get('specificity.paralogs.focus', null), par = s.par.slice().sort((a, b) => b.ov.id - a.ov.id), pd = par.find((x) => x.key === SP.focusKey), others = par.filter((x) => x.key !== SP.focusKey).slice(0, PF.get('specificity.paralogs.bars_other', 2));
+  const flabel = (foc && foc.label) || (pd && pd.label) || '';
+  return '<div><div class="sect">Specificity<span class="grow"></span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">' + n + ' residues most designs here touch</span></div>' +
+    '<div style="display:grid;grid-template-columns:112px 1fr 44px;gap:8px;align-items:center;font-size:11.5px;padding:2px 0"><span>Conservation</span><div class="stk" title="variable / average / conserved residues">' + bins.map((v, i) => '<i style="width:' + (100 * v) / n + '%;background:' + cc[i] + '" title="' + BS.plural(v, 'residue') + '"></i>').join('') + '</div><output class="mono" style="text-align:right;color:var(--ink-3);font-size:11px">' + s.meanG.toFixed(1) + '</output></div>' +
+    SP.orth.filter((o) => SP.show.indexOf(o.key) >= 0).map((o) => bar(o.label, s.orth[o.key], PF.t('map.spec.species_title', { label: o.label, subject: subj() }, 'identical residues in {label} {subject}') + (SP.diffs(o.map, s.E).length ? ' · differs at ' + SP.diffs(o.map, s.E).slice(0, 4).join(', ') : ''))).join('') +
+    (pd ? bar(flabel, pd.ov, PF.t('map.spec.focus_title', { label: flabel }, 'identical residues in {label}')) : '') + others.map((x) => bar(x.label, x.ov, 'identical residues in ' + x.label)).join('') +
+    '<div class="note" style="margin-top:4px">' + PF.t('map.spec.note', null, 'Identity over the contacted residues (pale = similar). Conserved across species means a binder is more likely to work on the other species; overlap with the related proteins is where off-target binding would come from. Open a design in the Inspector for the full alignment.') + '</div></div>';
+}
+/* the hotspots of the runs in view and how many designs touch each (the denominator is the designs whose own run has it as a hotspot) */
+function hotBlock(scope) {
+  if (!HBR || !hotShown.length || !scope.length) return '';
+  const rows = hotShown.map((r) => { const own = scope.filter((d) => (HBR[d.run] || []).indexOf(r) >= 0); return { r, n: own.length, k: own.filter((d) => d.hot.indexOf(r) >= 0).length, tag: hotTag[r] }; }).filter((x) => x.n), nw = scope.filter(wrongSite).length;
+  return '<div><div class="sect">Hotspots touched<span class="grow"></span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">share of designs whose run has the hotspot</span></div>' +
+    rows.map((x) => '<div class="pbrow" title="' + x.k + ' of ' + x.n + ' designs touch ' + hotLabel(x.r) + '"><span>' + hotLabel(x.r) + (x.tag ? ' <span class="muted">' + x.tag.map(runTag).join(' ') + '</span>' : '') + '</span><span class="b"><i style="width:' + (100 * x.k) / x.n + '%;background:var(--hotspot)"></i></span><output>' + Math.round((100 * x.k) / x.n) + '%</output></div>').join('') +
+    (nw ? '<div class="note" style="margin-top:4px">' + nw + (nw === 1 ? ' design touches' : ' designs touch') + ' none of the hotspots of its own run: wrong site.</div>' : '') + '</div>';
+}
+
+/* how close the designs in view come to the other subunit and to the rest of the protein (PER_RUN: exported projects) */
+function ctxBlock(scope) {
+  if (!PER_RUN || !(CAP('olig') || CAP('rest_ctx')) || !scope.length) return '';
+  const row = (label, key, what) => { const v = scope.map((d) => d.m[key]).filter(C.has).sort((a, b) => a - b); return v.length ? '<div class="pbrow" title="' + esc('Distance from the closest binder atom to ' + what + ', over the ' + BS.plural(v.length, 'design') + ' in view') + '"><span>' + label + '</span><span class="muted" style="font-size:11.5px">median ' + v[v.length >> 1].toFixed(1) + ' Å · closest ' + v[0].toFixed(1) + ' Å</span></div>' : ''; };
+  const rows = (CAP('olig') ? row(PF.t('map.ctx.partner_label', null, 'Other subunit'), 'olig_min', 'the other subunit') : '') + (CAP('rest_ctx') ? row(PF.t('map.ctx.rest_label', null, 'Rest of the protein'), 'rest_min', 'the rest of the protein (the part of the chain the construct leaves out)') : '');
+  return rows ? '<div><div class="sect">Context<span class="grow"></span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">closest approach of the binder</span></div>' + rows + '</div>' : '';
+}
+
+/* ---------------- mode detail + picks ---------------- */
+function drawDetail() {
+  const el = $('#detail'); const scope = D.filter(inScope); const m = st.brush ? null : st.mode; const all = m ? D.filter((d) => d.mode === m) : D;
+  const passN = scope.filter((d) => d.verdict !== 'fail').length, onEpi = scope.filter(epiOk).length;
+  const tc = new Map(); scope.forEach((d) => d.tc.forEach((r) => tc.set(r, (tc.get(r) || 0) + 1))); const topRes = Array.from(tc).sort((a, b) => b[1] - a[1]).slice(0, 9);
+  const covN = {}; MODES.forEach((mm) => (covN[mm] = pickList.filter((d) => d.mode === mm).length));
+  const top = scope.slice().sort((a, b) => b.q - a.q).slice(0, 4);
+  const title = st.brush ? 'Custom selection' : m ? m + ' · ' + MNAME[m] : 'All modes';
+  const nmem = scope.filter((d) => d.m.mem_excess > 0).length, S = C.S;
+  const cell = (k, v, title2) => '<div' + (title2 ? ' title="' + esc(title2) + '"' : '') + '><div class="k">' + k + '</div><div class="v">' + v + '</div></div>';
+  const cells = [];
+  if (CAP('families')) cells.push(cell('Backbones', new Set(scope.map((d) => d.bb)).size), cell('Folds', new Set(scope.map((d) => d.sc)).size)); else cells.push(cell('Classes', new Set(scope.map((d) => d.sc)).size));
+  if (CAP('families') && CAP('membrane')) cells.push(cell('Membrane-side', nmem));
+  if (CAP('complex_rmsd')) cells.push(cell('Pose flips', scope.filter((d) => d.flip).length));
+  if (CAP('olig')) cells.push(cell('Clash', scope.filter((d) => d.m.olig_n3 >= S.partner.fail_n3).length, PF.t('map.stats.clash_title', { n3: S.partner.fail_n3 }, 'Designs with {n3} or more atoms within 3 Å of the other subunit')));
+  if (CAP('flag_region')) cells.push(cell(PF.t('map.stats.flag_label', null, 'Flagged'), scope.filter((d) => d.m[PF.get('flag_region.key', 'flag') + '_n'] >= S.flagWarn).length));
+  if (CAP('rest_ctx')) cells.push(cell(PF.t('map.stats.rest_label', null, 'Rest overlap'), scope.filter((d) => d.m.rest_n3 >= S.rest.fail_n3).length, PF.t('map.stats.rest_title', { n3: S.rest.fail_n3 }, 'Designs with {n3} or more atoms within 3 Å of the rest of the protein (the part of the chain the construct leaves out)')),
+    cell(PF.t('map.stats.cut_label', null, 'Cut ends'), scope.filter((d) => d.m.cut_n >= S.cut.warn_n).length, PF.t('map.stats.cut_title', { k: S.cut.k, n: S.cut.warn_n }, 'Designs with {n} or more contacted residues within {k} residues of a cut end of the target')));
+  if (PER_RUN) cells.push(cell('Wrong site', scope.filter(wrongSite).length, 'Designs that touch none of the hotspots of their own run'));
+  if (CAP('rejected') && REJ.length && !st.brush) { const sel = BS.runFilter.selected(); cells.push(cell('Rejected', REJ.filter((d) => (!sel || sel.indexOf(d.run) >= 0) && (!m || d.mode === m)).length, 'Rejected designs whose footprint is nearest to ' + (m ? 'this mode' : 'a mode'))); }
+  if (CAP('outcomes')) { const nb = scope.filter((d) => d.outcome.binds).length, w = scope.reduce((a, d) => a + wOf(d), 0), wb = scope.reduce((a, d) => a + (d.outcome.binds ? wOf(d) : 0), 0); cells.push(cell('Bound', st.reveal ? nb + '<span class="muted" style="font-size:11px;font-weight:400">/' + scope.length + '</span>' : '–', st.reveal ? (CAP('weights') ? 'Weighted to the full dataset: ' + (w ? (100 * wb / w).toFixed(1) : '0') + '%' : 'Share that bound: ' + (scope.length ? (100 * nb / scope.length).toFixed(1) : '0') + '%') : 'Hidden until you press Show lab results')); }
+  const byRun = MULTI ? '<div class="note">By run: ' + selIds.map((id) => esc(id) + ' ' + scope.filter((d) => d.run === id).length).join(' · ') + '</div>' : '';
+  el.innerHTML =
+    '<div class="dh">' + (m ? shapeSvg(m, 14) : '') + '<h3>' + esc(title) + '</h3></div>' +
+    '<div class="note">' + (m ? (MULTI && selIds.length < RUNS.length && RAW.modes[m] && RAW.modes[m].by_run ? '<span class="muted">All runs: </span>' : '') + esc(modeNote(m)) : st.brush ? 'Designs you selected on the map. The epitope map on the left now shows only these.' : 'Every design in the campaign, wherever it binds.') + '</div>' +
+    '<div class="stats"><div><div class="k">In view</div><div class="v">' + scope.length + '<span class="muted" style="font-size:11px;font-weight:400">/' + all.length + '</span></div></div><div><div class="k">' + (PF.get('kind') === 'run' ? 'PASS or REVIEW' : 'Not NO PASS') + '</div><div class="v">' + passN + '</div></div><div><div class="k">Median ' + HEAD.label + '</div><div class="v">' + (scope.some((d) => C.has(headVal(d))) ? median(scope.map(headVal).filter((v) => C.has(v))).toFixed(2) : '–') + '</div></div><div><div class="k">On epitope</div><div class="v">' + onEpi + '</div></div>' +
+    cells.join('') + '</div>' + byRun +
+    '<div><div class="sect">Residues touched<span class="grow"></span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">share of designs in view</span></div><div class="consensus">' + (topRes.length ? topRes.map((r) => '<span class="cres' + (isHot(r[0]) ? ' hot' : '') + '" title="' + BS.plural(r[1], 'design') + '">' + T.resn[T.idx[r[0]]] + r[0] + ' <span class="muted">' + Math.round((100 * r[1]) / Math.max(1, scope.length)) + '%</span></span>').join('') : '<span class="note">No designs in view.</span>') + '</div></div>' +
+    hotBlock(scope) + ctxBlock(scope) + specBlock(scope, topRes) + (CAP('outcomes') && st.reveal ? labModes(m) : '') +
+    '<div><div class="sect">Best designs here<span class="grow"></span><span class="muted" style="text-transform:none;letter-spacing:0;font-weight:400">composite quality</span></div><div id="topList"></div></div>' +
+    '<div><div class="sect">Quality–diversity picks<span class="grow"></span></div>' +
+    '<div style="display:grid;gap:8px"><div class="ctl"><label for="kR">Budget</label><input type="range" id="kR" min="4" max="24" step="1" value="' + st.k + '"><output id="kO">' + st.k + '</output></div>' +
+    '<div class="ctl"><label for="aR">Diversity</label><input type="range" id="aR" min="0" max="1" step="0.05" value="' + st.alpha + '"><output id="aO">' + st.alpha.toFixed(2) + '</output></div>' +
+    '<div class="ctl" style="grid-template-columns:82px 1fr"><label for="poolS">Pool</label><select id="poolS"><option value="epi"' + (st.pool === 'epi' ? ' selected' : '') + '>' + PF.t('map.pool.epi', null, 'On the intended epitope') + ' (' + D.filter(STAGES[EPI].test).length + ')</option><option value="pose"' + (st.pool === 'pose' ? ' selected' : '') + '>' + PF.t('map.pool.pose', null, 'Any confident design that fits its surroundings') + ' (' + D.filter(STAGES[POSE].test).length + ')</option></select></div>' +
+    '<div><div class="covbar" aria-label="Picks per binding mode">' + MODES.map((mm) => (covN[mm] ? '<i style="flex:' + covN[mm] + ';background:' + C.modeCss(mm) + '" title="' + mm + ': ' + covN[mm] + '"></i>' : '')).join('') + '</div>' +
+    '<div class="note" style="margin-top:4px">' + (MODES.filter((mm) => covN[mm]).map((mm) => mm + ' × ' + covN[mm]).join(' · ') || 'no picks') + ' · ' + PF.t('map.picks.summary', { n_bb: new Set(pickList.map((d) => d.bb)).size, n_sc: new Set(pickList.map((d) => d.sc)).size, n_modes: new Set(pickList.map((d) => d.mode)).size }, '{n_bb} backbones · {n_sc} folds') + '</div></div>' +
+    '<div class="picks" id="picksList"></div>' +
+    '<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="btn sm" id="btnAdopt">' + icon('i-star') + 'Add picks to shortlist</button><button class="btn sm" id="btnStage">Show only picks</button><button class="btn sm ghost" id="btnFasta">' + icon('i-copy') + '<span>Copy FASTA</span></button></div>' +
+    '<div class="note">Greedy selection maximises (1 − diversity) × quality + diversity × distance to everything already picked. Distance uses the target-residue footprint, and siblings on one backbone count as near-duplicates.</div></div></div>';
+  const tl = $('#topList'); tl.innerHTML = '';
+  top.forEach((d) => {
+    const v = C.VERDICT[d.verdict], r = document.createElement('div'); r.className = 'row' + (d.id === st.focus ? ' on' : ''); const cv = document.createElement('canvas'); r.appendChild(cv);
+    const mid = document.createElement('div'); mid.innerHTML = '<div class="t1">' + idLink(d, sid(d)) + '<span class="st ' + v.cls + '">' + icon(v.icon) + v.label + '</span>' + (CAP('outcomes') && st.reveal ? labPillM(d) : '') + flagsOf(d).map((f) => '<span title="' + esc(f[1]) + '" style="color:var(--warn-ink)">' + icon(f[0]) + '</span>').join('') + '</div><div class="t2"><span class="minibar"><span>' + HEAD.label + ' ' + num(headVal(d)) + '</span><i><b style="width:' + (C.has(headVal(d)) ? headVal(d) * 100 : 0) + '%"></b></i></span><span>' + (CAP('min_ipae') ? 'iPAE ' + num(d.m.min_ipae, 1) : CAP('ipsae') ? 'ipTM ' + num(d.m.iptm) : 'i_pAE ' + num(d.m.ipae_norm)) + '</span><span>' + d.hot.length + '/' + C.hotOf(d) + ' hotspots</span><span>' + esc(d.sc) + '</span></div>';
+    r.appendChild(mid); const s = document.createElement('button'); s.className = 'star'; s.setAttribute('aria-label', 'Shortlist ' + d.id); s.setAttribute('aria-pressed', String(st.shortlist.has(d.id))); s.innerHTML = icon('i-star');
+    s.onclick = (e) => { e.stopPropagation(); st.shortlist.has(d.id) ? st.shortlist.delete(d.id) : st.shortlist.add(d.id); update(true); }; r.appendChild(s);
+    r.onclick = () => { st.focus = d.id; update(true); }; r.onpointerenter = () => { st.hover = d.id; if (st.view === 'map') drawMap(); updateViewer(); }; r.onpointerleave = () => { st.hover = null; if (st.view === 'map') drawMap(); updateViewer(); };
+    const a = $('a', mid); if (a) a.onclick = (e) => e.stopPropagation();
+    tl.appendChild(r); thumb(cv, d, 88, 60, true);
+  });
+  if (!top.length) tl.innerHTML = '<div class="note">Nothing in view here. Pick an earlier stage in the funnel, or another mode.</div>';
+  const pl = $('#picksList'); pl.innerHTML = pickList.map((d) => '<span class="pk" data-id="' + esc(d.id) + '" tabindex="0">' + shapeSvg(d.mode, 10) + sid(d) + (PER_RUN ? '<a class="pkx" href="' + BS.link.design(d.id) + '" aria-label="Open ' + esc(d.id) + ' in the inspector" title="Open in the inspector">↗</a>' : '') + '</span>').join('');
+  $$('.pk', pl).forEach((p) => p.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && e.target === p) { e.preventDefault(); p.click(); } }));
+  $$('.pk', pl).forEach((p) => (p.onclick = () => { const d = C.byId[p.dataset.id]; st.focus = d.id; st.mode = d.mode; st.brush = null; update(true); }));
+  $$('.pkx', pl).forEach((a) => (a.onclick = (e) => e.stopPropagation()));
+  const re = () => { computePicks(); update(true); };
+  $('#kR').oninput = (e) => { st.k = +e.target.value; re(); }; $('#aR').oninput = (e) => { st.alpha = +e.target.value; re(); }; $('#poolS').onchange = (e) => { st.pool = e.target.value; re(); };
+  $('#btnAdopt').onclick = () => { pickList.forEach((d) => st.shortlist.add(d.id)); update(true); };
+  $('#btnStage').onclick = () => { st.stage = PI; update(true); };
+  $('#btnFasta').onclick = () => { const txt = pickList.map((d) => '>' + d.id + ' mode=' + d.mode + ' ' + HEAD.label + '=' + num(headVal(d)) + '\n' + d.seq).join('\n'); const sp = $('#btnFasta span'); const done = (t) => { sp.textContent = t; setTimeout(() => (sp.textContent = 'Copy FASTA'), 1500); }; try { navigator.clipboard.writeText(txt).then(() => done('Copied'), () => done('Clipboard blocked')); } catch (e) { done('Clipboard blocked'); } };
+  $('#shortN').textContent = st.shortlist.size;
+}
+
+/* ---------------- orchestration ---------------- */
+const VIEWS = { map: 'closer = touches the same target residues', fp: 'one row per design, one column per target residue', hm: 'share of each mode’s designs that contact each target residue', tbl: 'the same marks as a ranked list' };
+function setView(v) {
+  if (v === 'hm' && !PER_RUN) v = 'map';
+  st.view = v; $$('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === v)));
+  $('#tblw').hidden = v !== 'tbl'; cvM.style.display = v === 'tbl' ? 'none' : 'block';
+  $('#mapSub').textContent = VIEWS[v]; if (PER_RUN) $('#mapSub').title = VIEWS[v];
+  hideCard(); tip.hide(); drawMain();
+}
+function drawMain() { if (st.view === 'map') drawMap(); else if (st.view === 'fp') drawFingerprints(); else if (st.view === 'hm') drawHeat(); else drawTable(); }
+function update(keepPicks) {
+  if (!keepPicks && !pickList.length) computePicks();
+  drawCrumbs(); syncRej(); drawFunnel(); drawLegend(); updateViewer(); drawDetail(); drawMain();
+}
+$('#preset').onchange = (e) => { C.applyPreset(e.target.value); st.preset = e.target.value; computePicks(); update(true); };
+addEventListener('resize', () => { drawStrip(); drawMain(); });
+C.onTheme(() => { update(true); });
+initPage();
+$$('#viewSeg button').forEach((b) => (b.onclick = () => setView(b.dataset.v)));
+refreshRuns(); setPool(); st.mode = MV[0] || null;
+BS.runFilter.onChange(() => { refreshRuns(); setPool(); computePicks(); update(true); });
+computePicks();
+function applyHash() {   // map.html#m=<mode> opens a mode, #d=<design id> a design (the inspector links back with it), #fp, #tbl or #v=hm a view
+  const hp = BS.link.parse(); if (hp.theme) return;
+  if (hp.m && MV.indexOf(hp.m) >= 0) { st.mode = hp.m; st.focus = null; st.brush = null; }
+  if (hp.d && C.byId[hp.d] && (D.concat(DR).indexOf(C.byId[hp.d]) >= 0)) { st.focus = hp.d; st.mode = C.byId[hp.d].mode; st.brush = null; }
+  const hv = hp.v || ('fp' in hp ? 'fp' : 'tbl' in hp ? 'tbl' : ''); if (hv && VIEWS[hv] && (hv !== 'hm' || PER_RUN)) { st.view = hv; $$('#viewSeg button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.v === hv))); $('#tblw').hidden = hv !== 'tbl'; cvM.style.display = hv === 'tbl' ? 'none' : 'block'; $('#mapSub').textContent = VIEWS[hv]; if (PER_RUN) $('#mapSub').title = VIEWS[hv]; }
+}
+applyHash(); BS.link.onChange(() => { applyHash(); update(true); });
+/* keyboard (exported projects): modes, views, rejected switch, clear */
+if (PER_RUN) document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.defaultPrevented) return;
+  const tg = e.target, tag = tg && tg.tagName; if (tag === 'INPUT' || tag === 'SELECT' || tag === 'TEXTAREA' || (tg && tg.isContentEditable)) return;
+  const k = e.key, pickMode = (m) => { if (!m) return; st.mode = st.mode === m ? null : m; st.focus = null; st.brush = null; update(); };
+  if (/^[1-9]$/.test(k)) { pickMode(MV[Number(k) - 1]); e.preventDefault(); }
+  else if (k === 'ArrowLeft' || k === 'ArrowRight') { if (tag === 'BUTTON' && tg.closest('.seg')) return; const i = MV.indexOf(st.mode), j = i < 0 ? (k === 'ArrowRight' ? 0 : MV.length - 1) : (i + (k === 'ArrowRight' ? 1 : -1) + MV.length) % MV.length; st.mode = MV[j]; st.focus = null; st.brush = null; update(); e.preventDefault(); }
+  else if (k === 'Escape') { if (st.brush || st.range || st.focus) { st.brush = null; st.range = null; st.focus = null; update(); } }
+  else if (/^[mfbt]$/i.test(k)) { const b = $('#viewSeg button[data-v="' + { m: 'map', f: 'fp', b: 'hm', t: 'tbl' }[k.toLowerCase()] + '"]'); if (b) b.click(); }
+  else if (/^r$/i.test(k)) { const b = $('#btnRej'); if (b && !b.disabled) b.click(); }
+});
+window.__map = { st, update, setPool, get pts() { return mapPts.map((p) => ({ id: p.d && p.d.id, x: p.x, y: p.y, rej: !!p.rej })); }, get cvRect() { const r = cvM.getBoundingClientRect(); return { x: r.x, y: r.y, w: r.width, h: r.height }; }, get D() { return D; }, get DR() { return DR; }, STAGES, get MV() { return MV; }, get hotShown() { return hotShown; }, get remSt() { return remSt; }, get picks() { return pickList; } };
+update(true);
+$$('[data-nav]').forEach((a) => a.addEventListener('click', (e) => { if (a.getAttribute('href') === '#') e.preventDefault(); }));
+})();
+</script>
+</body>
+</html>
